@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe67eaf2510f3d942add43c4c5a18c70, type: 3}
+  m_Name: GameplayTags
+  m_EditorClassIdentifier: 
+  Container:
+    Tokens:
+    - _SerializedID: dc4d268a-8ffa-4851-95c3-b7360966f195
+      Token: Damage
+      Depth: 0
+      bIsFolded: 0
+    - _SerializedID: 94ed9b47-57ae-4790-a491-e81bb3597976
+      Token: Chaos
+      Depth: 1
+      bIsFolded: 0
+    - _SerializedID: e2d6099b-a8cb-467f-b739-b43e754b1bd8
+      Token: Physical
+      Depth: 1
+      bIsFolded: 0
+    - _SerializedID: ee51318d-dfe2-44ba-baad-99056eb311c4
+      Token: Elemental
+      Depth: 1
+      bIsFolded: 0
+    - _SerializedID: 9cbdff33-55df-4d54-a622-e691bbc28789
+      Token: Lightning
+      Depth: 2
+      bIsFolded: 0
+    - _SerializedID: 9ceaf5b9-2699-464e-94ba-36fe78d2ee50
+      Token: Cold
+      Depth: 2
+      bIsFolded: 0
+    - _SerializedID: ec381ef9-a8db-455d-a7b8-9b26ce6583bb
+      Token: Fire
+      Depth: 2
+      bIsFolded: 0
