@@ -41,7 +41,6 @@ https://github.com/ratatui/templates
 # :notebook_with_decorative_cover: Table of Contents
 
 - [About the Project](#star2-about-the-project)
-  * [Features](#dart-features)
 - [Roadmap](#compass-roadmap)
 - [License](#warning-license)
 - [Acknowledgements](#gem-acknowledgements)
@@ -50,29 +49,26 @@ https://github.com/ratatui/templates
 <!-- About the Project -->
 ## About the Project
 
-<div align="center"> 
-  <img src="https://placehold.co/600x400?text=Your+Screenshot+here" alt="screenshot" /><br>
+<div align="left"> 
   I was programming a jump-and-run, but the movement felt sluggish. So I pivoted to adding much more enemies to hide it :)<br>
-  The plan is to have ~50k units on the screen in a fantasy ARPG
+  The plan is to have ~50k units on the screen in a fantasy ARPG, but for now I'm writing the underlying system
 </div>
-
-<!-- Features -->
-### :dart: Features
-
-- Feature 1
-- Feature 2
-- Feature 3
 
 <!-- Roadmap -->
 ## :compass: Roadmap
 
-* [x] Todo 1
+* [x] SparseSet implementation
+* [x] ComponentGroups and Queries
+* [ ] BVH Tree generation for location queries
+* [ ] Improved 
+* [ ] Gameplay effect integration
+* [ ] Example spells
 
 
 <!-- License -->
 ## :warning: License
 
-Distributed under the no License. See LICENSE.txt for more information.
+Distributed under the MIT License. See LICENSE.txt for more information.
 
 <!-- Acknowledgments -->
 ## :gem: Acknowledgements
