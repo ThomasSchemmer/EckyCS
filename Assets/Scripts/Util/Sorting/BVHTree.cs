@@ -155,7 +155,8 @@ public unsafe class BVHTree : ECSSystem
             Target = bIsEven ? Target : MortonCodes,
             LSBIndex = LSBIndex,
             Mask = Mask,
-            ThreadCount = ThreadCount
+            ThreadCount = ThreadCount,
+            BucketSize = BucketSize
         };
         return Job.Schedule(ThreadCount, 1, Dependency);
     }

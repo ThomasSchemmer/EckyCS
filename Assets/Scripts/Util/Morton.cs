@@ -56,14 +56,9 @@ public unsafe struct MortonSIMDJob : IJobParallelFor
         MortonPtr = (v256*)MortonCodes.GetUnsafePtr();
         ComponentsPtr = (v256*)Components.GetUnsafeReadOnlyPtr();
 
-        for (int j = 0; j < CountPerThread; j++)
-        {
-            int Offset = i * CountPerThread + j;
-            MortonCodes[Offset] = (uint)Components[Offset].PosX;
-        }
-        //SIMDCall(i);
-        //StandardCall(i);
-        //LeftOverCall(i);
+        SIMDCall(i);
+        StandardCall(i);
+        LeftOverCall(i);
     }
 
     /** SIMD write a chunk of memory, starting at a chunked offset according to thread index */
