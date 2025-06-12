@@ -7,21 +7,31 @@ using System;
  * Wrapper for the BitVector indicating which components are represented
  * Adds utility for ComponentType <-> byte conversion
  */
-public class ComponentGroupIdentifier : IEnumerator, IEnumerable
+public struct ComponentGroupIdentifier : IEnumerator, IEnumerable
 {
     private BitVector Flags;
-    private int EnumeratorIndex = -1;
+    // invalid == 0, as structs has no guaranteed init
+    private int EnumeratorIndex;
 
-
-    public ComponentGroupIdentifier()
+    public ComponentGroupIdentifier(BitVector Flags)
     {
-        Flags = new(ComponentAllocator.MAX_NUM_COMPONENTS);
+        this.Flags = Flags;
+        EnumeratorIndex = 0;
     }
 
     public void AddFlag(Type Component)
     {
         int Index = ComponentAllocator.GetIDFor(Component);
         Flags.Set(Index, true);
+    }
+
+    public void AddFlags(Type[] Components)
+    {
+        foreach (Type Component in Components)
+        {
+            int Index = ComponentAllocator.GetIDFor(Component);
+            Flags.Set(Index, true);
+        }
     }
 
     public bool HasFlag(Type Component)
@@ -63,16 +73,13 @@ public class ComponentGroupIdentifier : IEnumerator, IEnumerable
 
     public ComponentGroupIdentifier Clone()
     {
-        ComponentGroupIdentifier Clone = new();
-        Clone.Flags = Flags.Clone();
+        ComponentGroupIdentifier Clone = new(Flags.Clone());
         return Clone;
     }
 
     public ComponentGroupIdentifier Subtract(ComponentGroupIdentifier Other)
     {
-        return new() {
-            Flags = Flags.Subtract(Other.Flags)
-        };
+        return new(Flags.Subtract(Other.Flags));
     }
 
     public override bool Equals(object obj)
@@ -93,9 +100,22 @@ public class ComponentGroupIdentifier : IEnumerator, IEnumerable
         return Flags.ToString();
     }
 
+    /** returns the index of the requested type, ignoring all empty types */
+    public int GetSelfIndexOf(Type Type)
+    {
+        return Flags.GetSelfIndexOf(Type);
+    }
+    public int[] GetSelfIndexOf(Type[] Types)
+    {
+        return Flags.GetSelfIndexOf(Types);
+    }
+
     public List<Type> GetContainedTypes()
     {
         List<Type> Result = new();
+        if (GetAmountOfFlags() == 0)
+            return Result;
+
         foreach(Type Type in this)
         {
             Result.Add(Type);
@@ -105,13 +125,13 @@ public class ComponentGroupIdentifier : IEnumerator, IEnumerable
 
     public bool MoveNext()
     {
-        EnumeratorIndex = Flags.GetFirst(EnumeratorIndex + 1, true);
-        return EnumeratorIndex != -1;
+        EnumeratorIndex = Flags.GetFirst(EnumeratorIndex, true) + 1;
+        return EnumeratorIndex != 0;
     }
 
     public void Reset()
     {
-        EnumeratorIndex = -1;
+        EnumeratorIndex = 0;
     }
 
     public IEnumerator GetEnumerator()
@@ -119,5 +139,5 @@ public class ComponentGroupIdentifier : IEnumerator, IEnumerable
         return this;
     }
 
-    public object Current => ComponentAllocator.GetTypeFor(EnumeratorIndex);
+    public object Current => ComponentAllocator.GetTypeFor(EnumeratorIndex - 1);
 }

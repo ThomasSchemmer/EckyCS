@@ -20,7 +20,6 @@ using static Unity.Burst.Intrinsics.X86.Avx2;
 [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
 public unsafe struct MortonSIMDJob : IJobParallelFor
 {
-    [NativeDisableUnsafePtrRestriction]
     [ReadOnly]
     public NativeArray<TransformComponent> Components;
 

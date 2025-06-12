@@ -126,7 +126,7 @@ public class ECS : GameService
         if (!EntitySets.ContainsKey(GroupID))
         {
             Type[] GenTypes = GroupID.GetContainedTypes().ToArray();
-            var GenType = GenTypes.Length > 0 ? typeof(SparseSet<>).MakeGenericType(GenTypes) : typeof(SparseSet);
+            var GenType = GenTypes.Length > 0 ? typeof(SparseSet<,>).MakeGenericType(GenTypes) : typeof(SparseSet);
             var NewSet = (SparseSet)Activator.CreateInstance(GenType, new object[]
             {
                 GroupID, GetSparseSetSize(), 10

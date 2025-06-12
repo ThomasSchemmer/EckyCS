@@ -17,16 +17,12 @@ public class EntityGenerator
         Entity.ID = new(CurrentID++);
 
         Type Type = typeof(T);
-        List<Type> Types = new();
+        ComponentGroupIdentifier GroupID = default;
         foreach (var Attribute in Type.GetCustomAttributes(typeof(RequireComponentTypeAttribute), true))
         {
             var RequiredType = Attribute as RequireComponentTypeAttribute;
-            if (!typeof(IComponent).IsAssignableFrom(RequiredType.Type))
-                continue;
-
-            Types.Add(RequiredType.Type);
+            GroupID = RequiredType.ID;
         }
-        var GroupID = ECS.GetGroupIDFromList(Types);
         ECS.RegisterEntity(Entity.ID, GroupID);
         Profiler.EndSample();
         return true;

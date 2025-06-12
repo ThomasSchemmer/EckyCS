@@ -8,8 +8,6 @@ using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
-using static Unity.Burst.Intrinsics.X86.Avx;
-using static Unity.Burst.Intrinsics.X86.Avx2;
 
 /** 
  * Parallel Radix sort implementation
@@ -48,6 +46,8 @@ public unsafe class RadixSort
             NativeArray<int> TempCounts = new(BucketSize, Allocator.Temp);
             CountPerThread = MortonCodes.Length / ThreadCount;
             int LeftOverCount = MortonCodes.Length - CountPerThread * ThreadCount;
+            // can't split leftover between threads as it would swap positions of values
+            // so the last thread will always run a tad longer, making any other thread wait for it :(
             bool bIsLeftOver = i == ThreadCount - 1;
             int Count = CountPerThread + (bIsLeftOver ? LeftOverCount : 0);
 

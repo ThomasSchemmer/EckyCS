@@ -33,12 +33,12 @@ public class SparseSet
 
     public unsafe void ForEach(ComponentGroup.ByteAction Action)
     {
-        Values?.ForEach(Values.IDs.Length - Available, Action);
+        Values?.ForEach(Action);
     }
 
-    public unsafe byte*[] GetGroupPointers()
+    public unsafe byte*[] GetGroupPointers(Type[] Types)
     {
-        return Values?.GetGroupPointers();
+        return Values?.GetGroupPointers(Types);
     }
 
     public int GetCount()
@@ -128,8 +128,10 @@ public class SparseSet
     {
         int TargetIndex = Page.Indices[IndexInPage];
         bool bIsValid = TargetIndex != INVALID_INDEX && Values != null;
-        byte* Target = bIsValid ? Values.Get(TargetIndex) : null;
-        return Target != null && Values.IDs[TargetIndex].Equals(ID);
+        if (!bIsValid || !Values.Has(TargetIndex))
+            return false;
+
+        return Values.IDs[TargetIndex].Equals(ID);
     }
 
     public void Add(EntityID ID)
@@ -303,6 +305,15 @@ public class SparseSet<T> : SparseSet where T : struct, IComponent
         base(ID, NumPages, ExpectedEntities)
     {
         Values = new ComponentGroup<T>(ID, ExpectedEntities);
+        FillWithEmpty(0, ExpectedEntities);
+    }
+}
+public class SparseSet<X, Y> : SparseSet where X : struct, IComponent where Y : struct, IComponent
+{
+    public SparseSet(ComponentGroupIdentifier ID, int NumPages, int ExpectedEntities) :
+        base(ID, NumPages, ExpectedEntities)
+    {
+        Values = new ComponentGroup<X, Y>(ID, ExpectedEntities);
         FillWithEmpty(0, ExpectedEntities);
     }
 }

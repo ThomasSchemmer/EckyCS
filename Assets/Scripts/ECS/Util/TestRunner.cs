@@ -25,13 +25,12 @@ public class TestRunner : MonoBehaviour
             return;
 
 
-        for (int i = 0; i < ECS.MaxEntities; i++) //ECS.MaxEntities
+        for (int i = 0; i < 100; i++) //ECS.MaxEntities
         {
             EntityGenerator.TryCreate(out Enemy _);
         }
         //ECS.AssignComponent<NameComponent>(new EntityID(0));
-        ECS.AddSystem(new FollowTargetSystem());
-        ECS.AddSystem(new BVHTree());
+        ECS.AddSystem(new LocationSystem());
     }
 
 }

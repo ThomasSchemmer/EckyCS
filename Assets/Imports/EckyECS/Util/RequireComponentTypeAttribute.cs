@@ -6,10 +6,11 @@ using UnityEngine;
 [AttributeUsage(AttributeTargets.Class)]
 public class RequireComponentTypeAttribute : System.Attribute
 {
-    public Type Type;
+    public ComponentGroupIdentifier ID;
 
-    public RequireComponentTypeAttribute(Type Type)
+    public RequireComponentTypeAttribute(params Type[] Types)
     {
-        this.Type = Type;
+        ID = new();
+        ID.AddFlags(Types);
     }
 }

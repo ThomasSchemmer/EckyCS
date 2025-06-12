@@ -4,7 +4,11 @@ using UnityEngine;
 using System;
 using UnityEngine.Profiling;
 
-public class ComponentGroupView
+/** 
+ * Virtual collection of CGIs that fulfill a common required set of Components
+ * Used to quickly iterate/act on these components ("for each")
+ */
+public abstract class ComponentGroupView
 {
     public List<ComponentGroupIdentifier> Groups = new();
 
@@ -12,11 +16,12 @@ public class ComponentGroupView
     {
         Groups.Add(Group);
     }
-}
 
-public class ComponentGroupView<X> : ComponentGroupView where X : IComponent
-{
-    public unsafe void ForEach(ComponentGroup.ByteAction Action)
+    /** 
+     * Executes the provided action for each entity from each group
+     * Can be imperformant as it can create a lot of calls
+     */
+    public virtual unsafe void ForEach(ComponentGroup.ByteAction Action)
     {
         if (!Game.TryGetService(out ECS ECS))
             return;
@@ -28,6 +33,10 @@ public class ComponentGroupView<X> : ComponentGroupView where X : IComponent
         }
     }
 
+    /**
+     * Executes the provided action once for each contained group
+     * Can be performant as it allows to directly work on memory blocks instead
+     */
     public unsafe void ForEachGroup(ComponentGroup.GroupByteAction Action)
     {
         if (!Game.TryGetService(out ECS ECS))
@@ -36,29 +45,31 @@ public class ComponentGroupView<X> : ComponentGroupView where X : IComponent
         foreach (var Group in Groups)
         {
             var SparseSet = ECS.EntitySets[Group];
-            Action?.Invoke(Group, SparseSet.GetGroupPointers(), SparseSet.GetCount());
+            Action?.Invoke(
+                Group, 
+                SparseSet.GetGroupPointers(GetTypeSet()),
+                SparseSet.GetCount()
+            );
         }
     }
+
+    protected abstract Type[] GetTypeSet();
+}
+
+public class ComponentGroupView<X> : ComponentGroupView where X : IComponent
+{
+    protected override Type[] GetTypeSet()
+    {
+        return new Type[1] { typeof(X) };
+    }
+
 }
 
 public class ComponentGroupView<X, Y> : ComponentGroupView where X: IComponent where Y : IComponent
 {
-    public void ForEach(Action<EntityID, X, Y> Action)
-    {
-        if (!Game.TryGetService(out ECS ECS))
-            return;
 
-        foreach (var Group in Groups)
-        {
-            var SparseSet = ECS.EntitySets[Group];
-            //foreach (var Value in SparseSet)
-            //{
-            //    //Action?.Invoke(
-            //    //    Value.ID, 
-            //    //    (X)Value.Content[typeof(X)],
-            //    //    (Y)Value.Content[typeof(Y)]
-            //    //);
-            //}
-        }
+    protected override Type[] GetTypeSet()
+    {
+        return new Type[2] { typeof(X), typeof(Y) };
     }
 }

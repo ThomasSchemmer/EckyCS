@@ -1,12 +1,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Profiling;
-using Unity.VisualScripting;
-using System.Runtime.InteropServices;
-using System.ComponentModel;
+using static UnityEngine.GraphicsBuffer;
 
 /** 
  * Dense struct to help have a variable amount of components in a sparse set
@@ -21,18 +22,16 @@ public class ComponentGroup
 
     protected int ComponentAmount = -1;
     protected ComponentGroupIdentifier GroupID;
-    protected int ComponentSize;
 
     protected virtual void ResetComponents(int Index, EntityID ID) { }
     protected virtual void ChangeSizeComponents(int NewLength) { }
     protected virtual void SwapComponents(int IndexA, int IndexB) { }
-    public unsafe virtual byte* Get(int Index) { return null; }
-    public unsafe virtual void ForEach(int Count, ByteAction Action) { }
-    public unsafe virtual byte*[] GetGroupPointers() { return null; }
+    public unsafe virtual byte* Get<T>(int Index) where T : struct, IComponent { return null; }
+    public unsafe virtual void ForEach(ByteAction Action) { }
+    public unsafe virtual byte*[] GetGroupPointers(Type[] Types) { return null; }
 
     public ComponentGroup(ComponentGroupIdentifier ID, int ExpectedEntities)
     {
-        ComponentSize = 0;
         ComponentAmount = ID.GetAmountOfFlags();
         GroupID = ID;
         IDs = new EntityID[ExpectedEntities];
@@ -94,7 +93,12 @@ public class ComponentGroup
         return IDs.Length;
     }
 
-    public unsafe delegate void ByteAction(EntityID ID, byte* ptr);
+    public bool Has(int TargetIndex)
+    {
+        return !IDs[TargetIndex].IsInvalid();
+    }
+
+    public unsafe delegate void ByteAction(ComponentGroupIdentifier Group, EntityID ID, byte*[] ptr);
     public unsafe delegate void GroupByteAction(ComponentGroupIdentifier Group, byte*[] Ptrs, int Count);
 }
 
@@ -103,6 +107,8 @@ public unsafe class ComponentGroup<T> : ComponentGroup where T : struct, ICompon
 {
     // raw byte data as we cannot store it in T due to boxing
     public byte[] Components;
+
+    private int ComponentSize;
 
     public ComponentGroup(ComponentGroupIdentifier ID, int ExpectedEntities) : 
         base (ID, ExpectedEntities)
@@ -115,44 +121,44 @@ public unsafe class ComponentGroup<T> : ComponentGroup where T : struct, ICompon
             Reset(e, false);
         }
 
-        unsafe
-        {
-            //fixed (byte* bPtr = &Components[0])
-            //{
-            //    TransformComponent* Ptr = (TransformComponent*)bPtr;
-            //    TransformComponent* Ptr2 = (TransformComponent*)bPtr;
-            //    Ptr2->PosX += 5;
-            //
-            //}
-            //TransformComponent Test = (TransformComponent)Components[0];
-            //TransformComponent* First = &Test;
-            //First->Position = 0;
-        }
     }
-    public unsafe override byte* Get(int Index)
+    public unsafe override byte* Get<X>(int Index)
     {
+        if (typeof(X) != typeof(T))
+            return null;
+
         fixed (byte* bPtr = &Components[Index * ComponentSize])
         {
             return bPtr;
         }
     }
 
-    public unsafe override void ForEach(int Count, ByteAction Action)
+    public unsafe override void ForEach(ByteAction Action)
     {
-        base.ForEach(Count, Action);
+        base.ForEach(Action);
+        int Target = GroupID.GetSelfIndexOf(typeof(T));
+        if (Target != 0)
+            return;
+
         fixed (byte* bPtr = &Components[0])
         {
-            for (int i = 0; i < Count; i++)
+            for (int i = 0; i < IDs.Length; i++)
             {
-                {
-                    Action(IDs[i], (bPtr + i * ComponentSize));
-                }
+                if (IDs[i].IsInvalid())
+                    continue;
+
+                Action(GroupID, IDs[i], new byte*[1] { bPtr + i * ComponentSize });
             }
         }
     }
 
-    public unsafe override byte*[] GetGroupPointers() {
-        fixed (byte* Ptr = &Components[0])
+    public unsafe override byte*[] GetGroupPointers(Type[] Types) 
+    {
+        int Target = GroupID.GetSelfIndexOf(typeof(T));
+        if (Target < 0 || Target >= Components.Length)
+            return null;
+
+        fixed (byte* Ptr = &Components[Target])
         {
             return new byte*[] { Ptr };
         }
@@ -181,6 +187,123 @@ public unsafe class ComponentGroup<T> : ComponentGroup where T : struct, ICompon
             int A = (IndexA * ComponentSize) + i;
             int B = (IndexB * ComponentSize) + i;
             (Components[A], Components[B]) = (Components[B], Components[A]);
+        }
+    }
+}
+
+
+public unsafe class ComponentGroup<X, Y> : ComponentGroup where X : struct, IComponent where Y : struct, IComponent
+{
+    // raw byte data as we cannot store it in T due to boxing
+    public byte[] ComponentsX;
+    public byte[] ComponentsY;
+
+    private int ComponentSizeX, ComponentSizeY;
+
+    public ComponentGroup(ComponentGroupIdentifier ID, int ExpectedEntities) :
+        base(ID, ExpectedEntities)
+    {
+        ComponentSizeX = Marshal.SizeOf(typeof(X));
+        ComponentsX = new byte[ExpectedEntities * ComponentSizeX];
+        ComponentSizeY = Marshal.SizeOf(typeof(Y));
+        ComponentsY = new byte[ExpectedEntities * ComponentSizeY];
+
+        for (int e = 0; e < ExpectedEntities; e++)
+        {
+            Reset(e, false);
+        }
+
+    }
+
+    public unsafe override byte* Get<T>(int Index)
+    {
+        int Target = GroupID.GetSelfIndexOf(typeof(T));
+        if (Target < 0 || Target >= 2)
+            return null;
+
+        byte[] TargetPtr = Target == 0 ? ComponentsX : ComponentsY;
+        int TargetSize = Target == 0 ? ComponentSizeX : ComponentSizeY;
+        fixed (byte* bPtr = &TargetPtr[Index * TargetSize])
+        {
+            return bPtr;
+        }
+    }
+
+    public unsafe override void ForEach(ByteAction Action)
+    {
+        base.ForEach(Action);
+        fixed (byte* xPtr = &ComponentsX[0])
+        {
+            fixed (byte* yPtr = &ComponentsY[0])
+            {
+                for (int i = 0; i < IDs.Length; i++)
+                {
+                    if (IDs[i].IsInvalid())
+                        continue;
+
+                    Action(GroupID, IDs[i], new byte*[2]{
+                        xPtr + i * ComponentSizeX,
+                        yPtr + i * ComponentSizeY,
+                    });   
+                }
+            }
+        }
+    }
+
+    public unsafe override byte*[] GetGroupPointers(Type[] Types)
+    {
+        fixed (byte* xPtr = &ComponentsX[0])
+        {
+            fixed (byte* yPtr = &ComponentsY[0])
+            {
+                return new byte*[2]
+                {
+                    xPtr,
+                    yPtr
+                };
+            }
+        }
+    }
+
+    protected override void ChangeSizeComponents(int NewLength)
+    {
+        byte[] NewComponentsX = new byte[NewLength * ComponentSizeX];
+        byte[] NewComponentsY = new byte[NewLength * ComponentSizeY];
+        Array.Copy(ComponentsX, NewComponentsX, ComponentsX.Length);
+        Array.Copy(ComponentsY, NewComponentsY, ComponentsY.Length);
+        ComponentsX = NewComponentsX;
+        ComponentsY = NewComponentsY;
+    }
+
+    protected override void ResetComponents(int Index, EntityID ID)
+    {
+        int OffsetX = Index * ComponentSizeX;
+        for (int i = 0; i < ComponentSizeX; i++)
+        {
+            ComponentsX[i + OffsetX] = 0;
+        }
+
+        int OffsetY = Index * ComponentSizeY;
+        for (int i = 0; i < ComponentSizeY; i++)
+        {
+            ComponentsY[i + OffsetY] = 0;
+        }
+    }
+
+    protected override void SwapComponents(int IndexA, int IndexB)
+    {
+        for (int i = 0; i < ComponentSizeX; i++)
+        {
+            int A = (IndexA * ComponentSizeX) + i;
+            int B = (IndexB * ComponentSizeX) + i;
+            (ComponentsX[A], ComponentsX[B]) = (ComponentsX[B], ComponentsX[A]);
+        }
+
+        for (int i = 0; i < ComponentSizeY; i++)
+        {
+            int A = (IndexA * ComponentSizeY) + i;
+            int B = (IndexB * ComponentSizeY) + i;
+            (ComponentsY[A], ComponentsY[B]) = (ComponentsY[B], ComponentsY[A]);
         }
     }
 }

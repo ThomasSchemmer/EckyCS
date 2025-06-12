@@ -47,6 +47,5 @@ public class ComponentAllocator
         return Marshal.SizeOf(Type);
     }
 
-    public static int MAX_NUM_COMPONENTS = 256;
     private static int CURRENT_COMP_INDEX = 0;
 }
