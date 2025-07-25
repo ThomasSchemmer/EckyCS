@@ -16,19 +16,23 @@ using static UnityEngine.GraphicsBuffer;
  * Main advantage of this is that each component type has a dense array directly adjacent in memory (enabled with structs)
  * We also support the non-generic (aka no components per entity), which contains stubs for functions
  */
-public class ComponentGroup
+public abstract class ComponentGroup
 {
     public EntityID[] IDs;
 
     protected int ComponentAmount = -1;
     protected ComponentGroupIdentifier GroupID;
 
-    protected virtual void ResetComponents(int Index, EntityID ID) { }
-    protected virtual void ChangeSizeComponents(int NewLength) { }
-    protected virtual void SwapComponents(int IndexA, int IndexB) { }
-    public unsafe virtual byte* Get<T>(int Index) where T : struct, IComponent { return null; }
-    public unsafe virtual void ForEach(ByteAction Action) { }
-    public unsafe virtual byte*[] GetGroupPointers(Type[] Types) { return null; }
+    /** Returns a ptr to the requested component at index */
+    public unsafe abstract void* Get<T>(int Index) where T : struct, IComponent;
+    /** Executes the provided action for each valid entity in the group */
+    public unsafe abstract void ForEach(ByteAction Action);
+    /** Returns an array of ptrs to any components[] requested via Types, as well as to the ID array*/
+    public unsafe abstract void*[] GetGroupPointers(Type[] Types);
+
+    protected abstract void ResetComponents(int Index, EntityID ID);
+    protected abstract void ChangeSizeComponents(int NewLength);
+    protected abstract void SwapComponents(int IndexA, int IndexB);
 
     public ComponentGroup(ComponentGroupIdentifier ID, int ExpectedEntities)
     {
@@ -98,8 +102,8 @@ public class ComponentGroup
         return !IDs[TargetIndex].IsInvalid();
     }
 
-    public unsafe delegate void ByteAction(ComponentGroupIdentifier Group, EntityID ID, byte*[] ptr);
-    public unsafe delegate void GroupByteAction(ComponentGroupIdentifier Group, byte*[] Ptrs, int Count);
+    public unsafe delegate void ByteAction(ComponentGroupIdentifier Group, EntityID ID, void*[] ptr);
+    public unsafe delegate void GroupByteAction(ComponentGroupIdentifier Group, void*[] Ptrs, int Count);
 }
 
 
@@ -122,7 +126,8 @@ public unsafe class ComponentGroup<T> : ComponentGroup where T : struct, ICompon
         }
 
     }
-    public unsafe override byte* Get<X>(int Index)
+
+    public unsafe override void* Get<X>(int Index)
     {
         if (typeof(X) != typeof(T))
             return null;
@@ -135,7 +140,6 @@ public unsafe class ComponentGroup<T> : ComponentGroup where T : struct, ICompon
 
     public unsafe override void ForEach(ByteAction Action)
     {
-        base.ForEach(Action);
         int Target = GroupID.GetSelfIndexOf(typeof(T));
         if (Target != 0)
             return;
@@ -147,21 +151,40 @@ public unsafe class ComponentGroup<T> : ComponentGroup where T : struct, ICompon
                 if (IDs[i].IsInvalid())
                     continue;
 
-                Action(GroupID, IDs[i], new byte*[1] { bPtr + i * ComponentSize });
+                Action(GroupID, IDs[i], new void*[1] { bPtr + i * ComponentSize });
             }
         }
     }
 
-    public unsafe override byte*[] GetGroupPointers(Type[] Types) 
+    public unsafe override void*[] GetGroupPointers(Type[] Types) 
     {
-        int Target = GroupID.GetSelfIndexOf(typeof(T));
-        if (Target < 0 || Target >= Components.Length)
+        List<int> Targets = new();
+        foreach (var Type in Types)
+        {
+            int Temp = GroupID.GetSelfIndexOf(Type);
+            if (Temp == -1)
+                continue;
+
+            Targets.Add(Temp);
+        }
+        if (Targets.Count == 0)
             return null;
 
-        fixed (byte* Ptr = &Components[Target])
+        // can't use a list for void*
+        void*[] Result = new void*[Targets.Count + 1];
+        int ResultIndex = 0;
+        if (Targets.Contains(0))
         {
-            return new byte*[] { Ptr };
+            fixed (byte* xPtr = &Components[0])
+            {
+                Result[ResultIndex++] = xPtr;
+            }
         }
+        fixed (EntityID* IDPtr = &IDs[0])
+        {
+            Result[ResultIndex++] = IDPtr;
+        }
+        return Result;
     }
 
     protected override void ChangeSizeComponents(int NewLength)
@@ -198,7 +221,7 @@ public unsafe class ComponentGroup<X, Y> : ComponentGroup where X : struct, ICom
     public byte[] ComponentsX;
     public byte[] ComponentsY;
 
-    private int ComponentSizeX, ComponentSizeY;
+    private readonly int ComponentSizeX, ComponentSizeY;
 
     public ComponentGroup(ComponentGroupIdentifier ID, int ExpectedEntities) :
         base(ID, ExpectedEntities)
@@ -215,7 +238,7 @@ public unsafe class ComponentGroup<X, Y> : ComponentGroup where X : struct, ICom
 
     }
 
-    public unsafe override byte* Get<T>(int Index)
+    public unsafe override void* Get<T>(int Index)
     {
         int Target = GroupID.GetSelfIndexOf(typeof(T));
         if (Target < 0 || Target >= 2)
@@ -231,7 +254,6 @@ public unsafe class ComponentGroup<X, Y> : ComponentGroup where X : struct, ICom
 
     public unsafe override void ForEach(ByteAction Action)
     {
-        base.ForEach(Action);
         fixed (byte* xPtr = &ComponentsX[0])
         {
             fixed (byte* yPtr = &ComponentsY[0])
@@ -241,7 +263,7 @@ public unsafe class ComponentGroup<X, Y> : ComponentGroup where X : struct, ICom
                     if (IDs[i].IsInvalid())
                         continue;
 
-                    Action(GroupID, IDs[i], new byte*[2]{
+                    Action(GroupID, IDs[i], new void*[2]{
                         xPtr + i * ComponentSizeX,
                         yPtr + i * ComponentSizeY,
                     });   
@@ -250,19 +272,42 @@ public unsafe class ComponentGroup<X, Y> : ComponentGroup where X : struct, ICom
         }
     }
 
-    public unsafe override byte*[] GetGroupPointers(Type[] Types)
+    public unsafe override void*[] GetGroupPointers(Type[] Types)
     {
-        fixed (byte* xPtr = &ComponentsX[0])
+        List<int> Targets = new();
+        foreach (var Type in Types)
+        {
+            int Temp = GroupID.GetSelfIndexOf(Type);
+            if (Temp == -1)
+                continue;
+
+            Targets.Add(Temp);
+        }
+        if (Targets.Count == 0)
+            return null;
+
+        // can't use a list for void*
+        void*[] Result = new void*[Targets.Count + 1];
+        int ResultIndex = 0;
+        if (Targets.Contains(0))
+        {
+            fixed (byte* xPtr = &ComponentsX[0])
+            {
+                Result[ResultIndex++] = xPtr;
+            }
+        }
+        if (Targets.Contains(1))
         {
             fixed (byte* yPtr = &ComponentsY[0])
             {
-                return new byte*[2]
-                {
-                    xPtr,
-                    yPtr
-                };
+                Result[ResultIndex++] = yPtr;
             }
         }
+        fixed (EntityID* IDPtr = &IDs[0])
+        {
+            Result[ResultIndex++] = IDPtr;
+        }
+        return Result;
     }
 
     protected override void ChangeSizeComponents(int NewLength)

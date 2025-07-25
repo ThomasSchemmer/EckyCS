@@ -39,6 +39,14 @@ public class ECS : GameService
         ForEachSystem(System => System.LateTick(Time.deltaTime));
         Profiler.EndSample();
     }
+
+    public void OnDrawGizmos()
+    {
+        Profiler.BeginSample("ECS.OnDrawGizmos");
+        ForEachSystem(System => System.OnDrawGizmos());
+        Profiler.EndSample();
+    }
+
     public ComponentGroupView<X> Get<X>() where X : IComponent
     {
         Profiler.BeginSample("ECS.Get_X");

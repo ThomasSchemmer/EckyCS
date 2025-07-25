@@ -119,10 +119,8 @@ public unsafe class RadixSort
         public NativeArray<int> GlobalPrefixCounts;
         [ReadOnly]
         public NativeArray<int> Counts;
-
-        [NativeDisableContainerSafetyRestriction]
-        [NativeDisableParallelForRestriction]
-        public NativeArray<byte> Status;
+        [ReadOnly]
+        public NativeArray<EntityID> IDs;
 
         public int LSBIndex;
         public uint Mask;
@@ -131,6 +129,8 @@ public unsafe class RadixSort
 
         [NativeDisableParallelForRestriction]
         public NativeArray<uint> Target;
+        [NativeDisableParallelForRestriction]
+        public NativeArray<EntityID> TargetIDs;
 
         public int Iteration;
 
@@ -148,8 +148,6 @@ public unsafe class RadixSort
             {
                 Execute(i, j, ref LocalCounts);
             }
-
-            Status[i] = (byte)Iteration;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -162,6 +160,7 @@ public unsafe class RadixSort
 
             int TargetOffset = GlobalPrefixCounts[Value] + PrefixCounts[BucketIndex] + LocalCounts[Value];
             Target[TargetOffset] = MortonCode;
+            TargetIDs[TargetOffset] = IDs[Offset];
             LocalCounts[Value]++;
         }
     }

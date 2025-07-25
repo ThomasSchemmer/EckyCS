@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
-public struct TransformComponent : IComponent, IPlaceable
+public struct TransformComponent : IComponent
 {
     public float PosX;
     public float PosY;

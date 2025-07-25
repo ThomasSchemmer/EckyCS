@@ -5,6 +5,9 @@ using UnityEngine;
 
 public class BSpline : Spline<BCurve>
 {
+    public Mesh Mesh;
+    public Material Mat;
+
     public void Convert()
     {
         if (transform.childCount > 0)
@@ -32,6 +35,7 @@ public class BSpline : Spline<BCurve>
     {
         return Dimension;
     }
+
 
     public static int Dimension = 4;
 }

@@ -56,7 +56,6 @@ public class BSplineVisualizer : MonoBehaviour
         {
             Gizmos.DrawCube(Vertex, Vector3.one * 0.1f);
         }
-
     }
 
 

@@ -10,5 +10,6 @@ public interface ECSSystem
     public virtual void Tick(float Delta) {}
     public virtual void FixedTick(float FixedDelta) { }
     public virtual void LateTick(float Delta) { }
+    public virtual void OnDrawGizmos() { }
     public abstract void Destroy();
 }

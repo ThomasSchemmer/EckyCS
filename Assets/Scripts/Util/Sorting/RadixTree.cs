@@ -6,9 +6,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
-using Unity.VisualScripting.YamlDotNet.Core.Tokens;
 using UnityEngine;
-using static PlasticGui.LaunchDiffParameters;
 
 /** 
  * Helper struct to create a radix tree from an already sorted array of morton codess
@@ -38,7 +36,7 @@ public struct RadixTree
 
         public void Execute(int i)
         {
-            CountPerThread = (Nodes.Length - 1) / ThreadCount;
+            CountPerThread = Nodes.Length / ThreadCount;
             NodePtr = (Node*)Nodes.GetUnsafePtr();
             int LeftOverAmount = Nodes.Length - ThreadCount * CountPerThread;
             for (int j = 0; j < CountPerThread; j++)
@@ -195,8 +193,8 @@ public struct RadixTree
 
         public void Execute (int i)
         {
-
-            CountPerThread = (MortonCodes.Length - 1) / ThreadCount;
+            // note: we are iterating over the morton codes, not the nodes!
+            CountPerThread = MortonCodes.Length / ThreadCount;
             NodePtr = (Node*)Nodes.GetUnsafePtr();
             NodeChildrenPtr = (int*)NodeChildren.GetUnsafePtr();
             int LeftOverAmount = MortonCodes.Length - ThreadCount * CountPerThread;
@@ -214,12 +212,11 @@ public struct RadixTree
 
         private void Execute(int ThreadIndex, int LoopIndex)
         {
-            // if 2msb is 1 its a morton code child, otherwise a node child
-            int Child = ThreadIndex * CountPerThread + LoopIndex;
             // since we start from the bottom, all initial children are morton codes
-            int ChildWithType = SetChildType(Child, true);
+            int MortonChild = ThreadIndex * CountPerThread + LoopIndex;
+            int ChildWithType = SetChildType(MortonChild, true);
 
-            int Parent = MortonParents[Child] - 1;
+            int Parent = MortonParents[MortonChild] - 1;
             while (Parent != -1)
             {
                 // the first thread to reach immediately terminates, second will continue
@@ -257,6 +254,7 @@ public struct RadixTree
 
         private void GetChildVectors(int Child, out Vector3 Min, out Vector3 Max)
         {
+            // if 2msb is 1 its a morton code child, otherwise a node child
             bool bIsChildMorton = IsMortonChild(Child, out Child);
             if (bIsChildMorton)
             {
@@ -280,7 +278,7 @@ public struct RadixTree
         public int First;
         public int Last;
         public int Split;
-        // is 0 if no parent, as we cant init it with .1
+        // is 0 if no parent, as we cant init it with -1
         public int Parent;
 
         public Vector3 Min;

@@ -27,7 +27,7 @@ public abstract class Spline : MonoBehaviour
 
     public abstract Vector3[] GetSplineData();
 
-    public void Update()
+    public virtual void Update()
     {
         if (!Input.GetMouseButtonDown(0) || !bIsEditable)
             return;

@@ -5,7 +5,6 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Jobs.LowLevel.Unsafe;
-using Unity.VisualScripting.YamlDotNet.Core.Events;
 using UnityEngine;
 
 /*
@@ -18,6 +17,7 @@ using UnityEngine;
  * 2) parallel radix sort on MortonCodes (job)
  * 3) create radix tree from sorted MortonCodes
  * 4) calculate aabb for each radix node from childrens, bottom-up
+ * Uses flip-flop buffering for nodes and IDs 
  * 
  * NOTE: Originally planned to use SIMD for even more performance, but the majority of the RadixTree can't be SIMD'd
  * as it writes into different, random locations. RadixSort could be, but makes it ALOT more complicated due to indexing
@@ -43,15 +43,20 @@ using UnityEngine;
  *      https://docs.unity3d.com/6000.1/Documentation/ScriptReference/Jobs.IJobParallelForTransform.html
  *      
  */
-
-public unsafe class BVHTree
+public unsafe class BVHTree : ILocationProvider
 {
     public TransformComponent* ComponentsPtr;
+    public EntityID* IDsPtr;
     public int Count;
 
-    // only Nodes and Components are persistent!
+    // only Nodes, IDs and Components are persistent!
     private NativeArray<TransformComponent> Components;
-    private NativeArray<RadixTree.Node> Nodes;
+    private NativeArray<EntityID> OriginalIDs;
+    // but we need two nodes as we can only access the one we are currently
+    // not writing to!
+    private NativeArray<RadixTree.Node> NodesA;
+    private NativeArray<RadixTree.Node> NodesB;
+    private NativeArray<EntityID> FinalIDs;
 
     private NativeArray<uint> MortonCodes;
     private NativeArray<int> Counts;                // within a thread
@@ -60,31 +65,38 @@ public unsafe class BVHTree
     private NativeArray<int> MortonParents;
     private NativeArray<int> NodeChildren;
     private NativeArray<uint> Target;
-    private NativeArray<byte> Status;
-
+    private NativeArray<EntityID> TargetIDsA;
+    private NativeArray<EntityID> TargetIDsB;
 
     private JobHandle Handle;
-    private AtomicSafetyHandle AtomicSafetyHandle;
+    private AtomicSafetyHandle ComponentsSafetyHandle;
+    private AtomicSafetyHandle IDsSafetyHandle;
     private bool bIsActive;
+    private bool bWritesToNodesA;
     
     public void Init()
     {
-        // components will be a Ptr assignment
-        Nodes = new(Count - 1, Allocator.Persistent);
+        // uses flipflop bufers: nodes must be readable (which cannot be simultaneously accessed by jobs)
+        NodesA = new(Count - 1, Allocator.Persistent);
+        NodesB = new(Count - 1, Allocator.Persistent);
+        FinalIDs = new(Count, Allocator.Persistent);
+
+        // since we dont want to actually change the original components/IDs we use a ptr
+        Components = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<TransformComponent>(ComponentsPtr, Count, Allocator.None);
+        ComponentsSafetyHandle = AtomicSafetyHandle.Create();
+        NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref Components, ComponentsSafetyHandle);
+
+        OriginalIDs = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<EntityID>(IDsPtr, Count, Allocator.None);
+        IDsSafetyHandle = AtomicSafetyHandle.Create();
+        NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref OriginalIDs, IDsSafetyHandle);
 
         //fill rest with default
-        Handle = default;
-        Components = default;
-        AtomicSafetyHandle = default;
         bIsActive = false;
+        bWritesToNodesA = true;
     }
 
     private void InitTemp()
     {
-        Components = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<TransformComponent>(ComponentsPtr, Count, Allocator.None);
-        AtomicSafetyHandle = AtomicSafetyHandle.Create();
-        NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref Components, AtomicSafetyHandle);
-
         MortonCodes = new(Count, Allocator.TempJob);
 
         Counts = new(ThreadCount * BucketSize + BucketSize, Allocator.TempJob);
@@ -92,34 +104,21 @@ public unsafe class BVHTree
         GlobalPrefixCounts = new(BucketSize, Allocator.TempJob);
 
         Target = new(Count, Allocator.TempJob);
-        Status = new(ThreadCount, Allocator.TempJob);
+        TargetIDsA = new(Count, Allocator.TempJob);
+        TargetIDsB = new(Count, Allocator.TempJob);
         MortonParents = new(MortonCodes.Length, Allocator.TempJob);
-        NodeChildren = new(Nodes.Length, Allocator.TempJob);
-    }
-
-
-    public bool IsBusy()
-    {
-        if (!Handle.IsCompleted)
-            return true;
-
-        foreach (var Value in Status)
-        {
-            if (Value < GetMaxIteration() - 1)
-                return true;
-        }
-        return false;
+        NodeChildren = new(NodesA.Length, Allocator.TempJob);
     }
 
     public void Run()
     {
-        if (ComponentsPtr == null || bIsActive)
+        if (ComponentsPtr == null || IDsPtr  == null || bIsActive || !Handle.IsCompleted)
             return;
 
         int Start = 0;
         InitTemp();
-        ClearArray(Status);
-        ClearArray(Nodes);
+        ClearArray(GetWriteNodeArray());
+        ClearArray(FinalIDs);
         Handle = ComputeMortonCodes(Start);
 
         for (int i = Start; i < GetMaxIteration(); i++)  
@@ -133,9 +132,10 @@ public unsafe class BVHTree
         bIsActive = true;
     }
 
-    public void Register(TransformComponent* Ptr, int Count)
+    public void Register(TransformComponent* ComponentsPtr, EntityID* IDsPtr, int Count)
     {
-        ComponentsPtr = Ptr;
+        this.ComponentsPtr = ComponentsPtr;
+        this.IDsPtr = IDsPtr;
         if (this.Count != Count)
         {
             this.Count = Count;
@@ -191,6 +191,8 @@ public unsafe class BVHTree
     private JobHandle CreateRadixMoveJob(int Index, JobHandle Dependency = default)
     {
         bool bIsEven = (Index % 2) == 0;
+        bool bIsLast = Index == GetMaxIteration() - 1;
+        bool bIsFirst = Index == 0;
         GetVars(Index, out var Mask, out var LSBIndex);
         RadixSort.Move Job = new()
         {
@@ -198,6 +200,8 @@ public unsafe class BVHTree
             GlobalPrefixCounts = GlobalPrefixCounts,
             MortonCodes = bIsEven ? MortonCodes : Target,
             Target = bIsEven ? Target : MortonCodes,
+            IDs = bIsFirst ? OriginalIDs : (bIsEven ? TargetIDsA : TargetIDsB),
+            TargetIDs = bIsLast ? FinalIDs : (bIsEven ? TargetIDsB : TargetIDsA),
 
             LSBIndex = LSBIndex,
             Mask = Mask,
@@ -205,7 +209,6 @@ public unsafe class BVHTree
             ThreadCount = ThreadCount,
             Counts = Counts,
             Iteration = Index,
-            Status = Status
         };
         return Job.Schedule(ThreadCount, 1, Dependency);
     }
@@ -216,7 +219,7 @@ public unsafe class BVHTree
         {
             MortonCodes = MortonCodes,
             ThreadCount = ThreadCount,
-            Nodes = Nodes,
+            Nodes = GetWriteNodeArray(),
             MortonParents = MortonParents
         };
         return Job.Schedule(ThreadCount, 1, Dependency);
@@ -228,7 +231,7 @@ public unsafe class BVHTree
         {
             MortonCodes = MortonCodes,
             MortonParents = MortonParents,
-            Nodes = Nodes,
+            Nodes = GetWriteNodeArray(),
             NodeChildren = NodeChildren,
             ThreadCount = ThreadCount,
         };
@@ -254,6 +257,16 @@ public unsafe class BVHTree
         );
     }
 
+    private NativeArray<RadixTree.Node> GetWriteNodeArray()
+    {
+        return bWritesToNodesA ? NodesA : NodesB;
+    }
+
+    private NativeArray<RadixTree.Node> GetReadNodeArray()
+    {
+        return bWritesToNodesA ? NodesB : NodesA;
+    }
+
     public void Destroy()
     {
         if (!Handle.IsCompleted)
@@ -266,9 +279,24 @@ public unsafe class BVHTree
         if (GlobalPrefixCounts.IsCreated) GlobalPrefixCounts.Dispose();
         if (MortonCodes.IsCreated) MortonCodes.Dispose();
         if (Target.IsCreated) Target.Dispose();
-        if (Status.IsCreated) Status.Dispose();
-        if (Nodes.IsCreated) Nodes.Dispose();
+        if (NodesA.IsCreated) NodesA.Dispose();
+        if (NodesB.IsCreated) NodesB.Dispose();
+        if (TargetIDsA.IsCreated) TargetIDsA.Dispose();
+        if (TargetIDsB.IsCreated) TargetIDsB.Dispose();
         if (MortonParents.IsCreated) MortonParents.Dispose();
+        if (FinalIDs.IsCreated) FinalIDs.Dispose();
+
+        // dont need to dispose components / IDs, as they are non-alloc calls
+        if (!AtomicSafetyHandle.IsDefaultValue(ComponentsSafetyHandle) && AtomicSafetyHandle.IsHandleValid(ComponentsSafetyHandle))
+        {
+            AtomicSafetyHandle.CheckDeallocateAndThrow(ComponentsSafetyHandle);
+            AtomicSafetyHandle.Release(ComponentsSafetyHandle);
+        }
+        if (!AtomicSafetyHandle.IsDefaultValue(IDsSafetyHandle) && AtomicSafetyHandle.IsHandleValid(IDsSafetyHandle))
+        {
+            AtomicSafetyHandle.CheckDeallocateAndThrow(IDsSafetyHandle);
+            AtomicSafetyHandle.Release(IDsSafetyHandle);
+        }
     }
 
     private int GetMaxIteration()
@@ -277,17 +305,10 @@ public unsafe class BVHTree
     }
 
     public virtual void Tick(float Delta) {
-        if (!bIsActive)
-            return;
-
-        if (IsBusy())
+        if (!bIsActive || !Handle.IsCompleted)
             return;
 
         Handle.Complete();
-
-        // dont need to dispose components, as its a non-alloc call
-        AtomicSafetyHandle.CheckDeallocateAndThrow(AtomicSafetyHandle);
-        AtomicSafetyHandle.Release(AtomicSafetyHandle);
 
         //Validate();
         MortonCodes.Dispose();
@@ -297,25 +318,23 @@ public unsafe class BVHTree
         MortonParents.Dispose();
         NodeChildren.Dispose();
         Target.Dispose();
-        Status.Dispose();
+        TargetIDsA.Dispose();
+        TargetIDsB.Dispose();
 
         Handle = default;
         bIsActive = false;
+        bWritesToNodesA = !bWritesToNodesA;
     }
 
-    /** Needs to be called from OnDrawGizmos() */
     public void Debug()
     {
-        if (IsBusy())
-            return;
-
-        foreach (var Node in Nodes)
+        /** Needs to be called from OnDrawGizmos() */
+        Gizmos.color = Color.green;
+        foreach (var Node in GetReadNodeArray())
         {
-            int Size = (int)Mathf.Abs(Node.First - Node.Last);
-            int Width = (int)(Size / (float)Count * 15);
             Vector3 Center = (Node.Min + Node.Max) / 2f;
             Vector3 Range = Node.Max - Center;
-            Gizmos.DrawCube(Center, Range);
+            Gizmos.DrawWireCube(Center, Range);
         }
     }
 
@@ -330,8 +349,13 @@ public unsafe class BVHTree
         }
     }
 
+    public List<EntityID> GetAllAt(Vector3 Position, float Range)
+    {
+        return null;
+    }
+
     private const int LSBWidth = 2;
     private const int MortonWidth = 32;
     private const int BucketSize = 4;
-    private static int ThreadCount = JobsUtility.JobWorkerCount;
+    private readonly static int ThreadCount = JobsUtility.JobWorkerCount;
 }

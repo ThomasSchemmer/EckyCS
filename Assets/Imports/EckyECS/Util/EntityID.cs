@@ -20,7 +20,8 @@ public struct EntityID
     }
 
     public int ID {
-        get {
+        readonly get
+        {
             return (int)Data >> ID_OFFSET;
         } 
         private set
@@ -31,7 +32,7 @@ public struct EntityID
 
     public uint Version
     {
-        get
+        readonly get
         {
             return Data & VERSION_MASK;
         }
@@ -41,7 +42,7 @@ public struct EntityID
         }
     }
 
-    public override bool Equals(object obj)
+    public readonly override bool Equals(object obj)
     {
         if (obj is not EntityID Other)
             return false;
@@ -49,7 +50,7 @@ public struct EntityID
         return this.Data == Other.Data;
     }
 
-    public override int GetHashCode()
+    public readonly override int GetHashCode()
     {
         return Data.GetHashCode();
     }
@@ -63,14 +64,14 @@ public struct EntityID
         return new EntityID(0, INVALID);
     }
 
-    public override string ToString()
+    public readonly override string ToString()
     {
         return Version == INVALID ? 
             "Invalid" : 
             "" + ID + " | " + Version;
     }
 
-    public bool IsInvalid()
+    public readonly bool IsInvalid()
     {
         return Version == INVALID;
     }
@@ -81,8 +82,8 @@ public struct EntityID
     }
 
 
-    private static int ID_OFFSET = 8;
-    private static uint ID_MASK = 0xFFFFFF00;
-    private static uint VERSION_MASK = 0x000000FF;
+    private const int ID_OFFSET = 8;
+    private const uint ID_MASK = 0xFFFFFF00;
+    private const uint VERSION_MASK = 0x000000FF;
     public static uint INVALID = (uint)(Mathf.Pow(2, 8) - 1);
 }

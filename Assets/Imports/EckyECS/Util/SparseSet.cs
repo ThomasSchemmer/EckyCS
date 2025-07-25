@@ -36,7 +36,7 @@ public class SparseSet
         Values?.ForEach(Action);
     }
 
-    public unsafe byte*[] GetGroupPointers(Type[] Types)
+    public unsafe void*[] GetGroupPointers(Type[] Types)
     {
         return Values?.GetGroupPointers(Types);
     }

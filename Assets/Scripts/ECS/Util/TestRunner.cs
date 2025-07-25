@@ -13,19 +13,24 @@ using UnityEngine.Rendering.VirtualTexturing;
 
 public class TestRunner : MonoBehaviour
 {
+
     void Start()
     {
-        ECSTest();
+
+        //ECSTest();
+
     }
 
-
+    private void Update()
+    {
+    }
 
     private void ECSTest() {
         if (!Game.TryGetService(out ECS ECS))
             return;
 
 
-        for (int i = 0; i < 100; i++) //ECS.MaxEntities
+        for (int i = 0; i < ECS.MaxEntities; i++) //ECS.MaxEntities
         {
             EntityGenerator.TryCreate(out Enemy _);
         }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using static UnityEngine.GraphicsBuffer;
 
 /** 
  * Creates a BVH tree for each group with a TransformComponent, 
@@ -22,10 +23,11 @@ public class LocationSystem : ECSSystem
             {
                 ECS.Get<TransformComponent>().ForEach((GroupID, ID, Ptr) =>
                 {
+                    // todo: GetSelfIndex can be refactored out
                     int Target = GroupID.GetSelfIndexOf(typeof(TransformComponent));
                     TransformComponent* Component = (TransformComponent*)Ptr[Target];
-                    Component->PosX = ID.ID;
-                    Component->PosZ = ID.ID;
+                    Component->PosX = UnityEngine.Random.Range(0, 5f);
+                    Component->PosZ = UnityEngine.Random.Range(0, 5f);
                 });
             }
         });
@@ -49,23 +51,44 @@ public class LocationSystem : ECSSystem
 
     public void Tick(float Delta)
     {
+        // we actively need to query for completion
         foreach (var Pair in Trees)
         {
             Pair.Value.Tick(Delta);
         }
     }
 
-    private unsafe void Register(ComponentGroupIdentifier Group, byte*[] Ptrs, int Count)
+    private unsafe void Register(ComponentGroupIdentifier Group, void*[] Ptrs, int Count)
     {
         if (!Trees.ContainsKey(Group))
         {
             Trees.Add(Group, new());
         }
-        int Target = Group.GetSelfIndexOf(typeof(TransformComponent));
-        Trees[Group].Register((TransformComponent*)Ptrs[Target], Count);
+        int CompTarget = Group.GetSelfIndexOf(typeof(TransformComponent));
+        int IDsTarget = Ptrs.Length - 1;
+        Trees[Group].Register(
+            (TransformComponent*)Ptrs[CompTarget], 
+            (EntityID*)Ptrs[IDsTarget], 
+            Count
+        );
         Trees[Group].Run();
     }
 
+    public void OnDrawGizmos()
+    {
+        foreach (var Tuple in Trees)
+        {
+            Tuple.Value.Debug();
+        }
+    }
 
-    public void Destroy() { }
+
+    public void Destroy() {
+
+        foreach (var Tuple in Trees)
+        {
+            Trees[Tuple.Key].Destroy();
+        }
+        Trees.Clear();
+    }
 }

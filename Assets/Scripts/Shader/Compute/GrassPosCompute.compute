@@ -1,0 +1,84 @@
+#pragma kernel CSMain
+
+struct RenderInfo{
+	uint2 Pixel;
+	float3 WorldMin;
+	float3 WorldMax;
+	float3 Pos;
+};
+
+
+Texture2D<float4> HeightMap;
+AppendStructuredBuffer<RenderInfo> PositionBuffer;
+RWTexture2D<float4> Output;
+
+float3 WorldSize;
+float3 WorldPos;
+float3 TexSize;
+float HeightCutoff;
+float InverseScale;
+
+shared static uint ThreadCount = 1;
+
+float3 PixelToWorld(uint2 Pixel){
+	float3 PixelWorldPos = float3(
+		Pixel.x / TexSize.x * WorldSize.x,
+		HeightMap[Pixel].x * WorldSize.y,
+		Pixel.y / TexSize.z * WorldSize.z
+	);
+	PixelWorldPos.y *= 2;
+	return PixelWorldPos;
+}
+
+// https://www.shadertoy.com/view/4djSRW
+float hash12(float2 p)
+{
+	float3 p3  = frac(float3(p.xyx) * .1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return frac((p3.x + p3.y) * p3.z);
+}
+
+
+
+[numthreads(ThreadCount,ThreadCount,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+	uint2 Pixel = id.xy * InverseScale;
+	float3 MinPos = PixelToWorld(Pixel);
+	float3 MaxPos = PixelToWorld(Pixel + 1 * InverseScale);
+	float Length = distance(MinPos, MaxPos) / ThreadCount;
+	float3 AB = normalize(MaxPos - MinPos);
+	float3 ABNorm = cross(AB, float3(0, 1, 0));
+	float3 Norm = cross(ABNorm, AB);
+	float Align = dot(Norm, float3(0, 1, 0));
+	
+	float4 HeightColor = HeightMap[Pixel];
+	bool bShouldRender = 
+		HeightColor.x > HeightCutoff &&
+		Align > 0.8;
+	
+	// early return might not be best for shader performance
+	if (!bShouldRender)
+		return;
+
+	for (uint x = 0; x < ThreadCount; x++){
+		for (uint y = 0; y < ThreadCount; y++){
+			float3 Pos = MinPos + float3(
+				Length * x,
+				0,
+				Length * y
+			);
+			Pos.x += hash12(Pos.xz) * Length * .5;
+			Pos.z += hash12(Pos.zx) * Length * .5;
+			
+			RenderInfo Info;
+			Info.Pixel = Pixel;
+			Info.WorldMin = MinPos;
+			Info.WorldMax = MaxPos;
+			Info.Pos = Pos;
+
+			PositionBuffer.Append(Info);
+		}
+	}
+	
+}
