@@ -1,0 +1,123 @@
+#pragma kernel Generate
+#pragma kernel Paint
+#pragma kernel Debug
+#pragma kernel Reset
+#pragma kernel Pixel
+
+struct Triangle{
+    float3 A;
+    float3 B;
+    float3 C;
+};
+
+RWTexture2D<float4> Result;
+AppendStructuredBuffer<Triangle> TriangleBuffer;
+RWStructuredBuffer<float3> PositionBuffer;
+
+float4 _MousePosition;
+float _BrushSize;
+uint _Width;
+static uint VertCount = 6;
+static float Threshold = .5;
+
+/** Maps vertex indices and their height to the required spline connections
+ Vertex   0-1   spline X-0-X
+          | |          |   |
+          2-3          1   2
+                       |   |
+                       X-3-X
+*/
+static int HeightToTriangles[2][18] = { 
+    {0, 1, 2, 1, 3, 2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},
+    {0, 1, 2, 1, 2, 7, 1, 6, 7, 7, 11, 6, 6, 10, 11, 10, 11, 3},
+};
+
+static float3 VertexToWorld[] = {
+    float3(0, 0, 1),
+    float3(1, 0, 1),
+    float3(0, 0, 0),
+    float3(1, 0, 0),
+};
+
+float3 GetWorldPos(int i, uint2 id){
+    float3 Temp = VertexToWorld[i];
+    //Temp.x *= id.x;
+    //Temp.z *= id.y;
+    return Temp;
+}
+
+
+void Calc(uint2 id){
+    float Height0 = Result[id.xy + uint2(0, 1)].r;
+    float Height1 = Result[id.xy + uint2(1, 1)].r;
+    float Height2 = Result[id.xy + uint2(0, 0)].r;
+    float Height3 = Result[id.xy + uint2(0, 1)].r;
+    
+    uint HeightID = 
+        (Height0 > Threshold) << 3 |
+        (Height1 > Threshold) << 2 |
+        (Height2 > Threshold) << 1 |
+        (Height3 > Threshold) << 0;
+
+    if (HeightID > 1)
+        return;
+
+    int SplineIndices[] = HeightToTriangles[HeightID];
+
+    for (int i = 0; i < 18; i +=3 ){
+        if (SplineIndices[i] == -1)
+            break;
+
+        Triangle A;
+        A.A = VertexToWorld[SplineIndices[i + 0]];
+        A.B = VertexToWorld[SplineIndices[i + 1]];
+        A.C = VertexToWorld[SplineIndices[i + 2]];
+        TriangleBuffer.Append(A);
+    }
+}
+
+[numthreads(1,1,1)]
+void Generate (uint3 id : SV_DispatchThreadID)
+{
+    int Index = id.y * _Width + id.x;
+    PositionBuffer[Index * VertCount + 0] = float3(0 + id.x, 0, 0 + id.y);
+    PositionBuffer[Index * VertCount + 1] = float3(0 + id.x, 0, 1 + id.y);
+    PositionBuffer[Index * VertCount + 2] = float3(1 + id.x, 0, 0 + id.y);
+    PositionBuffer[Index * VertCount + 3] = float3(1 + id.x, 0, 0 + id.y);
+    PositionBuffer[Index * VertCount + 4] = float3(0 + id.x, 0, 1 + id.y);
+    PositionBuffer[Index * VertCount + 5] = float3(1 + id.x, 0, 1 + id.y);
+}
+
+[numthreads(1,1,1)]
+void Paint(uint3 id: SV_DispatchThreadID){
+
+    float d = 1 - distance(_MousePosition.xyz, float3(id.x, 0, id.y)) / _BrushSize;
+    d = (int)(d * 4)/4.0;
+    d = clamp(d, 0, 1);
+    Result[id.xy] += float4(d, 0, 0, 1);
+}
+
+
+[numthreads(1,1,1)]
+void Reset(uint3 id: SV_DispatchThreadID){
+
+    Result[id.xy] = 0;
+}
+
+[numthreads(1,1,1)]
+void Debug(uint3 id: SV_DispatchThreadID){
+
+    Calc(id.xy);
+}
+
+[numthreads(1,1,1)]
+void Pixel(uint3 id: SV_DispatchThreadID){
+    //Result[uint2(0, 0)] = 0.75;
+    //Result[uint2(1, 0)] = 0.75;
+    //Result[uint2(2, 0)] = 0.25;
+    //Result[uint2(0, 1)] = 0.25;
+    //Result[uint2(1, 1)] = 0.25;
+    Result[uint2(0, 0)] = 0.75;
+    Result[uint2(0, 1)] = 0.25;
+    Result[uint2(1, 0)] = 0.25;
+}

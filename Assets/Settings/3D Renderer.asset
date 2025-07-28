@@ -79,7 +79,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b03571d0f7f5f394bae93ff2c6224874, type: 3}
   m_Name: Pixelizer
   m_EditorClassIdentifier: 
-  m_Active: 1
+  m_Active: 0
   Cutoff: 0
   RT: {fileID: 8400000, guid: 49acc3d3b87658c49b853c34a4cb2968, type: 2}
   bEnableGrass: 1
