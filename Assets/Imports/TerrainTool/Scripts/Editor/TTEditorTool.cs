@@ -48,7 +48,9 @@ public class TTEditorTool : EditorTool, IDrawSelectedHandles
     }
     //SceneView.lastActiveSceneView.ShowNotification(new GUIContent("Entering Terrain Tool"), .1f);
 
-
+    Vector3 WorldStart;
+    Vector2 ScreenStart;
+    bool bIsDrawing = false;
     public void OnSceneGUI(SceneView View)
     {
         if (!bIsActive)
@@ -56,9 +58,37 @@ public class TTEditorTool : EditorTool, IDrawSelectedHandles
 
         if (Event.current.type == EventType.MouseDown && Event.current.button == 0)
         {
-            Manager.Brush(View);
+            WorldStart = Manager.GetMousePoint(View);
+            ScreenStart = HandleUtility.GUIPointToScreenPixelCoordinate(Event.current.mousePosition);
+            bIsDrawing = true;
+        }
+        if (Event.current.type == EventType.MouseUp && Event.current.button == 0)
+        {
+            Manager.Brush(View, GetBrushStrength());
+            bIsDrawing = false;
+        }
+        if (bIsDrawing) {
+            Vector2 ScreenEnd = HandleUtility.GUIPointToScreenPixelCoordinate(Event.current.mousePosition);
+            float Strength = GetBrushStrength();
+            Vector3 WorldEnd = WorldStart;
+            WorldEnd.y += Strength;
+
+            Handles.DrawDottedLine(WorldStart, WorldEnd, 8);
+            Handles.BeginGUI();
+            GUI.color = Color.black;
+            Vector2 Temp = new(ScreenEnd.x, Screen.height - ScreenEnd.y);
+            GUI.Label(new Rect(Temp, new(100, 25)), "" + Strength);
+            Handles.EndGUI();
         }
         Manager.OnSceneGUI(View);
+    }
+
+    private float GetBrushStrength()
+    {
+        Vector2 ScreenEnd = HandleUtility.GUIPointToScreenPixelCoordinate(Event.current.mousePosition);
+        float Distance = (int)((ScreenEnd.y - ScreenStart.y) * 10) / 500.0f;
+        Distance = Mathf.Clamp(Distance, -1, 1);
+        return Distance;
     }
 
     public override void OnActivated()

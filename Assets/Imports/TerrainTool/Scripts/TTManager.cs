@@ -52,6 +52,8 @@ public class TTManager : MonoBehaviour
         RenderArgsBuffer = new ComputeBuffer(4, sizeof(int), ComputeBufferType.IndirectArguments);  
         RenderArgsBuffer.SetData(new int[] { Count, 1, 0, 0 });
 
+        TriangleAppendBuffer = new ComputeBuffer(100000, sizeof(float) * 3 * 3, ComputeBufferType.Append);
+
         if (Shader == null)
             return;
 
@@ -79,7 +81,7 @@ public class TTManager : MonoBehaviour
         TerrainMat.SetFloat("_BrushSize", BrushSize);
     }
 
-    public void Brush(SceneView View)
+    public void Brush(SceneView View, float Strength)
     {
         Vector4 Point = GetMousePoint(View);
         if (Point.w == 0)
@@ -92,10 +94,12 @@ public class TTManager : MonoBehaviour
         Shader.SetTexture(PaintKernel, "Result", HeightRTHandle.rt);
         Shader.SetFloat("_Width", Settings.Width);
         Shader.SetFloat("_BrushSize", BrushSize);
+        Shader.SetFloat("_BrushStrength", Strength);
         Shader.SetVector("_MousePosition", Point);
         Shader.Dispatch(PaintKernel, HeightRT.width, HeightRT.height, 1);
         EditorUtility.SetDirty(TerrainMat);
         EditorUtility.SetDirty(this);
+        Calculate();
     }
 
     public void Reset()
@@ -104,20 +108,8 @@ public class TTManager : MonoBehaviour
         Shader.Dispatch(ResetKernel, HeightRT.width, HeightRT.height, 1);
     }
 
-    GameObject Temp;
-    public void Debug()
+    public void Calculate()
     {
-        if (Temp)
-        {
-            DestroyImmediate(Temp);
-        }
-        Temp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Temp.GetComponent<MeshFilter>().mesh = CreateMesh();
-
-
-
-        return;
-        TriangleAppendBuffer = new ComputeBuffer(100000, sizeof(float) * 3 * 3, ComputeBufferType.Append);
         TriangleAppendBuffer.SetCounterValue(0);
         Shader.SetBuffer(DebugKernel, "TriangleBuffer", TriangleAppendBuffer);
         Shader.SetTexture(DebugKernel, "Result", HeightRTHandle.rt);
@@ -153,7 +145,7 @@ public class TTManager : MonoBehaviour
     }
 
 
-    private Vector4 GetMousePoint(SceneView View)
+    public Vector4 GetMousePoint(SceneView View)
     {
         if (View == null)
             return Vector4.zero;
@@ -179,73 +171,76 @@ public class TTManager : MonoBehaviour
         HeightRT = null;
     }
 
-    static int[][] Structures = new int[6][]
+    /** Maps the height number into the corresponding vertex structure, see
+     * https://www.boristhebrave.com/2021/12/29/2d-marching-cubes-with-multiple-colors/
+     * -1 => invalid index
+     */
+    static int[] VertexMap = new int[]
     {
-        // flat bottom
-        new int[6]{0, 1, 2, 1, 3, 2 },
-        // corner raised
-        new int[18]{0, 1, 2, 1, 7, 2, 1, 6, 7, 7, 6, 11, 6, 10, 11, 10, 15, 11 },
-        // edge raised
-        new int[18]{0, 1, 5, 1, 6, 5, 5, 6, 9, 6, 10, 9, 9, 10, 14, 14, 10, 15},
-        // opposites raised
-        new int[30]{0, 4, 5, 5, 4, 9, 8, 9, 4, 9, 11, 14, 9, 8, 11, 10, 11, 8, 8, 13, 10, 10, 6, 7, 7, 11, 10, 7, 6, 3},
-        // corner lowered
-        new int[18]{0, 4, 5, 5, 4, 9, 4, 8, 9, 8, 13, 14, 8, 14, 9, 13, 15, 14},
-        // flat ceiling
-        new int[6] { 12, 13, 14, 13, 15, 14},
-    };
-
-
-    /** contains structure index and y-rotation */
-    static Vector2[] HeightToStructure = new Vector2[16]{
-        new (0, 0),
-        new (1, 0),
-        new (1, 90),
-        new (2, 0),
-        new (1, -90),
-        new (2, -90),
-        new (3, 0),
-        new (4, 0),
-        new (1, 180),
-        new (3, 90),
-        new (2, 90),
-        new (4, 90),
-        new (2, 180),
-        new (4, -90),
-        new (4, 180),
-        new (5, 0),
+        //0, 1, -2, -3, 4, 5, 6, -7, -8, -9, -10, -11, -12, -13, -14, -15, 16, 17, 18, -19, 20, 21, 22, -23, 24, 25, 26, 27
+          0, 1, -1, -1, 2, 3, 4, -1, -1, -1, -1,   -1,  -1,  -1,  -1,  -1,  5,  6,  7,  -1,  8,  9, 10,  -1, 11, 12, 13, 14
     };
 
     /** 
-     * contains {Xpos, HeightMinMaxInd, ZPos, HeightIndexA, HeightIndexB}
+     * indices to vertices arranged in a plane
+     * 0--4/8--1
+     * |       |
+     * 5/9-X---6/10
+     * |       |
+     * 2--7/11-3
+     * where x is 12, 13, 14, 15
+     * Index dictates the height lookup (ie 4-> spline 0 to 1, lower number so start height: v0)
+     * Connecting triples into triangles results in the actual mesh part
+     */
+    static int[][] VertexLookup = new int[][]
+    {
+        new int[]{0, 1, 2, 1, 3, 2},
+        new int[]{0, 1, 2, 1, 6, 7, 7, 2, 1, 6, 11, 7, 6, 10, 11, 10, 3, 11},
+        new int[]{0, 1, 3, 0, 11, 5, 0, 3, 11, 7, 9, 11, 5, 11, 9, 9, 7, 2},
+        new int[]{0, 1, 5, 1, 6, 5, 5, 10, 9, 6, 10, 5, 9, 10, 2, 2, 10, 3},
+        new int[]{0, 1, 5, 1, 6, 5, 5, 12, 9, 12, 14, 9, 12, 6, 15, 6, 10, 15, 9, 14, 7, 7, 2, 9, 15, 10, 3, 3, 11, 15, 15, 14, 7, 7, 11, 15},
+        new int[]{0, 3, 2, 0, 4, 10, 10, 3, 0, 4, 8, 6, 6, 10, 4, 8, 1, 6},
+        new int[]{0, 4, 7, 7, 2, 0, 4, 8, 11, 11, 7, 4, 8, 1, 3, 3, 11, 8},
+        new int[]{0, 4, 7, 7, 2, 0, 4, 8, 13, 13, 12, 4, 14, 15, 11, 11, 7, 14, 15, 10, 3, 3, 11, 15, 8, 1, 6, 6, 13, 8, 13, 6, 10, 10, 15, 13},
+        new int[]{0, 4, 5, 4, 8, 9, 9, 5, 4, 8, 1, 6, 7, 2, 9, 9, 8, 6, 6, 7, 9, 7, 6, 10, 10, 11, 7, 10, 3, 11},
+        new int[]{0, 4, 5, 4, 8, 9, 9, 5, 4, 8, 1, 6, 8, 6, 7, 7, 9, 8, 9, 7, 2, 10, 3, 11},
+        new int[]{0, 4, 5, 4, 8, 9, 9, 5, 4, 8, 1, 6, 7, 2, 9, 9, 8, 6, 6, 7, 9, 7, 6, 10, 10, 11, 7, 10, 3, 11},
+        new int[]{0, 4, 5, 4, 10, 11, 11, 5, 4, 10, 3, 11, 4, 8, 6, 6, 10, 4, 5, 11, 7, 7, 9, 5, 9, 7, 2, 8, 1, 6},
+        new int[]{8, 1, 3, 3, 11, 8, 4, 8, 13, 13, 12, 4, 14, 15, 11, 11, 7, 14, 0, 4, 12, 12, 5, 0, 9, 14, 7, 7, 2, 9, 5, 12, 14, 14, 9, 5},
+        new int[]{9, 10, 3, 3, 2, 9, 5, 9, 14, 14, 12, 5, 15, 10, 6, 6, 13, 15, 0, 4, 12, 12, 5, 0, 8, 1, 6, 6, 13, 8, 4, 8, 13, 13, 12, 4},
+        new int[]{0, 4, 12, 12, 5, 0, 8, 1, 6, 6, 13, 8, 15, 10, 3, 3, 11, 15, 7, 2, 9, 9, 14, 7, 9, 5, 12, 12, 14, 9, 4, 8, 13, 13, 12, 4, 13, 6, 10, 10, 15, 13, 11, 7, 14, 14, 15, 11}
+    };
+
+    /** 
+     * contains {Xpos, ZPos, HeightLookup}
      */
     static float[][] VertexToWorld = new float[16][]{
-        new float[]{0, 0, 1, 0, 0},
-        new float[]{1, 0, 1, 1, 1},
-        new float[]{0, 0, 0, 2, 2},
-        new float[]{1, 0, 0, 3, 3},
-        new float[]{.5f, 0, 1, 0, 1},
-        new float[]{0, 0, .5f, 0, 2},
-        new float[]{1, 0, .5f, 1, 3},
-        new float[]{.5f, 0, 0, 2, 3},
-        new float[]{.5f, 1, 1, 0, 1},
-        new float[]{0, 1, .5f, 0, 2},
-        new float[]{1, 1, .5f, 1, 3},
-        new float[]{.5f, 1, 0, 2, 3},
-        new float[]{0, 1, 1, 0, 0},
-        new float[]{1, 1, 1, 1, 1},
-        new float[]{0, 1, 0, 2, 2},
-        new float[]{1, 1, 0, 3, 3},
+        new float[]{0, 1, 0},
+        new float[]{1, 1, 1},
+        new float[]{0, 0, 2},
+        new float[]{1, 0, 3},
+
+        new float[]{.5f, 1, 0},
+        new float[]{0, .5f, 0},
+        new float[]{1, .5f, 1},
+        new float[]{.5f, 0, 2},
+
+        new float[]{.5f, 1, 1},
+        new float[]{0, .5f, 2},
+        new float[]{1, .5f, 3},
+        new float[]{.5f, 0, 3},
+
+        new float[]{.5f, .5f, 0},
+        new float[]{.5f, .5f, 1},
+        new float[]{.5f, .5f, 2},
+        new float[]{.5f, .5f, 3},
     };
 
     /** Uses height interpolation to calculate the resulting WorldPos*/
-    Vector3 GetVertex(int Index, float[] Heights)
+    Vector3 GetVertex(int Index, int[] Heights)
     {
         float[] Temp = VertexToWorld[Index];
-        Vector3 Result = new(Temp[0], 0, Temp[2]);
-        float HeightA = Heights[(int)Temp[3]];
-        float HeightB = Heights[(int)Temp[4]];
-        Result.y = Temp[1] * Mathf.Max(HeightA, HeightB) + (1 - Temp[1]) * Mathf.Min(HeightA, HeightB);
+        Vector3 Result = new(Temp[0], Heights[(int)Temp[2]], Temp[1]);
         return Result;
     }
 
@@ -254,31 +249,7 @@ public class TTManager : MonoBehaviour
         return (id.y + Offset.y) * HeightRT.width + id.x + Offset.x;
     }
 
-    Vector3 RotatePoint(Vector3 Point, Matrix4x4 Matrix, Vector2Int Offset)
-    {
-        Point -= new Vector3(.5f, 0, .5f);
-        Point = Matrix.MultiplyPoint3x4(Point);
-        Point += new Vector3(.5f, 0, .5f);
-        return Point + new Vector3(Offset.x, 0, Offset.y);
-    }
-
-    float[] RotateHeights(float[] Heights, float YAngle)
-    {
-        float[] Result = new float[4];
-        int[] Rotation = { 
-            0, 1, 2, 3, 
-            2, 0, 3, 1,
-            3, 2, 1, 0,
-            1, 3, 0, 2
-        };
-        int Offset = (int)(YAngle / 90f);
-        Offset = (Offset + 4) % 4;
-        for (int i = 0; i < Heights.Length; i++)
-        {
-            Result[i] = Heights[Rotation[i + Offset * 4]];
-        }
-        return Result;
-    }
+    int Bands = 4;
 
     private Mesh CreateMesh()
     {
@@ -296,38 +267,33 @@ public class TTManager : MonoBehaviour
         {
             for (int y = 0; y < HeightRT.height - 1; y++)
             {
-                Vector2Int id = new(x, y);
+                Vector2Int ID = new(x, y);
+                Vector3 IDOffset = new(x, 0, y);
                 // height indicates the type of mesh via lookup table
                 // clamped to different height bands
-                float Height0 = Pixels[Index(id, new Vector2Int(0, 1))].r;
-                float Height1 = Pixels[Index(id, new Vector2Int(1, 1))].r;
-                float Height2 = Pixels[Index(id, new Vector2Int(0, 0))].r;
-                float Height3 = Pixels[Index(id, new Vector2Int(1, 0))].r;
-                //Height0 = (int)(Height0 * HeightBand) / HeightBand;
-                //Height1 = (int)(Height1 * HeightBand) / HeightBand;
-                //Height2 = (int)(Height2 * HeightBand) / HeightBand;
-                //Height3 = (int)(Height3 * HeightBand) / HeightBand;
-                float HeightMin = Mathf.Min(Height0, Mathf.Min(Height1, Mathf.Min(Height2, Height3)));
+                int Height0 = Mathf.RoundToInt(Pixels[Index(ID, new Vector2Int(0, 1))].r * (Bands - 1));
+                int Height1 = Mathf.RoundToInt(Pixels[Index(ID, new Vector2Int(1, 1))].r * (Bands - 1));
+                int Height2 = Mathf.RoundToInt(Pixels[Index(ID, new Vector2Int(0, 0))].r * (Bands - 1));
+                int Height3 = Mathf.RoundToInt(Pixels[Index(ID, new Vector2Int(1, 0))].r * (Bands - 1));
+                int[] HeightMap = new int[Bands];
+                int[] Heights = { Height0, Height1, Height2, Height3 };
+                for (int i = 0; i < Bands; i++)
+                {
+                    HeightMap[i] = -1;
+                }
+                int CurIndex = 0;
+                HeightMap[Height0] = HeightMap[Height0] < 0 ? CurIndex++ : HeightMap[Height0];
+                HeightMap[Height1] = HeightMap[Height1] < 0 ? CurIndex++ : HeightMap[Height1];
+                HeightMap[Height2] = HeightMap[Height2] < 0 ? CurIndex++ : HeightMap[Height2];
+                HeightMap[Height3] = HeightMap[Height3] < 0 ? CurIndex++ : HeightMap[Height3];
 
                 int HeightID =
-                    ((Height0 > HeightMin) ? 1 : 0) << 3 |
-                    ((Height1 > HeightMin) ? 1 : 0) << 2 |
-                    ((Height2 > HeightMin) ? 1 : 0) << 1 |
-                    ((Height3 > HeightMin) ? 1 : 0) << 0;
+                    HeightMap[Height3] + HeightMap[Height2] * 4 + HeightMap[Height1] * 16;
 
-                if (HeightID > HeightToStructure.Length)
+                if (HeightID > VertexMap.Length)
                     continue;
 
-                Vector2 Info = HeightToStructure[HeightID];
-                int[] VertexIndices = Structures[(int)Info.x];
-                float YAngle = Info.y;
-
-                // rotate heights to "original" version to allow base 
-                // vertices to be calculated. Will be rotated back later
-                float[] Heights = { Height0, Height1, Height2, Height3 };
-                Heights = RotateHeights(Heights, -YAngle);
-
-                var M = Matrix4x4.Rotate(Quaternion.Euler(0, YAngle, 0));
+                int[] VertexIndices = VertexLookup[VertexMap[HeightID]];
 
                 // lookup the blueprint for the structure
                 for (int i = 0; i < VertexIndices.Length; i += 3)
@@ -336,12 +302,10 @@ public class TTManager : MonoBehaviour
                         break;
 
                     int TriCount = Vertices.Count;
-                    Vector3 A = GetVertex(VertexIndices[i + 0], Heights);
-                    Vector3 B = GetVertex(VertexIndices[i + 1], Heights);
-                    Vector3 C = GetVertex(VertexIndices[i + 2], Heights);
-                    A = RotatePoint(A, M, id);
-                    B = RotatePoint(B, M, id);
-                    C = RotatePoint(C, M, id);
+                    Vector3 A = GetVertex(VertexIndices[i + 0], Heights) + IDOffset;
+                    Vector3 B = GetVertex(VertexIndices[i + 1], Heights) + IDOffset;
+                    Vector3 C = GetVertex(VertexIndices[i + 2], Heights) + IDOffset;
+
                     Vertices.Add(A);
                     Vertices.Add(B);
                     Vertices.Add(C);

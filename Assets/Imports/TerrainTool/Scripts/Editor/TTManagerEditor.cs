@@ -24,7 +24,7 @@ public class TTManagerEditor : Editor
         }
         if (GUILayout.Button("Debug", GUILayout.MaxWidth(100)))
         {
-            Manager.Debug();
+            Manager.Calculate();
         }
         if (GUILayout.Button("Pixel", GUILayout.MaxWidth(100)))
         {

@@ -8,6 +8,7 @@ struct Triangle{
     float3 A;
     float3 B;
     float3 C;
+    //float3 N;
 };
 
 RWTexture2D<float4> Result;
@@ -16,63 +17,162 @@ RWStructuredBuffer<float3> PositionBuffer;
 
 float4 _MousePosition;
 float _BrushSize;
+float _BrushStrength;
 uint _Width;
 static uint VertCount = 6;
-static float Threshold = .5;
+const static int Bands = 12;
+static int VertexMapLength = 28;
+static int VertexLookupLength0 = 15;
+static int VertexLookupLength1 = 48;
 
-/** Maps vertex indices and their height to the required spline connections
- Vertex   0-1   spline X-0-X
-          | |          |   |
-          2-3          1   2
-                       |   |
-                       X-3-X
-*/
-static int HeightToTriangles[2][18] = { 
-    {0, 1, 2, 1, 3, 2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},
-    {0, 1, 2, 1, 2, 7, 1, 6, 7, 7, 11, 6, 6, 10, 11, 10, 11, 3},
+/** Maps the height number into the corresponding vertex structure, see
+    * https://www.boristhebrave.com/2021/12/29/2d-marching-cubes-with-multiple-colors/
+    * -1 => invalid index
+    */
+static int VertexMap[] =
+{
+    //0, 1, -2, -3, 4, 5, 6, -7, -8, -9, -10, -11, -12, -13, -14, -15, 16, 17, 18, -19, 20, 21, 22, -23, 24, 25, 26, 27
+      0, 1, -1, -1, 2, 3, 4, -1, -1, -1, -1,   -1,  -1,  -1,  -1,  -1,  5,  6,  7,  -1,  8,  9, 10,  -1, 11, 12, 13, 14
 };
 
-static float3 VertexToWorld[] = {
-    float3(0, 0, 1),
-    float3(1, 0, 1),
-    float3(0, 0, 0),
-    float3(1, 0, 0),
+/** 
+ * indices to vertices arranged in a plane
+ * 0--4/8--1
+ * |       |
+ * 5/9-X---6/10
+ * |       |
+ * 2--7/11-3
+ * where x is 12, 13, 14, 15
+ * Index dictates the height lookup (ie 4-> spline 0 to 1, lower number so start height: v0)
+ * Connecting triples into triangles results in the actual mesh part
+ */
+groupshared int VertexLookup[15][48] = 
+{
+    {0, 1, 2, 1, 3, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+    {0, 1, 2, 1, 6, 7, 7, 2, 1, 6, 11, 7, 6, 10, 11, 10, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+    {0, 1, 3, 0, 11, 5, 0, 3, 11, 7, 9, 11, 5, 11, 9, 9, 7, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+    {0, 1, 5, 1, 6, 5, 5, 10, 9, 6, 10, 5, 9, 10, 2, 2, 10, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+    {0, 1, 5, 1, 6, 5, 5, 12, 9, 12, 14, 9, 12, 6, 15, 6, 10, 15, 9, 14, 7, 7, 2, 9, 15, 10, 3, 3, 11, 15, 15, 14, 7, 7, 11, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+    {0, 3, 2, 0, 4, 10, 10, 3, 0, 4, 8, 6, 6, 10, 4, 8, 1, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+    {0, 4, 7, 7, 2, 0, 4, 8, 11, 11, 7, 4, 8, 1, 3, 3, 11, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+    {0, 4, 7, 7, 2, 0, 4, 8, 13, 13, 12, 4, 14, 15, 11, 11, 7, 14, 15, 10, 3, 3, 11, 15, 8, 1, 6, 6, 13, 8, 13, 6, 10, 10, 15, 13, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+    {0, 4, 5, 4, 8, 9, 9, 5, 4, 8, 1, 6, 7, 2, 9, 9, 8, 6, 6, 7, 9, 7, 6, 10, 10, 11, 7, 10, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+    {0, 4, 5, 4, 8, 9, 9, 5, 4, 8, 1, 6, 8, 6, 7, 7, 9, 8, 9, 7, 2, 10, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+    {0, 4, 5, 4, 8, 9, 9, 5, 4, 8, 1, 6, 7, 2, 9, 9, 8, 6, 6, 7, 9, 7, 6, 10, 10, 11, 7, 10, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+    {0, 4, 5, 4, 10, 11, 11, 5, 4, 10, 3, 11, 4, 8, 6, 6, 10, 4, 5, 11, 7, 7, 9, 5, 9, 7, 2, 8, 1, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+    {8, 1, 3, 3, 11, 8, 4, 8, 13, 13, 12, 4, 14, 15, 11, 11, 7, 14, 0, 4, 12, 12, 5, 0, 9, 14, 7, 7, 2, 9, 5, 12, 14, 14, 9, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+    {9, 10, 3, 3, 2, 9, 5, 9, 14, 14, 12, 5, 15, 10, 6, 6, 13, 15, 0, 4, 12, 12, 5, 0, 8, 1, 6, 6, 13, 8, 4, 8, 13, 13, 12, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+    {0, 4, 12, 12, 5, 0, 8, 1, 6, 6, 13, 8, 15, 10, 3, 3, 11, 15, 7, 2, 9, 9, 14, 7, 9, 5, 12, 12, 14, 9, 4, 8, 13, 13, 12, 4, 13, 6, 10, 10, 15, 13, 11, 7, 14, 14, 15, 11}
 };
 
-float3 GetWorldPos(int i, uint2 id){
-    float3 Temp = VertexToWorld[i];
-    //Temp.x *= id.x;
-    //Temp.z *= id.y;
-    return Temp;
+
+/** 
+ * contains {Xpos, ZPos, HeightLookup}
+ */
+static float VertexToWorld[16][3] = {
+    // regular points
+    {0, 1, 0},
+    {1, 1, 1},
+    {0, 0, 2},
+    {1, 0, 3},
+    // in between, first 
+    {.5f, 1, 0},
+    {0, .5f, 0},
+    {1, .5f, 1},
+    {.5f, 0, 2},
+    // in between, last
+    {.5f, 1, 1},
+    {0, .5f, 2},
+    {1, .5f, 3},
+    {.5f, 0, 3},
+    // center for vertex 0, 1, 2, 3
+    {.5f, .5f, 0},
+    {.5f, .5f, 1},
+    {.5f, .5f, 2},
+    {.5f, .5f, 3},
+};
+
+
+/** Uses height interpolation to calculate the resulting WorldPos*/
+float3 GetVertex(int Index, int Heights[4])
+{
+    float Temp[3] = VertexToWorld[Index];
+    float3 Result = float3(Temp[0], Heights[(int)Temp[2]], Temp[1]);
+    return Result;
 }
 
+int GetHeightID(int Heights[4]){
 
-void Calc(uint2 id){
-    float Height0 = Result[id.xy + uint2(0, 1)].r;
-    float Height1 = Result[id.xy + uint2(1, 1)].r;
-    float Height2 = Result[id.xy + uint2(0, 0)].r;
-    float Height3 = Result[id.xy + uint2(0, 1)].r;
+    int HeightMap[Bands];
+    for (int i = 0; i < Bands; i++){
+        HeightMap[i] = -1;
+    }
+    int CurIndex = 0;
+    if (HeightMap[Heights[0]] < 0){
+        HeightMap[Heights[0]] = CurIndex;
+        CurIndex++;
+    }
+    if (HeightMap[Heights[1]] < 0){
+        HeightMap[Heights[1]] = CurIndex;
+        CurIndex++;
+    }
+    if (HeightMap[Heights[2]] < 0){
+        HeightMap[Heights[2]] = CurIndex;
+        CurIndex++;
+    }
+    if (HeightMap[Heights[3]] < 0){
+        HeightMap[Heights[3]] = CurIndex;
+        CurIndex++;
+    }
+
+    // heightMap[0] is always 0!
+    int HeightID = HeightMap[Heights[3]] + HeightMap[Heights[2]] * 4 + HeightMap[Heights[1]] * 16;
     
-    uint HeightID = 
-        (Height0 > Threshold) << 3 |
-        (Height1 > Threshold) << 2 |
-        (Height2 > Threshold) << 1 |
-        (Height3 > Threshold) << 0;
+    //Triangle S;
+    //S.A = float3(Heights[0], Heights[1], Heights[2]);
+    //S.B = float3(Heights[3], HeightMap[Heights[0]], HeightMap[Heights[1]]);
+    //S.C = float3(HeightMap[Heights[2]], HeightMap[Heights[3]], HeightID);
+    //TriangleBuffer.Append(S);
 
-    if (HeightID > 1)
+    return HeightID;
+}                    
+
+void Calc(uint2 id)
+{
+
+    float3 IDOffset = float3(id.x, 0, id.y);
+    // height indicates the type of mesh via lookup table
+    // clamped to different height bands
+    int Height0 = round(Result[id + uint2(0, 1)].r * (Bands - 1));
+    int Height1 = round(Result[id + uint2(1, 1)].r * (Bands - 1));
+    int Height2 = round(Result[id + uint2(0, 0)].r * (Bands - 1));
+    int Height3 = round(Result[id + uint2(1, 0)].r * (Bands - 1));
+
+    int Heights[4] = { Height0, Height1, Height2, Height3 };
+    int HeightID = GetHeightID(Heights);
+    if (HeightID >= VertexMapLength)
         return;
 
-    int SplineIndices[] = HeightToTriangles[HeightID];
+    int LookupID = VertexMap[HeightID];
+    if (LookupID < 0 || LookupID >= VertexLookupLength0)
+        return;
 
-    for (int i = 0; i < 18; i +=3 ){
-        if (SplineIndices[i] == -1)
+    int VertexIndices[] = VertexLookup[LookupID];
+
+    // lookup the blueprint for the structure
+    for (int i = 0; i < VertexLookupLength1; i += 3)
+    {
+        if (VertexIndices[i] == -1)
             break;
 
-        Triangle A;
-        A.A = VertexToWorld[SplineIndices[i + 0]];
-        A.B = VertexToWorld[SplineIndices[i + 1]];
-        A.C = VertexToWorld[SplineIndices[i + 2]];
-        TriangleBuffer.Append(A);
+        float3 A = GetVertex(VertexIndices[i + 0], Heights) + IDOffset;
+        float3 B = GetVertex(VertexIndices[i + 1], Heights) + IDOffset;
+        float3 C = GetVertex(VertexIndices[i + 2], Heights) + IDOffset;
+        Triangle T;
+        T.A = A;
+        T.B = B;
+        T.C = C;
+        TriangleBuffer.Append(T);
     }
 }
 
@@ -92,8 +192,9 @@ void Generate (uint3 id : SV_DispatchThreadID)
 void Paint(uint3 id: SV_DispatchThreadID){
 
     float d = 1 - distance(_MousePosition.xyz, float3(id.x, 0, id.y)) / _BrushSize;
-    d = (int)(d * 4)/4.0;
-    d = clamp(d, 0, 1);
+    d = d > 0;//clamp(d, 0, 1);
+    d *= _BrushStrength;
+    d = (int)(d * Bands) / (float)Bands;
     Result[id.xy] += float4(d, 0, 0, 1);
 }
 
@@ -112,12 +213,8 @@ void Debug(uint3 id: SV_DispatchThreadID){
 
 [numthreads(1,1,1)]
 void Pixel(uint3 id: SV_DispatchThreadID){
-    //Result[uint2(0, 0)] = 0.75;
-    //Result[uint2(1, 0)] = 0.75;
-    //Result[uint2(2, 0)] = 0.25;
-    //Result[uint2(0, 1)] = 0.25;
-    //Result[uint2(1, 1)] = 0.25;
-    Result[uint2(0, 0)] = 0.75;
-    Result[uint2(0, 1)] = 0.25;
-    Result[uint2(1, 0)] = 0.25;
+    Result[uint2(0, 1)] = 0.95;
+    Result[uint2(1, 1)] = 0.7;
+    Result[uint2(0, 0)] = 0.3;
+    Result[uint2(1, 0)] = 0.1;
 }
