@@ -14,17 +14,21 @@ public class TTManagerEditor : Editor
         TTManager Manager = (TTManager)target;
 
         EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button("Generate", GUILayout.MaxWidth(100)))
+        if (GUILayout.Button("BaseMesh", GUILayout.MaxWidth(100)))
         {
-            Manager.Generate();
+            Manager.GenerateDefaultMesh();
+        }
+        if (GUILayout.Button("HeightMesh", GUILayout.MaxWidth(100)))
+        {
+            Manager.GenerateMesh();
+        }
+        if (GUILayout.Button("Save", GUILayout.MaxWidth(100)))
+        {
+            Manager.SaveHeightTex();
         }
         if (GUILayout.Button("Reset", GUILayout.MaxWidth(100)))
         {
             Manager.Reset();
-        }
-        if (GUILayout.Button("Debug", GUILayout.MaxWidth(100)))
-        {
-            Manager.Calculate();
         }
         if (GUILayout.Button("Pixel", GUILayout.MaxWidth(100)))
         {

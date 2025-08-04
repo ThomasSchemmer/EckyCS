@@ -10,19 +10,18 @@ public class DownSamplingPass : ScriptableRenderPass
 {
     private RTHandle PixColorHandle;
     private RTHandle PixDepthHandle;
-    private RTHandle PixTerrainHandle;
-
-    private const int Height = 512, Width = (int)(Height * 1.7777f);
 
     private List<ShaderTagId> ShaderTags;
 
 
-    public DownSamplingPass()
+    public DownSamplingPass(TTTerrainPass TPass)
     {
+        if (TPass == null)
+            return;
+
         renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
-        PixColorHandle = RTHandles.Alloc(width: Width, height: Height);
-        PixDepthHandle = RTHandles.Alloc(width: Width, height: Height, depthBufferBits: DepthBits.Depth16);
-        PixTerrainHandle = RTHandles.Alloc(width: Width / 2, height: Height / 2);
+        PixColorHandle = TPass.GetColorHandle();
+        PixDepthHandle = TPass.GetDepthHandle();
 
         ShaderTags = new(){
             new ShaderTagId("UniversalForward"),
@@ -35,7 +34,7 @@ public class DownSamplingPass : ScriptableRenderPass
         ConfigureTarget(PixColorHandle, PixDepthHandle);
 
         ConfigureInput(ScriptableRenderPassInput.Normal | ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
-        ConfigureClear(ClearFlag.Color, new(1, 0, 0, 1));
+        //ConfigureClear(ClearFlag.Color, new(1, 0, 0, 1));
     }
 
 
@@ -50,19 +49,10 @@ public class DownSamplingPass : ScriptableRenderPass
             Context.ExecuteCommandBuffer(Cmd);
             Cmd.Clear();
 
-            Cmd.ClearRenderTarget(true, false, new(0, 0, 0, 0));
-            Context.ExecuteCommandBuffer(Cmd);
-            Cmd.Clear();
-
             DrawingSettings DrawSettings = CreateDrawingSettings(ShaderTags, ref renderingData, SortingCriteria.CommonOpaque);
         
             FilteringSettings TerrainFilter = new FilteringSettings(layerMask: 1 << LayerMask.NameToLayer("Terrain"));
             Context.DrawRenderers(renderingData.cullResults, ref DrawSettings, ref TerrainFilter);
-
-            Cmd.Blit(PixColorHandle, PixTerrainHandle);
-            Cmd.SetRenderTarget(PixColorHandle, PixDepthHandle);
-            Context.ExecuteCommandBuffer(Cmd);
-            Cmd.Clear();
 
             FilteringSettings WorldFilter = new FilteringSettings(layerMask: 1 << LayerMask.NameToLayer("World"));
             Context.DrawRenderers(renderingData.cullResults, ref DrawSettings, ref WorldFilter);
@@ -75,27 +65,6 @@ public class DownSamplingPass : ScriptableRenderPass
         CommandBufferPool.Release(Cmd);
     }
 
-    public void Dispose()
-    {
-        PixColorHandle?.Release();
-        PixDepthHandle?.Release();
-        PixTerrainHandle?.Release();
-    }
-
-    public RTHandle GetColorHandle()
-    {
-        return PixColorHandle;
-    }
-
-    public RTHandle GetDepthHandle()
-    {
-        return PixDepthHandle;
-    }
-
-    public RTHandle GetTerrainHandle()
-    {
-        return PixTerrainHandle;
-    }
 
     // DO NOT DELETE _ FALLBACK FOR IMG COPY
     //Context.ExecuteCommandBuffer(Cmd);

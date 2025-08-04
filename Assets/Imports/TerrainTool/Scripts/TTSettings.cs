@@ -7,5 +7,10 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "TTSettings", menuName = "TerrainTool/Settings", order = 0)]
 public class TTSettings : ScriptableObject
 {
-    public int Width, Height;
+    [SerializeField]
+    public Vector2Int TexSize = new(128, 128);
+
+    [SerializeField]
+    public Vector3Int WorldSize = new(1, 1, 1);
+
 }

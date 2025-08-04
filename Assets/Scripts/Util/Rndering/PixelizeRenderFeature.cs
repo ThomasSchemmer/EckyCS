@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
@@ -11,6 +12,7 @@ using UnityEngine.Rendering.Universal;
  */
 public class PixelizeRenderFeature : ScriptableRendererFeature
 {
+    public UniversalRendererData URPRenderer;
     public float Cutoff;
     public RenderTexture RT;
     public bool bEnableGrass;
@@ -26,7 +28,7 @@ public class PixelizeRenderFeature : ScriptableRendererFeature
 
     public override void AddRenderPasses(ScriptableRenderer Renderer, ref RenderingData renderingData)
     {
-        if (renderingData.cameraData.isSceneViewCamera || renderingData.cameraData.isPreviewCamera)
+        if (renderingData.cameraData.isPreviewCamera)
             return;
 
         Renderer.EnqueuePass(DSPass);
@@ -34,6 +36,10 @@ public class PixelizeRenderFeature : ScriptableRendererFeature
         {
             Renderer.EnqueuePass(GrassPass);
         }
+
+        if (renderingData.cameraData.isSceneViewCamera)
+            return;
+
         if (bEnableEdge)
         {
             Renderer.EnqueuePass(EdgePass);
@@ -42,20 +48,23 @@ public class PixelizeRenderFeature : ScriptableRendererFeature
 
     public override void Create()
     {
-        DSPass = new DownSamplingPass();
+        TerrainRenderFeature TRF = URPRenderer.rendererFeatures.Where(x => x is TerrainRenderFeature).FirstOrDefault() as TerrainRenderFeature;
+        if (!TRF ||TRF.TerrainPass == null)
+            return;
+
+        TTTerrainPass TPass = TRF.TerrainPass;
+        DSPass = new DownSamplingPass(TPass);
         GrassPass = new GrassPass(
-            RT, 
             HeightCompute, 
             GrassMat, 
-            QuadMesh, 
-            DSPass
+            QuadMesh,
+            TPass
         );
-        EdgePass = new EdgeHighlightPass(EdgeMaterial, DSPass.GetColorHandle());
+        EdgePass = new EdgeHighlightPass(EdgeMaterial, TPass.GetColorHandle());
     }
 
     protected override void Dispose(bool disposing)
     {
-        DSPass.Dispose();
         GrassPass.Dispose();
     }
 

@@ -1,5 +1,18 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-3324933747923997970
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95449399ed81490468282b43a005d96f, type: 3}
+  m_Name: Terrain
+  m_EditorClassIdentifier: 
+  m_Active: 1
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17,8 +30,9 @@ MonoBehaviour:
       type: 3}
     hdrDebugViewPS: {fileID: 4800000, guid: 573620ae32aec764abd4d728906d2587, type: 3}
   m_RendererFeatures:
+  - {fileID: -3324933747923997970}
   - {fileID: 3144558139044849432}
-  m_RendererFeatureMap: 18e75485f7b6a32b
+  m_RendererFeatureMap: ee2a485d5f76dbd118e75485f7b6a32b
   m_UseNativeRenderPass: 0
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
@@ -79,7 +93,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b03571d0f7f5f394bae93ff2c6224874, type: 3}
   m_Name: Pixelizer
   m_EditorClassIdentifier: 
-  m_Active: 0
+  m_Active: 1
+  URPRenderer: {fileID: 11400000}
   Cutoff: 0
   RT: {fileID: 8400000, guid: 49acc3d3b87658c49b853c34a4cb2968, type: 2}
   bEnableGrass: 1

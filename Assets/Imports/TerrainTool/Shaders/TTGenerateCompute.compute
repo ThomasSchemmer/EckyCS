@@ -1,6 +1,6 @@
-#pragma kernel Generate
+#pragma kernel GenerateBaseMesh
+#pragma kernel GenerateHeightMesh
 #pragma kernel Paint
-#pragma kernel Debug
 #pragma kernel Reset
 #pragma kernel Pixel
 
@@ -15,12 +15,16 @@ RWTexture2D<float4> Result;
 AppendStructuredBuffer<Triangle> TriangleBuffer;
 RWStructuredBuffer<float3> PositionBuffer;
 
+float3 _WorldPos;
 float4 _MousePosition;
 float _BrushSize;
 float _BrushStrength;
-uint _Width;
+int _BrushType;
+uint2 _TexSize;
+uint3 _WorldSize;
 static uint VertCount = 6;
-const static int Bands = 12;
+// keep this equal to TTSettings.Bands!
+const static int Bands = 10;
 static int VertexMapLength = 28;
 static int VertexLookupLength0 = 15;
 static int VertexLookupLength1 = 48;
@@ -137,16 +141,15 @@ int GetHeightID(int Heights[4]){
     return HeightID;
 }                    
 
-void Calc(uint2 id)
-{
-
+[numthreads(1,1,1)]
+void GenerateHeightMesh(uint3 id: SV_DispatchThreadID){
     float3 IDOffset = float3(id.x, 0, id.y);
     // height indicates the type of mesh via lookup table
     // clamped to different height bands
-    int Height0 = round(Result[id + uint2(0, 1)].r * (Bands - 1));
-    int Height1 = round(Result[id + uint2(1, 1)].r * (Bands - 1));
-    int Height2 = round(Result[id + uint2(0, 0)].r * (Bands - 1));
-    int Height3 = round(Result[id + uint2(1, 0)].r * (Bands - 1));
+    int Height0 = (int)(Result[id.xy + uint2(0, 1)].r * (Bands - 1));
+    int Height1 = (int)(Result[id.xy + uint2(1, 1)].r * (Bands - 1));
+    int Height2 = (int)(Result[id.xy + uint2(0, 0)].r * (Bands - 1));
+    int Height3 = (int)(Result[id.xy + uint2(1, 0)].r * (Bands - 1));
 
     int Heights[4] = { Height0, Height1, Height2, Height3 };
     int HeightID = GetHeightID(Heights);
@@ -168,6 +171,17 @@ void Calc(uint2 id)
         float3 A = GetVertex(VertexIndices[i + 0], Heights) + IDOffset;
         float3 B = GetVertex(VertexIndices[i + 1], Heights) + IDOffset;
         float3 C = GetVertex(VertexIndices[i + 2], Heights) + IDOffset;
+        // scale back down to 1x1x1
+        A.y = A.y / (Bands - 2) * _WorldSize.y;
+        B.y = B.y / (Bands - 2) * _WorldSize.y;
+        C.y = C.y / (Bands - 2) * _WorldSize.y;
+        A.xz = A.xz / _TexSize * _WorldSize.xz;
+        B.xz = B.xz / _TexSize * _WorldSize.xz;
+        C.xz = C.xz / _TexSize * _WorldSize.xz;
+        A += _WorldPos;
+        B += _WorldPos;
+        C += _WorldPos;
+
         Triangle T;
         T.A = A;
         T.B = B;
@@ -177,22 +191,23 @@ void Calc(uint2 id)
 }
 
 [numthreads(1,1,1)]
-void Generate (uint3 id : SV_DispatchThreadID)
+void GenerateBaseMesh (uint3 id : SV_DispatchThreadID)
 {
-    int Index = id.y * _Width + id.x;
-    PositionBuffer[Index * VertCount + 0] = float3(0 + id.x, 0, 0 + id.y);
-    PositionBuffer[Index * VertCount + 1] = float3(0 + id.x, 0, 1 + id.y);
-    PositionBuffer[Index * VertCount + 2] = float3(1 + id.x, 0, 0 + id.y);
-    PositionBuffer[Index * VertCount + 3] = float3(1 + id.x, 0, 0 + id.y);
-    PositionBuffer[Index * VertCount + 4] = float3(0 + id.x, 0, 1 + id.y);
-    PositionBuffer[Index * VertCount + 5] = float3(1 + id.x, 0, 1 + id.y);
+    int Index = id.y * _TexSize.x + id.x;
+    PositionBuffer[Index * VertCount + 0] = float3(0 + id.x, 0, 0 + id.y) / float3(_TexSize.x, 1, _TexSize.y) * _WorldSize;
+    PositionBuffer[Index * VertCount + 1] = float3(0 + id.x, 0, 1 + id.y) / float3(_TexSize.x, 1, _TexSize.y) * _WorldSize;
+    PositionBuffer[Index * VertCount + 2] = float3(1 + id.x, 0, 0 + id.y) / float3(_TexSize.x, 1, _TexSize.y) * _WorldSize;
+    PositionBuffer[Index * VertCount + 3] = float3(1 + id.x, 0, 0 + id.y) / float3(_TexSize.x, 1, _TexSize.y) * _WorldSize;
+    PositionBuffer[Index * VertCount + 4] = float3(0 + id.x, 0, 1 + id.y) / float3(_TexSize.x, 1, _TexSize.y) * _WorldSize;
+    PositionBuffer[Index * VertCount + 5] = float3(1 + id.x, 0, 1 + id.y) / float3(_TexSize.x, 1, _TexSize.y) * _WorldSize;
 }
 
 [numthreads(1,1,1)]
 void Paint(uint3 id: SV_DispatchThreadID){
 
-    float d = 1 - distance(_MousePosition.xyz, float3(id.x, 0, id.y)) / _BrushSize;
-    d = d > 0;//clamp(d, 0, 1);
+    float2 World = id.xy / (float)_TexSize * _WorldSize.xz;
+    float d = 1 - distance(_MousePosition.xz, World) / _BrushSize;
+    d = (_BrushType == 0) ? clamp(d, 0, 1) : (d > 0);
     d *= _BrushStrength;
     d = (int)(d * Bands) / (float)Bands;
     Result[id.xy] += float4(d, 0, 0, 1);
@@ -206,15 +221,9 @@ void Reset(uint3 id: SV_DispatchThreadID){
 }
 
 [numthreads(1,1,1)]
-void Debug(uint3 id: SV_DispatchThreadID){
-
-    Calc(id.xy);
-}
-
-[numthreads(1,1,1)]
 void Pixel(uint3 id: SV_DispatchThreadID){
-    Result[uint2(0, 1)] = 0.95;
-    Result[uint2(1, 1)] = 0.7;
-    Result[uint2(0, 0)] = 0.3;
-    Result[uint2(1, 0)] = 0.1;
+    float d = id.x / (float)_TexSize.x;
+    //d = (int)(d * Bands) / (float)(Bands - 1);
+    Result[id.xy] = float4(d, 0, 0, 1);
+
 }

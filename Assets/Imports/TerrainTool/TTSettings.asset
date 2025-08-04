@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aaf3bb30d6af169429c8743682feed87, type: 3}
   m_Name: TTSettings
   m_EditorClassIdentifier: 
-  Width: 128
-  Height: 128
+  TexSize: {x: 128, y: 128}
+  WorldSize: {x: 50, y: 15, z: 50}

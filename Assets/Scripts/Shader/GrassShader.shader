@@ -75,10 +75,10 @@ Shader "Custom/Grass"
             };
 
             static float3 Vertices[] = {
-                float3(0, 0, 0),
-                float3(1, 0, 0),
-                float3(0, 1, 0),
-                float3(1, 1, 0),
+                float3(-.5, 0, 0),
+                float3(.5, 0, 0),
+                float3(-.5, 1, 0),
+                float3(.5, 1, 0),
             };
             
             v2f vert (appdata v, uint InstanceID : SV_INSTANCEID)
@@ -88,8 +88,7 @@ Shader "Custom/Grass"
                 float3 Vert = Vertices[v.vertexID];
                 float3 Offset = 
                     Vert.x * _CamRight.xyz +
-                    Vert.y * _CamUp.xyz +
-                    Vert.z;
+                    Vert.y * _CamUp.xyz;
                 float3 Pos = PositionBuffer[InstanceID].Pos + Offset * 2;
                     
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(Pos);

@@ -102,9 +102,14 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
+    - _GrassQuantize: 4
+    - _GrassScale: 0.05
+    - _GrassThreshold: 0.209
     - _Metallic: 0
+    - _NoiseScale: 4
     - _OcclusionStrength: 1
     - _Parallax: 0.005
+    - _Quantize: 4
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _Smoothness: 0.5
@@ -119,6 +124,8 @@ Material:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _GrassColor: {r: 0.58431375, g: 0.77254903, b: 0.39215687, a: 0}
+    - _RockColor: {r: 0.3019608, g: 0.28627452, b: 0.23529412, a: 0}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
 --- !u!114 &4254684428435771940

@@ -18,20 +18,23 @@ public class GrassPass : ScriptableRenderPass
     private ComputeShader HeightCompute;
     private ComputeBuffer PositionAppendBuffer;
     private int MainKernel;
-    private Terrain Terrain;
+    private TTManager TerrainManager;
 
     private readonly RTHandle PixColorHandle;
     private readonly RTHandle PixDepthHandle;
     private readonly RTHandle PixTerrainHandle;
 
-    public GrassPass(RenderTexture RT, ComputeShader HeightCompute, Material GrassMat, Mesh QuadMesh, DownSamplingPass Pass)
+    public GrassPass(ComputeShader HeightCompute, Material GrassMat, Mesh QuadMesh, TTTerrainPass TerrainPass)
     {
-        this.Terrain = Terrain.activeTerrain;
+        if (TerrainPass == null)
+            return;
+
         this.HeightCompute = HeightCompute;
         this.GrassMat = GrassMat;
-        this.PixColorHandle = Pass.GetColorHandle();
-        this.PixDepthHandle = Pass.GetDepthHandle();
-        this.PixTerrainHandle = Pass.GetTerrainHandle();
+        this.PixColorHandle = TerrainPass.GetColorHandle();
+        this.PixDepthHandle = TerrainPass.GetDepthHandle();
+        this.PixTerrainHandle = TerrainPass.GetTerrainHandle();
+        this.TerrainManager = TerrainPass.Manager;
         this.QuadMesh = QuadMesh;
         renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
 
@@ -40,16 +43,15 @@ public class GrassPass : ScriptableRenderPass
 
     public void InitTerrain()
     {
-        if (HeightCompute == null || Terrain == null)
+        if (HeightCompute == null || TerrainManager == null)
             return;
 
         if (QuadMesh == null || GrassMat == null)
             return;
 
         // use heightmap to place grass blades in a grid
-        var Data = Terrain.terrainData;
-        RenderTexture HeightTex = Data.heightmapTexture;
-        const float Scale = 1 / 4.0f;
+        RenderTexture HeightTex = TerrainManager.HeightRT;
+        const float Scale = .75f;
         const float InverseScale = 1 / Scale;
         const int MemSize = sizeof(uint) * 2 + sizeof(float) * (3 + 3 + 3);
         
@@ -60,11 +62,12 @@ public class GrassPass : ScriptableRenderPass
         HeightCompute.SetTexture(MainKernel, "HeightMap", HeightTex);
         HeightCompute.SetFloat("HeightCutoff", 0.004f);
         HeightCompute.SetFloat("InverseScale", InverseScale);
-        HeightCompute.SetVector("WorldSize", Data.size);
-        HeightCompute.SetVector("TexSize", new(HeightTex.width, 0, HeightTex.height));
-        HeightCompute.SetVector("WorldPos", Terrain.transform.position);
+        HeightCompute.SetVector("WorldSize", (Vector3)TerrainManager.Settings.WorldSize);
+        HeightCompute.SetVector("TexSize", (Vector2)TerrainManager.Settings.TexSize);
+        HeightCompute.SetVector("WorldPos", TerrainManager.transform.position);
 
-        HeightCompute.Dispatch(MainKernel, (int)(HeightTex.width * Scale), (int)(HeightTex.height * Scale), 1);
+        HeightCompute.Dispatch(MainKernel, Mathf.RoundToInt(HeightTex.width * Scale), Mathf.RoundToInt(HeightTex.height * Scale), 1);
+        //HeightCompute.Dispatch(MainKernel, 9, 1, 1);
 
         // read out the actually found grass positions
         ArgsBuffer = new ComputeBuffer(1, Args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
