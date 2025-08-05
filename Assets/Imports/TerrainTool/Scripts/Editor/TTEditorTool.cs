@@ -34,12 +34,16 @@ public class TTEditorTool : EditorTool, IDrawSelectedHandles
                     sceneView.sceneViewState.fxEnabled = true;
 
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.PrefixLabel("Brushsize ");
-                Brush.Size = EditorGUILayout.Slider(Brush.Size, 0, Manager.Settings.TexSize.x, GUILayout.MaxWidth(128));
+                EditorGUILayout.LabelField("Brush: ");
                 EditorGUILayout.EndHorizontal();
 
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.PrefixLabel("Brushtype ");
+                EditorGUILayout.PrefixLabel("Size ");
+                Brush.Size = EditorGUILayout.Slider(Brush.Size, 0, Manager.Settings.TexSize.x / 5, GUILayout.MaxWidth(128));
+                EditorGUILayout.EndHorizontal();
+
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.PrefixLabel("Type ");
                 const int ButtonSize = 25;
                 if (GUILayout.Button(BrushSoftTex, GUILayout.Width(ButtonSize), GUILayout.Height(ButtonSize)))
                 {
@@ -48,6 +52,29 @@ public class TTEditorTool : EditorTool, IDrawSelectedHandles
                 if (GUILayout.Button(BrushHardTex, GUILayout.Width(ButtonSize), GUILayout.Height(ButtonSize)))
                 {
                     Brush.Type = 1;
+                }
+                EditorGUILayout.EndHorizontal();
+
+
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.PrefixLabel("OverrideType ");
+                if (GUILayout.Button("Add", GUILayout.Width(ButtonSize*2), GUILayout.Height(ButtonSize)))
+                {
+                    Brush.OverrideType = 0;
+                }
+                if (GUILayout.Button("Max", GUILayout.Width(ButtonSize*2), GUILayout.Height(ButtonSize)))
+                {
+                    Brush.OverrideType = 1;
+                }
+                EditorGUILayout.EndHorizontal();
+
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.PrefixLabel("Preview ");
+                bool bOld = Brush.bIsPreview;
+                Brush.bIsPreview = GUILayout.Toggle(Brush.bIsPreview, "");
+                if (Brush.bIsPreview && !bOld)
+                {
+                    Manager.ResetRT(true);
                 }
                 EditorGUILayout.EndHorizontal();
 
@@ -82,20 +109,55 @@ public class TTEditorTool : EditorTool, IDrawSelectedHandles
             Manager.Brush(Brush);
             bIsDrawing = false;
         }
+        CheckPreview();
         if (bIsDrawing) {
-            Vector2 ScreenEnd = HandleUtility.GUIPointToScreenPixelCoordinate(Event.current.mousePosition);
-            Brush.Strength = GetBrushStrength();
-            Vector3 WorldEnd = Brush.WorldPos;
-            WorldEnd.y += Brush.Strength * 10;
-
-            Handles.DrawDottedLine(Brush.WorldPos, WorldEnd, 12);
-            Handles.BeginGUI();
-            GUI.color = Color.black;
-            Vector2 Temp = new(ScreenEnd.x, Screen.height - ScreenEnd.y);
-            GUI.Label(new Rect(Temp, new(100, 25)), "" + Brush.Strength);
-            Handles.EndGUI();
+            if (Brush.bIsPreview)
+            {
+                HandlePreview(View);
+            }
+            else{
+                HandleBrushing();
+            }
         }
         Manager.OnSceneGUI(View, Brush);
+    }
+
+    private void CheckPreview()
+    {
+        if (Event.current.keyCode != KeyCode.LeftShift)
+            return;
+
+        bool bOld = Brush.bIsPreview;
+        Brush.bIsPreview =
+            Event.current.type != EventType.KeyUp && ((Event.current.type == EventType.KeyDown) || Brush.bIsPreview);
+
+        if (Brush.bIsPreview && !bOld)
+        {
+            Manager.ResetRT(true);
+        }
+
+    }
+
+    private void HandlePreview(SceneView View)
+    {
+        Brush.WorldPos = Manager.GetMousePoint(View);
+        Brush.Strength = 1;
+        Manager.Brush(Brush);
+    }
+
+    private void HandleBrushing()
+    {
+        Vector2 ScreenEnd = HandleUtility.GUIPointToScreenPixelCoordinate(Event.current.mousePosition);
+        Brush.Strength = GetBrushStrength();
+        Vector3 WorldEnd = Brush.WorldPos;
+        WorldEnd.y += Brush.Strength * 10;
+
+        Handles.DrawDottedLine(Brush.WorldPos, WorldEnd, 12);
+        Handles.BeginGUI();
+        GUI.color = Color.black;
+        Vector2 Temp = new(ScreenEnd.x, Screen.height - ScreenEnd.y);
+        GUI.Label(new Rect(Temp, new(100, 25)), "" + Brush.Strength);
+        Handles.EndGUI();
     }
 
     private float GetBrushStrength()

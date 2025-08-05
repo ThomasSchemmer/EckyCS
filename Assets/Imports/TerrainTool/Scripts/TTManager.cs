@@ -26,7 +26,10 @@ public class TTManager : MonoBehaviour
 
     public RenderTexture HeightRT;
     private RTHandle HeightRTHandle;
+    public RenderTexture PreviewRT;
+    private RTHandle PreviewRTHandle;
 
+    private bool bHasPreview;
     private const String HeightPath = "/Textures/Heightmap.png";
 
     public void OnRenderObject()
@@ -49,6 +52,9 @@ public class TTManager : MonoBehaviour
 
         HeightRTHandle = RTHandles.Alloc(width: Settings.TexSize.x, height: Settings.TexSize.y, enableRandomWrite: true, useMipMap: false);
         HeightRT = HeightRTHandle.rt;
+        PreviewRTHandle = RTHandles.Alloc(width: Settings.TexSize.x, height: Settings.TexSize.y, enableRandomWrite: true, useMipMap: false);
+        PreviewRT = PreviewRTHandle.rt;
+
         int Count = GetCount();
         PositionBuffer = new(Count, sizeof(float) * 3);
 
@@ -78,6 +84,7 @@ public class TTManager : MonoBehaviour
 
         Shader.SetVector("_TexSize", (Vector2)Settings.TexSize);
         Shader.SetVector("_WorldSize", (Vector3)Settings.WorldSize);
+        Shader.SetVector("_WorldPos", transform.position);
         Shader.SetTexture(GenerateBaseKernel, "Result", HeightRTHandle.rt);
         Shader.SetBuffer(GenerateBaseKernel, "PositionBuffer", PositionBuffer);
         Shader.Dispatch(GenerateBaseKernel, HeightRT.width - 1, HeightRT.height - 1, 1);
@@ -85,6 +92,9 @@ public class TTManager : MonoBehaviour
         TerrainMat.SetTexture("_HeightTex", HeightRTHandle.rt);
         TerrainMat.SetBuffer("PositionBuffer", PositionBuffer);
         TerrainMat.SetFloat("_Width", Settings.TexSize.x);
+        TerrainMat.SetVector("_WorldPos", transform.position);
+        ResetRT(true);
+        ResetRT(false);
     }
 
     public void OnSceneGUI(SceneView View, TTBrushSettings Brush)
@@ -98,27 +108,55 @@ public class TTManager : MonoBehaviour
         if (Brush.WorldPos.w == 0)
             return;
 
-        Rect Container = new (Vector2.zero, Settings.TexSize);
+        Rect Container = new (
+            new Vector2(transform.position.x, transform.position.z), 
+            new Vector2(Settings.WorldSize.x, Settings.WorldSize.z)
+        );
         if (!Container.Contains(new Vector2(Brush.WorldPos.x, Brush.WorldPos.z)))
             return;
 
+        Vector4 TempPos = Brush.WorldPos;
+        TempPos.x -= transform.position.x;
+        TempPos.y -= transform.position.y;
+        TempPos.z -= transform.position.z;
+
+        RTHandle Temp = Brush.bIsPreview ? PreviewRTHandle : HeightRTHandle;
         Shader.SetTexture(PaintKernel, "Result", HeightRTHandle.rt);
+        Shader.SetTexture(PaintKernel, "Preview", PreviewRTHandle.rt);
         Shader.SetVector("_TexSize", (Vector2)Settings.TexSize);
         Shader.SetVector("_WorldSize", (Vector3)Settings.WorldSize);
         Shader.SetFloat("_BrushSize", Brush.Size);
         Shader.SetFloat("_BrushStrength", Brush.Strength);
         Shader.SetInt("_BrushType", Brush.Type);
-        Shader.SetVector("_MousePosition", Brush.WorldPos);
-        Shader.Dispatch(PaintKernel, HeightRT.width, HeightRT.height, 1);
+        Shader.SetInt("_BrushOverrideType", Brush.OverrideType);
+        Shader.SetBool("_BrushIsPreview", Brush.bIsPreview);
+        Shader.SetBool("_BrushHasPreview", bHasPreview);
+        Shader.SetVector("_MousePosition", TempPos);
+        Shader.Dispatch(PaintKernel, Temp.rt.width, Temp.rt.height, 1);
         EditorUtility.SetDirty(TerrainMat);
         EditorUtility.SetDirty(this);
+
+        bHasPreview = Brush.bIsPreview || bHasPreview;
+        if (Brush.bIsPreview)
+            return;
+
         GenerateMesh(false);
+        ResetRT(true);
     }
 
     public void Reset()
     {
-        Shader.SetTexture(ResetKernel, "Result", HeightRTHandle.rt);
-        Shader.Dispatch(ResetKernel, HeightRT.width, HeightRT.height, 1);
+        ResetRT(true);
+        ResetRT(false);
+    }
+
+    public void ResetRT(bool bIsPreview)
+    {
+        RTHandle Target = bIsPreview ? PreviewRTHandle : HeightRTHandle;
+        Shader.SetTexture(ResetKernel, "Result", Target.rt);
+        Shader.Dispatch(ResetKernel, Target.rt.width, Target.rt.height, 1);
+        EditorUtility.SetDirty(this);
+        bHasPreview = !bIsPreview && bHasPreview;
     }
 
     public void GenerateMesh(bool bAutoLoad = true)
@@ -155,7 +193,12 @@ public class TTManager : MonoBehaviour
         Args[2] = 0;
         Args[3] = 0;
         RenderArgsBuffer.SetData(Args);
+
+        TerrainMat.SetTexture("_HeightTex", HeightRTHandle.rt);
+        TerrainMat.SetTexture("_PreviewTex", PreviewRTHandle.rt);
         TerrainMat.SetBuffer("PositionBuffer", TriangleAppendBuffer);
+        TerrainMat.SetFloat("_Width", Settings.TexSize.x);
+        TerrainMat.SetVector("_WorldPos", transform.position);
     }
 
     public void Pixel()
@@ -248,10 +291,12 @@ public class TTManager : MonoBehaviour
     {
         Graphics.SetRenderTarget(null);
         HeightRTHandle?.Release();
+        PreviewRTHandle?.Release();
         PositionBuffer?.Release();
         RenderArgsBuffer?.Release();
         TriangleAppendBuffer?.Release();
         HeightRT = null;
+        PreviewRT = null;
     }
 
     private int GetCount()
@@ -266,7 +311,9 @@ public class TTManager : MonoBehaviour
 public struct TTBrushSettings
 {
     public int Type;
+    public int OverrideType;
     public float Size;
     public float Strength;
     public Vector4 WorldPos;
+    public bool bIsPreview;
 }

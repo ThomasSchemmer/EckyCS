@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: TTSettings
   m_EditorClassIdentifier: 
   TexSize: {x: 128, y: 128}
-  WorldSize: {x: 50, y: 15, z: 50}
+  WorldSize: {x: 128, y: 10, z: 128}

@@ -36,11 +36,18 @@ public class TTManagerEditor : Editor
         }
         EditorGUILayout.EndHorizontal();
 
+        EditorGUILayout.BeginHorizontal();
         if (Manager.HeightRT != null)
         {
             Rect Rect = EditorGUILayout.GetControlRect(false, 128, GUILayout.MaxWidth(128));
             EditorGUI.DrawPreviewTexture(Rect, Manager.HeightRT);
         }
+        if (Manager.PreviewRT != null)
+        {
+            Rect Rect = EditorGUILayout.GetControlRect(false, 128, GUILayout.MaxWidth(128));
+            EditorGUI.DrawPreviewTexture(Rect, Manager.PreviewRT);
+        }
+        EditorGUILayout.EndHorizontal();
     }
 
 

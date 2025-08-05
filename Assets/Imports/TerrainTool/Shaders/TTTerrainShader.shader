@@ -12,6 +12,9 @@ Shader "TerrainTool/TTTerain"
         [Header(Grass)][Space]
         _GrassScale("Scale", Float) = 1
         _GrassQuantize("Quantize", Float) = 1
+
+        [HideInInspector]
+        _PreviewTex ("Preview Tex", 2D) = "white" {}
     }
 
     
@@ -24,6 +27,7 @@ Shader "TerrainTool/TTTerain"
 
     CBUFFER_START(UnityPerMaterial)
         sampler2D _HeightTex;
+        sampler2D _PreviewTex;
         
         float4 _GrassColor;
         float4 _RockColor;
@@ -38,6 +42,7 @@ Shader "TerrainTool/TTTerain"
     
     StructuredBuffer<float3> PositionBuffer;
     uniform float _Width;
+    uniform float4 _WorldPos;
     
     struct v2g
     {
@@ -61,7 +66,7 @@ Shader "TerrainTool/TTTerain"
         VertexPositionInputs vertexInput = GetVertexPositionInputs(PositionBuffer[id]);
         o.vertex = vertexInput.positionCS;
         o.world = vertexInput.positionWS;
-        o.uv = o.world.xz / _Width;
+        o.uv = (-_WorldPos.xz + o.world.xz) / _Width;
         return o;
     }
             
@@ -115,11 +120,16 @@ Shader "TerrainTool/TTTerain"
 
 
             float3 GetBrushColor(g2f i){
-                float d = distance(i.world, _MousePosition.xyz);
+                float d = distance(i.world.xz, _MousePosition.xz);
                 float a0 = smoothstep(_BrushSize - BRUSHBORDER, _BrushSize, d);
                 float a1 = smoothstep(_BrushSize, _BrushSize + BRUSHBORDER, d);
                 float3 BrushColor = a0 - a1;
-                return BrushColor;
+                
+                int3 iWorld = i.world - _WorldPos;
+                int Show = (iWorld.x % 2 == 0) && (iWorld.z % 2 == 0);
+                float3 PreviewColor = tex2D(_PreviewTex, i.uv).xyz * Show;
+
+                return clamp(PreviewColor + BrushColor, 0, 1);
             }
 
             float GetLight(g2f i){

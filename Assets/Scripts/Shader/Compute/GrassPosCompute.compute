@@ -30,6 +30,7 @@ float3 PixelToWorld(uint2 Pixel){
 		(int)(HeightMap[Pixel].x * (Bands - 1)) * Height,
 		Pixel.y / TexSize.y * WorldSize.z
 	);
+	PixelWorldPos += WorldPos;
 	return PixelWorldPos;
 }
 
