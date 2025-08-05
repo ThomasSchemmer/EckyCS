@@ -39,7 +39,7 @@ public class TTEditorTool : EditorTool, IDrawSelectedHandles
 
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.PrefixLabel("Size ");
-                Brush.Size = EditorGUILayout.Slider(Brush.Size, 0, Manager.Settings.TexSize.x / 5, GUILayout.MaxWidth(128));
+                Brush.Size = EditorGUILayout.Slider(Brush.Size, 0, GetMaxBrushSize(), GUILayout.MaxWidth(128));
                 EditorGUILayout.EndHorizontal();
 
                 EditorGUILayout.BeginHorizontal();
@@ -58,11 +58,11 @@ public class TTEditorTool : EditorTool, IDrawSelectedHandles
 
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.PrefixLabel("OverrideType ");
-                if (GUILayout.Button("Add", GUILayout.Width(ButtonSize*2), GUILayout.Height(ButtonSize)))
+                if (GUILayout.Button("Add", GUILayout.Width(ButtonSize * 2), GUILayout.Height(ButtonSize)))
                 {
                     Brush.OverrideType = 0;
                 }
-                if (GUILayout.Button("Max", GUILayout.Width(ButtonSize*2), GUILayout.Height(ButtonSize)))
+                if (GUILayout.Button("Max", GUILayout.Width(ButtonSize * 2), GUILayout.Height(ButtonSize)))
                 {
                     Brush.OverrideType = 1;
                 }
@@ -100,7 +100,8 @@ public class TTEditorTool : EditorTool, IDrawSelectedHandles
 
         if (Event.current.type == EventType.MouseDown && Event.current.button == 0)
         {
-            Brush.WorldPos = Manager.GetMousePoint(View);
+            Brush.CurrentWorldPos = Manager.ProjectMouseOnPlane(View);
+            Brush.StartWorldPos = Brush.CurrentWorldPos;
             ScreenStart = HandleUtility.GUIPointToScreenPixelCoordinate(Event.current.mousePosition);
             bIsDrawing = true;
         }
@@ -115,9 +116,15 @@ public class TTEditorTool : EditorTool, IDrawSelectedHandles
             {
                 HandlePreview(View);
             }
-            else{
+            else {
                 HandleBrushing();
             }
+        }
+
+        if (Event.current.type == EventType.ScrollWheel && Event.current.shift)
+        {
+            Brush.Size += Event.current.delta.x;
+            Brush.Size = Mathf.Clamp(Brush.Size, 0, GetMaxBrushSize());
         }
         Manager.OnSceneGUI(View, Brush);
     }
@@ -135,12 +142,11 @@ public class TTEditorTool : EditorTool, IDrawSelectedHandles
         {
             Manager.ResetRT(true);
         }
-
     }
 
     private void HandlePreview(SceneView View)
     {
-        Brush.WorldPos = Manager.GetMousePoint(View);
+        Brush.CurrentWorldPos = Manager.ProjectMouseOnPlane(View);
         Brush.Strength = 1;
         Manager.Brush(Brush);
     }
@@ -149,10 +155,10 @@ public class TTEditorTool : EditorTool, IDrawSelectedHandles
     {
         Vector2 ScreenEnd = HandleUtility.GUIPointToScreenPixelCoordinate(Event.current.mousePosition);
         Brush.Strength = GetBrushStrength();
-        Vector3 WorldEnd = Brush.WorldPos;
+        Vector3 WorldEnd = Brush.CurrentWorldPos;
         WorldEnd.y += Brush.Strength * 10;
 
-        Handles.DrawDottedLine(Brush.WorldPos, WorldEnd, 12);
+        Handles.DrawDottedLine(Brush.CurrentWorldPos, WorldEnd, 12);
         Handles.BeginGUI();
         GUI.color = Color.black;
         Vector2 Temp = new(ScreenEnd.x, Screen.height - ScreenEnd.y);
@@ -185,5 +191,9 @@ public class TTEditorTool : EditorTool, IDrawSelectedHandles
     {
         Manager = null;
         SceneView.duringSceneGui -= OnSceneGUI;
+    }
+
+    private float GetMaxBrushSize(){
+        return Manager.Settings.TexSize.x / 5.0f;
     }
 }

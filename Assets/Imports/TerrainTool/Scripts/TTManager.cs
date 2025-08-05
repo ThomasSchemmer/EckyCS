@@ -99,39 +99,36 @@ public class TTManager : MonoBehaviour
 
     public void OnSceneGUI(SceneView View, TTBrushSettings Brush)
     {
-        TerrainMat.SetVector("_MousePosition", GetMousePoint(View));
+        TerrainMat.SetVector("_MousePosition", ProjectMouseOnPlane(View));
         TerrainMat.SetFloat("_BrushSize", Brush.Size);
     }
 
     public void Brush(TTBrushSettings Brush)
     {
-        if (Brush.WorldPos.w == 0)
+        if (Brush.CurrentWorldPos.w == 0)
             return;
 
         Rect Container = new (
             new Vector2(transform.position.x, transform.position.z), 
             new Vector2(Settings.WorldSize.x, Settings.WorldSize.z)
         );
-        if (!Container.Contains(new Vector2(Brush.WorldPos.x, Brush.WorldPos.z)))
+        if (!Container.Contains(new Vector2(Brush.CurrentWorldPos.x, Brush.CurrentWorldPos.z)))
             return;
-
-        Vector4 TempPos = Brush.WorldPos;
-        TempPos.x -= transform.position.x;
-        TempPos.y -= transform.position.y;
-        TempPos.z -= transform.position.z;
 
         RTHandle Temp = Brush.bIsPreview ? PreviewRTHandle : HeightRTHandle;
         Shader.SetTexture(PaintKernel, "Result", HeightRTHandle.rt);
         Shader.SetTexture(PaintKernel, "Preview", PreviewRTHandle.rt);
         Shader.SetVector("_TexSize", (Vector2)Settings.TexSize);
         Shader.SetVector("_WorldSize", (Vector3)Settings.WorldSize);
+        Shader.SetVector("_WorldPos", transform.position);
         Shader.SetFloat("_BrushSize", Brush.Size);
         Shader.SetFloat("_BrushStrength", Brush.Strength);
         Shader.SetInt("_BrushType", Brush.Type);
         Shader.SetInt("_BrushOverrideType", Brush.OverrideType);
         Shader.SetBool("_BrushIsPreview", Brush.bIsPreview);
         Shader.SetBool("_BrushHasPreview", bHasPreview);
-        Shader.SetVector("_MousePosition", TempPos);
+        Shader.SetVector("_MousePosition", Brush.CurrentWorldPos);
+        Shader.SetVector("_MouseStartPosition", Brush.StartWorldPos);
         Shader.Dispatch(PaintKernel, Temp.rt.width, Temp.rt.height, 1);
         EditorUtility.SetDirty(TerrainMat);
         EditorUtility.SetDirty(this);
@@ -254,7 +251,7 @@ public class TTManager : MonoBehaviour
         return File.Exists(GetHeightFilePath());
     }
 
-    public Vector4 GetMousePoint(SceneView View)
+    public Vector4 ProjectMouseOnPlane(SceneView View)
     {
         if (View == null)
             return Vector4.zero;
@@ -314,6 +311,7 @@ public struct TTBrushSettings
     public int OverrideType;
     public float Size;
     public float Strength;
-    public Vector4 WorldPos;
+    public Vector4 CurrentWorldPos;
+    public Vector4 StartWorldPos;
     public bool bIsPreview;
 }
