@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,6 +15,8 @@ public class GameplayAbilitySystem : GameService
 
     public SerializedDictionary<Type, GameplayAbilityBehaviour> Behaviours = new();
     private SerializedDictionary<Type, UnityAction<GameplayAbilityBehaviour>> OnInitializedCallbacks = new();
+    public List<GameplayAbilityCue> Cues = new();
+
 
     public void Update()
     {
@@ -33,14 +36,45 @@ public class GameplayAbilitySystem : GameService
         _OnBehaviourRegistered?.Invoke(Behaviour);
     }
 
+    public void DeRegister(GameplayAbilityBehaviour Behaviour, Type Type)
+    {
+        Behaviours.Remove(Type);
+    }
+
     protected override void ResetInternal()
     {
-        
+        LoadCues();
         AttributeSet.Get().Reset();
+    }
+
+    public List<GameplayAbilityCue> GetCuesForTag(GameplayAbilityBehaviour Target, Guid Tag)
+    {
+        List<GameplayAbilityCue> Result = new();
+        foreach (var Cue in Cues)
+        {
+            if (!Cue.AssignedTags.IDs.Contains(Tag))
+                continue;
+
+            Result.Add(Cue.GetByInstancing(Target) as GameplayAbilityCue);
+        }
+        return Result;
+    }
+
+    private void LoadCues()
+    {
+        Cues.Clear();
+        foreach (var Obj in Resources.LoadAll(CuesPath))
+        {
+            if (Obj is not GameplayAbilityCue Cue)
+                continue;
+
+            Cues.Add(Cue);
+        }
     }
 
     protected override void StartServiceInternal()
     {
+        LoadCues();
         _OnInit?.Invoke(this);
     }
 
@@ -54,7 +88,7 @@ public class GameplayAbilitySystem : GameService
         if (!Target.HasTags(Effect.ApplicationRequirementTags.IDs))
             return false;
 
-        GameplayEffect Clone = Effect.GetByInstancing(Target);
+        GameplayEffect Clone = Effect.GetByInstancing(Target) as GameplayEffect;
 
         Clone.SetTarget(Target);
         Target.AddEffect(Clone);
@@ -96,4 +130,6 @@ public class GameplayAbilitySystem : GameService
 
     public delegate void OnBehaviourRegistered(GameplayAbilityBehaviour Behavior);
     public static OnBehaviourRegistered _OnBehaviourRegistered;
+
+    private const string CuesPath = "/GAS/Cues/";
 }

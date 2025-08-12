@@ -19,6 +19,7 @@ public class GrassPass : ScriptableRenderPass
     private ComputeBuffer PositionAppendBuffer;
     private int MainKernel;
     private TTManager TerrainManager;
+    private Camera Cam;
 
     private readonly RTHandle PixColorHandle;
     private readonly RTHandle PixDepthHandle;
@@ -36,6 +37,9 @@ public class GrassPass : ScriptableRenderPass
         this.PixTerrainHandle = TerrainPass.GetTerrainHandle();
         this.TerrainManager = TerrainPass.Manager;
         this.QuadMesh = QuadMesh;
+        this.TerrainManager = TerrainPass.Manager;
+        this.Cam = Camera.main;
+
         renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
 
         InitTerrain();
@@ -60,6 +64,7 @@ public class GrassPass : ScriptableRenderPass
         PositionAppendBuffer.SetCounterValue(0);
         HeightCompute.SetBuffer(MainKernel, "PositionBuffer", PositionAppendBuffer);
         HeightCompute.SetTexture(MainKernel, "HeightMap", HeightTex);
+        HeightCompute.SetInt("Bands", TerrainManager.Settings.Bands);
         HeightCompute.SetFloat("HeightCutoff", 0.004f);
         HeightCompute.SetFloat("InverseScale", InverseScale);
         HeightCompute.SetVector("WorldSize", (Vector3)TerrainManager.Settings.WorldSize);
@@ -67,7 +72,6 @@ public class GrassPass : ScriptableRenderPass
         HeightCompute.SetVector("WorldPos", TerrainManager.transform.position);
 
         HeightCompute.Dispatch(MainKernel, Mathf.RoundToInt(HeightTex.width * Scale), Mathf.RoundToInt(HeightTex.height * Scale), 1);
-        //HeightCompute.Dispatch(MainKernel, 9, 1, 1);
 
         // read out the actually found grass positions
         ArgsBuffer = new ComputeBuffer(1, Args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
@@ -104,6 +108,7 @@ public class GrassPass : ScriptableRenderPass
         if (PixColorHandle == null)
             return;
 
+        GrassMat.SetVector("_CamOffset", Cam.transform.position);
         CommandBuffer GrassCmd = CommandBufferPool.Get();
         using (new ProfilingScope(GrassCmd, new ProfilingSampler("GrassPass")))
         {

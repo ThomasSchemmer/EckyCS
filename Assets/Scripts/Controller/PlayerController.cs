@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class PlayerController : MonoBehaviour
 {
@@ -58,10 +59,14 @@ public class PlayerController : MonoBehaviour
         Hook = GetComponent<HookController>();
         Spline = GetComponent<SplineController>();
         WallRunning = GetComponent<WallrunningController>();
-        IMovements.Add(MovementComp);
-        IMovements.Add(Hook);
-        IMovements.Add(Spline);
-        IMovements.Add(WallRunning);
+        if (MovementComp != null)
+            IMovements.Add(MovementComp);
+        if (Hook != null)
+            IMovements.Add(Hook);
+        if (Spline != null)
+            IMovements.Add(Spline);
+        if (WallRunning != null)
+            IMovements.Add(WallRunning);
 
         IMovements.ForEach(_ => _.Init());
     }
@@ -76,9 +81,10 @@ public class PlayerController : MonoBehaviour
                 continue;
 
             Vector3 Temp = IMovement.GetMovement();
-            Movement += Temp;
-            AddDebugText(IMovement.GetName() + ": " + Temp + "\n");
+            if (Temp.magnitude == 0)
+                return;
 
+            Movement += Temp;
         }
     }
 
@@ -86,6 +92,7 @@ public class PlayerController : MonoBehaviour
     {
         FixedDebugText.text = "";
         Move();
+        Rotate();
         Jump();
         UpdateFixedMovement();
         IMovements.ForEach(_ => _.FixedUpdateMovement());
@@ -100,9 +107,23 @@ public class PlayerController : MonoBehaviour
         MoveList = CollideAndSlide(NormMove);
         foreach (var Move in MoveList)
         {
-            Rb.AddForce(Move, ForceMode.Force);
-            AddDebugText("" + Move + "\n", true);
+            Rb.transform.position += Move;
         }
+    }
+
+    private void Rotate()
+    {
+        var Comp = GetMovementComponent();
+        Plane Plane = new(Vector3.up, 1);
+        var Ray = Comp.Cam.ScreenPointToRay(Input.mousePosition);
+        if (!Plane.Raycast(Ray, out float Distance))
+            return;
+
+        Vector3 TargetPoint = Ray.GetPoint(Distance);
+        TargetPoint.y = transform.position.y;
+        Vector3 TargetDir = TargetPoint - transform.position;
+        Quaternion TargetRotation = Quaternion.LookRotation(TargetDir, Vector3.up);
+        transform.rotation = Quaternion.Lerp(transform.rotation, TargetRotation, Time.deltaTime * Comp.Smoothness);
     }
 
     private void Jump()
@@ -124,14 +145,9 @@ public class PlayerController : MonoBehaviour
 
     private void UpdateFixedMovement()
     {
+        return;
         Rb.useGravity = !bIsWallrunning || State == MovementState.Falling;
-
-        float MaxV = IsSprinting() ? MovementComp.MaxSprintVelocity : MovementComp.MaxVelocity;
-        bool bShouldRestrict = !IsIn(MovementState.Falling) && !IsJumping() && !IsHooking();
-        if (Rb.velocity.magnitude > MaxV && bShouldRestrict)
-        {
-            Rb.velocity = Rb.velocity.normalized * MaxV;
-        }
+ 
     }
 
     private void UpdateState()
@@ -183,8 +199,7 @@ public class PlayerController : MonoBehaviour
             GetGroundCastStart(),
             Vector3.down,
             out GroundHit,
-            1,
-            GroundMask
+            1
         );
 
         if (bIsGrounded)
@@ -233,17 +248,20 @@ public class PlayerController : MonoBehaviour
     private List<Vector3> CollideAndSlide(Vector3 Movement)
     {
         List<Vector3> SplitMoves = new();
+        if (Vector3.Magnitude(Movement) == 0)
+            return SplitMoves;
+
         float Radius = Rb.transform.localScale.z / 2f;
         Vector3 PredPos = Rb.transform.position;
-        Vector3 PredDir = PredictDistance(Movement);
+        Movement = PredictDistance(Movement);
         float SkinDepth = 0.01f;
-        float Range = PredDir.magnitude + Radius + SkinDepth;
+        float Range = Movement.magnitude + Radius + SkinDepth;
         WallNormal = new();
 
         int MaxCollision = 5;
         for (int i = 0; i < MaxCollision; i++)
         {
-            if (!Physics.SphereCast(PredPos, Radius - SkinDepth, PredDir.normalized, out var Hit, Range, GroundMask))
+            if (!Physics.SphereCast(PredPos, Radius - SkinDepth, Movement.normalized, out var Hit, Range, GroundMask))
             {
                 SplitMoves.Add(Movement);
                 return SplitMoves;
@@ -255,28 +273,17 @@ public class PlayerController : MonoBehaviour
             Movement = Movement * (1 - CollDis);
             Movement = Vector3.ProjectOnPlane(Movement, Hit.normal);
 
-            PredPos = PredictPosition(Movement);
-            PredDir = PredictDistance(Movement);
-            Range = PredDir.magnitude + Radius + SkinDepth;
+            PredPos += Movement;
+            Range = Movement.magnitude + Radius + SkinDepth;
             WallNormal = Hit.normal;
         }
         return SplitMoves;
     }
 
-    public Vector3 PredictPosition(Vector3 MovementInput)
-    {
-        return Rb.transform.position + PredictDistance(MovementInput);
-    }
-
     public Vector3 PredictDistance(Vector3 MovementInput)
     {
-        Vector3 PredVel = (MovementInput / Rb.mass) * Time.fixedDeltaTime;
+        Vector3 PredVel = MovementInput * Time.fixedDeltaTime;
         return PredVel * Time.fixedDeltaTime;
-    }
-
-    public void SetVelocity(Vector3 Velocity)
-    {
-        Rb.velocity = Velocity;
     }
 
     public void OnDrawGizmos()

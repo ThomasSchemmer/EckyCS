@@ -53,12 +53,32 @@ public abstract class ComponentGroupView
         }
     }
 
-    protected abstract Type[] GetTypeSet();
+    public unsafe bool CheckEachGroup(ComponentGroup.GroupByteCheck Action, bool bExpectedResult)
+    {
+        if (!Game.TryGetService(out ECS ECS))
+            return false;
+
+        foreach (var Group in Groups)
+        {
+            var SparseSet = ECS.EntitySets[Group];
+            bool bResult = (bool)Action?.Invoke(
+                Group,
+                SparseSet.GetGroupPointers(GetTypeSet()),
+                SparseSet.GetCount()
+            );
+            if (bResult != bExpectedResult)
+                return false;
+        }
+
+        return true;
+    }
+
+    public abstract Type[] GetTypeSet();
 }
 
 public class ComponentGroupView<X> : ComponentGroupView where X : IComponent
 {
-    protected override Type[] GetTypeSet()
+    public override Type[] GetTypeSet()
     {
         return new Type[1] { typeof(X) };
     }
@@ -68,7 +88,7 @@ public class ComponentGroupView<X> : ComponentGroupView where X : IComponent
 public class ComponentGroupView<X, Y> : ComponentGroupView where X: IComponent where Y : IComponent
 {
 
-    protected override Type[] GetTypeSet()
+    public override Type[] GetTypeSet()
     {
         return new Type[2] { typeof(X), typeof(Y) };
     }

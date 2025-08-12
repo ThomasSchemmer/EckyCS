@@ -39,6 +39,7 @@ public struct RadixTree
             CountPerThread = Nodes.Length / ThreadCount;
             NodePtr = (Node*)Nodes.GetUnsafePtr();
             int LeftOverAmount = Nodes.Length - ThreadCount * CountPerThread;
+            Morton.DeInterlace(MortonCodes[0], out var X, out var Z);
             for (int j = 0; j < CountPerThread; j++)
             {
                 Execute(i, j);
@@ -108,7 +109,7 @@ public struct RadixTree
         private int GetNodeSplit(int i, int Range, int Dir, int PrefixNode)
         {
             int Split = 0;
-            for (int t = Range / 2; t >= 1; t /= 2)
+            for (int t = Mathf.RoundToInt(Range / 2f + .5f); t >= 1; t /= 2)
             {
                 int PrefixTemp = GetPrefixLength(i, i + (Split + t) * Dir);
                 if (PrefixTemp > PrefixNode)
@@ -122,7 +123,7 @@ public struct RadixTree
         private int GetNodeRange(int i, int Dir)
         {
             int MinPrefix = GetPrefixLength(i, i - Dir);
-            int MaxRange = 8;
+            int MaxRange = 2;
             // quick upper bound calc
             while (GetPrefixLength(i, i + Dir * MaxRange) > MinPrefix)
             {
@@ -130,7 +131,7 @@ public struct RadixTree
             }
             // actual range with binary search
             int Range = 0;
-            int T = MaxRange / 2;
+            int T = Mathf.RoundToInt(MaxRange / 2f + .5f);
             while (T >= 1)
             {
                 if (GetPrefixLength(i, i + (Range + T) * Dir) > MinPrefix)
@@ -161,7 +162,7 @@ public struct RadixTree
             {
                 XOr = (uint)(i ^ j);
             }
-            return IntSize - 1 - (int)Mathf.Log(XOr, 2);
+            return Mathf.Max(IntSize - 1 - (int)Mathf.Log(XOr, 2), 0);
         }
 
         private const int IntSize = 32;

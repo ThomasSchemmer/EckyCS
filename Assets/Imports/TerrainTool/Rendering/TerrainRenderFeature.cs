@@ -10,7 +10,7 @@ public class TerrainRenderFeature : ScriptableRendererFeature
 
     public override void AddRenderPasses(ScriptableRenderer Renderer, ref RenderingData renderingData)
     {
-        if (renderingData.cameraData.isPreviewCamera)
+        if (renderingData.cameraData.isPreviewCamera || renderingData.cameraData.isSceneViewCamera)
             return;
 
         Renderer.EnqueuePass(TerrainPass);

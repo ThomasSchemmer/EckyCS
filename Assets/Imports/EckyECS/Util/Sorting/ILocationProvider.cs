@@ -4,5 +4,5 @@ using UnityEngine;
 
 public interface ILocationProvider
 {
-    public List<EntityID> GetAllAt(Vector3 Position, float Range);
+    public List<EntityID> GetAllAt(Rect Target);
 }

@@ -6,7 +6,6 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.UIElements;
 
 [ExecuteInEditMode]
 [Serializable]
@@ -23,12 +22,14 @@ public class TTManager : MonoBehaviour
     public ComputeBuffer RenderArgsBuffer;
     private int GenerateBaseKernel, GenerateHeightKernel, PaintKernel, ResetKernel, PixelKernel;
     private readonly int VertexCount = 6;
+    private uint TriangleCount;
 
     public RenderTexture HeightRT;
     private RTHandle HeightRTHandle;
     public RenderTexture PreviewRT;
     private RTHandle PreviewRTHandle;
 
+    private Mesh Mesh;
     private bool bHasPreview;
     private const String HeightPath = "/Textures/Heightmap.png";
 
@@ -93,6 +94,7 @@ public class TTManager : MonoBehaviour
         TerrainMat.SetBuffer("PositionBuffer", PositionBuffer);
         TerrainMat.SetFloat("_Width", Settings.TexSize.x);
         TerrainMat.SetVector("_WorldPos", transform.position);
+        TerrainMat.SetVector("_WorldSize", (Vector3)Settings.WorldSize);
         ResetRT(true);
         ResetRT(false);
     }
@@ -121,6 +123,7 @@ public class TTManager : MonoBehaviour
         Shader.SetVector("_TexSize", (Vector2)Settings.TexSize);
         Shader.SetVector("_WorldSize", (Vector3)Settings.WorldSize);
         Shader.SetVector("_WorldPos", transform.position);
+        Shader.SetInt("_Bands", Settings.Bands);
         Shader.SetFloat("_BrushSize", Brush.Size);
         Shader.SetFloat("_BrushStrength", Brush.Strength);
         Shader.SetInt("_BrushType", Brush.Type);
@@ -147,6 +150,12 @@ public class TTManager : MonoBehaviour
         ResetRT(false);
     }
 
+    public void FullyReset()
+    {
+        Destroy();
+        GenerateMesh();
+    }
+
     public void ResetRT(bool bIsPreview)
     {
         RTHandle Target = bIsPreview ? PreviewRTHandle : HeightRTHandle;
@@ -170,7 +179,8 @@ public class TTManager : MonoBehaviour
             LoadHeightTex();
         }
 
-        TriangleAppendBuffer.SetCounterValue(0);
+        TriangleAppendBuffer.SetCounterValue(0); 
+        Shader.SetInt("_Bands", Settings.Bands);
         Shader.SetVector("_WorldPos", transform.position);
         Shader.SetBuffer(GenerateHeightKernel, "TriangleBuffer", TriangleAppendBuffer);
         Shader.SetTexture(GenerateHeightKernel, "Result", HeightRTHandle.rt);
@@ -182,7 +192,7 @@ public class TTManager : MonoBehaviour
         RenderArgsBuffer.SetData(Args);
         ComputeBuffer.CopyCount(TriangleAppendBuffer, RenderArgsBuffer, 0);
         RenderArgsBuffer.GetData(Args);
-        var TriangleCount = Args[0];
+        TriangleCount = Args[0];
 
         // now we can actually fill in the data
         Args[0] = TriangleCount * 3;
@@ -195,6 +205,7 @@ public class TTManager : MonoBehaviour
         TerrainMat.SetTexture("_PreviewTex", PreviewRTHandle.rt);
         TerrainMat.SetBuffer("PositionBuffer", TriangleAppendBuffer);
         TerrainMat.SetFloat("_Width", Settings.TexSize.x);
+        TerrainMat.SetVector("_WorldSize", (Vector3)Settings.WorldSize);
         TerrainMat.SetVector("_WorldPos", transform.position);
     }
 
@@ -288,12 +299,18 @@ public class TTManager : MonoBehaviour
     {
         Graphics.SetRenderTarget(null);
         HeightRTHandle?.Release();
+        HeightRTHandle = null;
         PreviewRTHandle?.Release();
+        PreviewRTHandle = null;
         PositionBuffer?.Release();
+        PositionBuffer = null;
         RenderArgsBuffer?.Release();
+        RenderArgsBuffer = null;
         TriangleAppendBuffer?.Release();
+        TriangleAppendBuffer = null;
         HeightRT = null;
         PreviewRT = null;
+        DestroyImmediate(GetComponent<MeshCollider>().sharedMesh);
     }
 
     private int GetCount()
@@ -301,6 +318,46 @@ public class TTManager : MonoBehaviour
         if (Settings == null)
             return 0;
         return VertexCount * Settings.TexSize.x * Settings.TexSize.y;
+    }
+
+    public void Update()
+    {
+        if (Mesh == null && TriangleCount > 0)
+        {
+            ApplyMesh();
+        }
+    }
+
+    private void ApplyMesh()
+    {
+        Vector3[] Vertices = new Vector3[TriangleCount * 3];
+        TriangleAppendBuffer.GetData(Vertices);
+        for (int i = 0; i < Vertices.Length; i++)
+        {
+            Vertices[i] = Vertices[i] - transform.position;
+        }
+        int[] Triangles = new int[TriangleCount * 3];
+        for (int i = 0; i < Triangles.Length; i++)
+        {
+            Triangles[i] = i;
+        }
+
+        Mesh = new Mesh();
+        Mesh.vertices = Vertices;
+        Mesh.triangles = Triangles;
+        Mesh.Optimize();
+        Mesh.RecalculateNormals();
+        Mesh.RecalculateBounds();
+
+        var Filter = GetComponent<MeshFilter>();
+        if (Filter.sharedMesh != null)
+        {
+            DestroyImmediate(Filter.sharedMesh);
+        }
+        Filter.sharedMesh = Mesh;
+
+        var Collider = GetComponent<MeshCollider>();
+        Collider.sharedMesh = Filter.sharedMesh;
     }
 }
 

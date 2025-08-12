@@ -25,13 +25,6 @@ public class ComponentAllocator
         return IDToType[ID];
     }
 
-    public static bool TryCreate(Type Type, out IComponent Component)
-    {
-        Register(Type);
-        Component = (IComponent)Activator.CreateInstance(Type);
-        return true;
-    }
-
     private static void Register(Type Type)
     {
         if (TypeToID.ContainsKey(Type))
@@ -42,7 +35,7 @@ public class ComponentAllocator
         TypeToSize.Add(Type, GetSize(Type));
     }
 
-    private static int GetSize(Type Type)
+    public static int GetSize(Type Type)
     {
         return Marshal.SizeOf(Type);
     }

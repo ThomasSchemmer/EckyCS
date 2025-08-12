@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "AttributeSet", menuName = "ScriptableObjects/AttributeSet", order = 2)]
+[CreateAssetMenu(fileName = "AttributeSet", menuName = "ScriptableObjects/GAS/AttributeSet", order = 2)]
 public class AttributeSet : ScriptableObject
 {
     public SerializedDictionary<AttributeType, Attribute> Attributes = new();

@@ -123,6 +123,17 @@ public struct ComponentGroupIdentifier : IEnumerator, IEnumerable
         return Result;
     }
 
+    public string[] GetNameArray()
+    {
+        var List = GetContainedTypes();
+        string[] Result = new string[List.Count];
+        for (int i = 0; i < Result.Length; i++)
+        {
+            Result[i] = List[i].ToString();
+        }
+        return Result;
+    }
+
     public bool MoveNext()
     {
         EnumeratorIndex = Flags.GetFirst(EnumeratorIndex, true) + 1;

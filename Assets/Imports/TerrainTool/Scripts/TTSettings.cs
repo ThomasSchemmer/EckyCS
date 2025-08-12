@@ -13,4 +13,5 @@ public class TTSettings : ScriptableObject
     [SerializeField]
     public Vector3Int WorldSize = new(1, 1, 1);
 
+    public int Bands = 10;
 }

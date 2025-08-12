@@ -28,8 +28,8 @@ uniform bool _BrushIsPreview;
 uint2 _TexSize;
 uint3 _WorldSize;
 static uint VertCount = 6;
-// keep this equal to TTSettings.Bands!
-const static int Bands = 10;
+// keep this equal to TTSettings.Bands! has to be static :(
+static const int Bands = 10;
 static int VertexMapLength = 28;
 static int VertexLookupLength0 = 15;
 static int VertexLookupLength1 = 48;
@@ -209,7 +209,6 @@ void GenerateBaseMesh (uint3 id : SV_DispatchThreadID)
 
 float GetFallOff(float Value){
     Value = (_BrushType == 0) ? clamp(Value, 0, 1) : (Value > 0);
-    Value = (int)(Value * Bands) / (float)Bands;
     return Value;
 }
 
@@ -228,6 +227,7 @@ float GetBrushValueAt(uint2 id, float OldValue){
     v = GetFallOff(v);
     v = GetStrengthOverride(v, OldValue);
     v *= _BrushStrength;
+    v = (int)(v * Bands) / (float)Bands;
     return v;
 }
 

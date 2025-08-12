@@ -6,6 +6,7 @@ Shader "Custom/Grass"
         _CopyTex ("CopyTex", 2D) = "white" {}
         _TargetTex ("TargetTex", 2D) = "white" {}
         _Cutoff("Cutoff", Float) = 0
+        _Offset("Offset", Vector) = (0,0,0,0)
     }
 
     
@@ -24,6 +25,8 @@ Shader "Custom/Grass"
         sampler2D _TargetTex;
         
         sampler2D _CameraDepthTexture;
+        float4 _CamOffset;
+        float4 _Offset;
         float _Cutoff;
     CBUFFER_END
 

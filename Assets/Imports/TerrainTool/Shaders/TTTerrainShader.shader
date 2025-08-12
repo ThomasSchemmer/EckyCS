@@ -43,6 +43,7 @@ Shader "TerrainTool/TTTerain"
     StructuredBuffer<float3> PositionBuffer;
     uniform float _Width;
     uniform float4 _WorldPos;
+    uniform float4 _WorldSize;
     
     struct v2g
     {
@@ -66,7 +67,7 @@ Shader "TerrainTool/TTTerain"
         VertexPositionInputs vertexInput = GetVertexPositionInputs(PositionBuffer[id]);
         o.vertex = vertexInput.positionCS;
         o.world = vertexInput.positionWS;
-        o.uv = (-_WorldPos.xz + o.world.xz) / _Width;
+        o.uv = (-_WorldPos.xz + o.world.xz) / _WorldSize.xz;  
         return o;
     }
             

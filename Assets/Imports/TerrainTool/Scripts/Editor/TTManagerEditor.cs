@@ -48,6 +48,13 @@ public class TTManagerEditor : Editor
             EditorGUI.DrawPreviewTexture(Rect, Manager.PreviewRT);
         }
         EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("FullyReset", GUILayout.MaxWidth(100)))
+        {
+            Manager.FullyReset();
+        }
+        EditorGUILayout.EndHorizontal();
     }
 
 

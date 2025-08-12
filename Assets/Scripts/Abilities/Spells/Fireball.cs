@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Fireball", menuName = "ScriptableObjects/Abilities/Fireball", order = 0)]
-public class Fireball : Ability
+public class Fireball : GameplayAbility
 {
     public GameplayEffect OnHitEffect;
 
@@ -20,7 +20,7 @@ public class Fireball : Ability
             Type = AbilityType.Fireball,
             Speed = 5
         };
-        TrySpawnProjectile(SpawnParams, out Projectile);
+        GameplayAbilityLibrary.TrySpawnProjectile(this, SpawnParams, out Projectile);
 
         End();
     }

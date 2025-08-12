@@ -171,6 +171,7 @@ public class TTEditorTool : EditorTool, IDrawSelectedHandles
         Vector2 ScreenEnd = HandleUtility.GUIPointToScreenPixelCoordinate(Event.current.mousePosition);
         float Distance = (int)((ScreenEnd.y - ScreenStart.y) * 10) / 500.0f;
         Distance = Mathf.Clamp(Distance, -1, 1);
+        Distance = (int)(Distance * Manager.Settings.Bands) / (float)Manager.Settings.Bands;
         return Distance;
     }
 

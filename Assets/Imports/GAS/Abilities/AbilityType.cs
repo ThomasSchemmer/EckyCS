@@ -5,5 +5,6 @@ using UnityEngine;
 public enum AbilityType 
 {
     DEFAULT,
-    Fireball
+    Fireball,
+    Shovel
 }

@@ -2,16 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class Ability : GameplayAbility, ITargeted
+public abstract class GameplayAbilityLibrary
 {
-    public AbilityType Type;
-
-    public void OnAbilityHit(GameplayAbilityBehaviour Target)
-    {
-        OnTargetHit.ForEach(_ => _?.Invoke(Target));
-    }
-
-    protected bool TrySpawnProjectile(Projectile.Parameters Params, out Projectile Projectile)
+    public static bool TrySpawnProjectile(GameplayAbility Parent, Projectile.Parameters Params, out Projectile Projectile)
     {
         Projectile = null;
         if (!Game.TryGetService(out MeshFactory MeshFactory))
@@ -23,15 +16,10 @@ public abstract class Ability : GameplayAbility, ITargeted
         Projectile = ProjectileGO.AddComponent<Projectile>();
         ProjectileGO.GetComponent<MeshCollider>().sharedMesh = Mesh;
         ProjectileGO.GetComponent<MeshFilter>().mesh = Mesh;
-        Projectile.Initialize(Params, this);
+        Projectile.Initialize(Params, Parent);
 
         return true;
     }
 
-    public float GetCooldownCutoff()
-    {
-        return 1 - CurrentCooldown;
-    }
 
-    public ActionList<GameplayAbilityBehaviour> OnTargetHit = new();
 }

@@ -6,11 +6,11 @@ using UnityEngine;
 [RequireComponent(typeof(SVGImage))]
 public class AbilityScreen : MonoBehaviour
 {
-    public Ability Ability;
+    public GameplayAbility Ability;
 
     private SVGImage Image;
 
-    public void Initialize(Ability Ability, Material Mat)
+    public void Initialize(GameplayAbility Ability, Material Mat)
     {
         Image = GetComponent<SVGImage>();
         Image.material = Instantiate(Mat);

@@ -3,8 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "GameplayEffect", menuName = "ScriptableObjects/GameplayEffect", order = 3)]
-public class GameplayEffect : ScriptableObject
+[CreateAssetMenu(fileName = "Effect", menuName = "ScriptableObjects/GAS/Effect", order = 3)]
+public class GameplayEffect : GameplayAbilityInstancingPolicy
 {
     public enum Duration
     {
@@ -13,15 +13,7 @@ public class GameplayEffect : ScriptableObject
         Infinite
     }
 
-    public enum Instancing
-    {
-        InstancedPerExecution,
-        InstancedPerActor,
-        NonInstanced
-    }
-
     public Duration DurationPolicy;
-    public Instancing InstancingPolicy;
     public List<GameplayEffectModifier> Modifiers = new();
     public float DurationLength = 0;
     public GameplayAbility GrantedAbility;
@@ -104,25 +96,6 @@ public class GameplayEffect : ScriptableObject
             SelectedModifiers.Add(Modifier);
         }
         return SelectedModifiers;
-    }
-
-    public GameplayEffect GetByInstancing(GameplayAbilityBehaviour Target)
-    {
-        switch (InstancingPolicy)
-        {
-            case Instancing.NonInstanced: return this;
-            case Instancing.InstancedPerActor: return GetByInstancingActor(Target);
-            case Instancing.InstancedPerExecution: return Instantiate(this);
-        }
-        return null;
-    }
-
-    private GameplayEffect GetByInstancingActor(GameplayAbilityBehaviour Target)
-    {
-        if (Target.GetActiveEffects().Contains(this))
-            return this;
-
-        return Instantiate(this);
     }
 
     public string GetEffectDescription()

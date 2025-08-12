@@ -1,4 +1,5 @@
 using Codice.CM.Client.Differences;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -54,6 +55,14 @@ public class DownSamplingPass : ScriptableRenderPass
             FilteringSettings TerrainFilter = new FilteringSettings(layerMask: 1 << LayerMask.NameToLayer("Terrain"));
             Context.DrawRenderers(renderingData.cullResults, ref DrawSettings, ref TerrainFilter);
 
+            if (Game.TryGetService(out ECS ECS) && ECS.TryGetSystems<RenderSystem>(out var SystemList))
+            {
+                foreach (var System in SystemList)
+                {
+                    RenderSystem(Cmd, (RenderSystem)System);
+                }
+            }
+
             FilteringSettings WorldFilter = new FilteringSettings(layerMask: 1 << LayerMask.NameToLayer("World"));
             Context.DrawRenderers(renderingData.cullResults, ref DrawSettings, ref WorldFilter);
             
@@ -63,6 +72,26 @@ public class DownSamplingPass : ScriptableRenderPass
         Context.ExecuteCommandBuffer(Cmd);
         Cmd.Clear();
         CommandBufferPool.Release(Cmd);
+    }
+
+    private void RenderSystem(CommandBuffer Cmd, RenderSystem System)
+    {
+        if (Cmd == null || System == null)
+            return;
+
+        foreach (var Pair in System.Infos) {
+
+            var Info = Pair.Value;
+            System.BaseMat.SetBuffer("_Positions", Info.PositionBuffer);
+            System.BaseMat.SetBuffer("_IDs", Info.IDBuffer);
+            Cmd.DrawMeshInstancedIndirect(
+                System.Mesh,
+                0,
+                System.BaseMat,
+                0,
+                Info.ArgsBuffer
+            );
+        }
     }
 
 

@@ -40,6 +40,7 @@ public class HookController : IMovementComponent
 
     private void Shoot()
     {
+        return;
         if (bIsHooking)
             return;
 
@@ -84,7 +85,9 @@ public class HookController : IMovementComponent
         if (grapplePointRelativeYPos < 0) highestPointOnArc = OvershootYAxis;
 
         Vector3 Velocity = CalculateJumpVelocity(transform.position, Target.point, highestPointOnArc);
-        Controller.SetVelocity(Velocity);
+        return;
+        int asd = 5;
+        //Controller.SetVelocity(Velocity);
     }
 
 

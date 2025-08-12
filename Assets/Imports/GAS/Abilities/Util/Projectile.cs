@@ -11,7 +11,7 @@ public class Projectile : MonoBehaviour
 
     private Vector3 Dir;
     private float Speed = 1;
-    private Ability OwningAbility;
+    private GameplayAbility OwningAbility;
         
     void OnCollisionEnter(Collision Collision)
     {
@@ -26,7 +26,7 @@ public class Projectile : MonoBehaviour
         transform.position += Dir * Time.deltaTime * Speed;
     }
 
-    public void Initialize(Parameters Params, Ability Ability)
+    public void Initialize(Parameters Params, GameplayAbility Ability)
     {
         Dir = Params.Direction;
         Speed = Params.Speed;

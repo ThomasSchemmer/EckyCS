@@ -3,11 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Profiling;
-using static UnityEngine.GraphicsBuffer;
 
 /** 
  * Dense struct to help have a variable amount of components in a sparse set
@@ -30,6 +30,8 @@ public abstract class ComponentGroup
     /** Returns an array of ptrs to any components[] requested via Types, as well as to the ID array*/
     public unsafe abstract void*[] GetGroupPointers(Type[] Types);
 
+    public abstract void SetData(int Index, byte[] Data);
+    public abstract byte[] GetData(int Index);
     protected abstract void ResetComponents(int Index, EntityID ID);
     protected abstract void ChangeSizeComponents(int NewLength);
     protected abstract void SwapComponents(int IndexA, int IndexB);
@@ -46,19 +48,21 @@ public abstract class ComponentGroup
         Set(Index, EntityID.Invalid(Index + 1), bResetComponents);
     }
 
-    public void Set(int Index, EntityID ID, bool bResetComponents = true)
+    public void Set(int Index, EntityID ID, bool bResetComponents = true, byte[] Data = null)
     {
         Assert.IsTrue(Index >= 0 && Index < IDs.Length);
         
         IDs[Index] = ID;
 
-        if (!bResetComponents)
-            return;
-        
-        ResetComponents(Index, ID);
+        if (bResetComponents)
+        {
+            ResetComponents(Index, ID);
+        }
+        if (Data != null)
+        {
+            SetData(Index, Data);
+        }
     }
-
-
     public void ChangeSize(int NewLength)
     {
         Profiler.BeginSample("ECS.ComponentGroup.ChangeSize");
@@ -104,6 +108,7 @@ public abstract class ComponentGroup
 
     public unsafe delegate void ByteAction(ComponentGroupIdentifier Group, EntityID ID, void*[] ptr);
     public unsafe delegate void GroupByteAction(ComponentGroupIdentifier Group, void*[] Ptrs, int Count);
+    public unsafe delegate bool GroupByteCheck(ComponentGroupIdentifier Group, void*[] Ptrs, int Count);
 }
 
 
@@ -127,6 +132,21 @@ public unsafe class ComponentGroup<T> : ComponentGroup where T : struct, ICompon
 
     }
 
+    public override void SetData(int Index, byte[] Data)
+    {
+        if (Data.Length != ComponentSize)
+            return;
+
+        Array.Copy(Data, 0, Components, Index * ComponentSize, ComponentSize);
+    }
+
+    public override byte[] GetData(int Index)
+    {
+        byte[] Data = new byte[ComponentSize];
+        Array.Copy(Components, Index * ComponentSize, Data, 0, ComponentSize);
+        return Data;
+    }
+
     public unsafe override void* Get<X>(int Index)
     {
         if (typeof(X) != typeof(T))
@@ -140,10 +160,6 @@ public unsafe class ComponentGroup<T> : ComponentGroup where T : struct, ICompon
 
     public unsafe override void ForEach(ByteAction Action)
     {
-        int Target = GroupID.GetSelfIndexOf(typeof(T));
-        if (Target != 0)
-            return;
-
         fixed (byte* bPtr = &Components[0])
         {
             for (int i = 0; i < IDs.Length; i++)
@@ -252,6 +268,24 @@ public unsafe class ComponentGroup<X, Y> : ComponentGroup where X : struct, ICom
         }
     }
 
+    public override void SetData(int Index, byte[] Data)
+    {
+        int TotalSize = ComponentSizeX + ComponentSizeY;
+        if (Data.Length != TotalSize)
+            return;
+
+        Array.Copy(Data, 0, ComponentsX, Index * TotalSize, ComponentSizeX);
+        Array.Copy(Data, ComponentSizeX, ComponentsY, Index * TotalSize + ComponentSizeX, ComponentSizeY);
+    }
+
+    public override byte[] GetData(int Index)
+    {
+        byte[] Data = new byte[ComponentSizeX + ComponentSizeY];
+        Array.Copy(ComponentsX, Index * ComponentSizeX, Data, 0, ComponentSizeX);
+        Array.Copy(ComponentsY, Index * ComponentSizeY, Data, ComponentSizeX, ComponentSizeY);
+        return Data;
+    }
+
     public unsafe override void ForEach(ByteAction Action)
     {
         fixed (byte* xPtr = &ComponentsX[0])
@@ -351,4 +385,214 @@ public unsafe class ComponentGroup<X, Y> : ComponentGroup where X : struct, ICom
             (ComponentsY[A], ComponentsY[B]) = (ComponentsY[B], ComponentsY[A]);
         }
     }
+
+
+}
+
+public unsafe class ComponentGroup<X, Y, Z> : ComponentGroup where X : struct, IComponent where Y : struct, IComponent where Z : struct, IComponent
+{
+    // raw byte data as we cannot store it in T due to boxing
+    public byte[] ComponentsX;
+    public byte[] ComponentsY;
+    public byte[] ComponentsZ;
+
+    private readonly int ComponentSizeX, ComponentSizeY, ComponentSizeZ;
+
+    public ComponentGroup(ComponentGroupIdentifier ID, int ExpectedEntities) :
+        base(ID, ExpectedEntities)
+    {
+        ComponentSizeX = Marshal.SizeOf(typeof(X));
+        ComponentsX = new byte[ExpectedEntities * ComponentSizeX];
+        ComponentSizeY = Marshal.SizeOf(typeof(Y));
+        ComponentsY = new byte[ExpectedEntities * ComponentSizeY];
+        ComponentSizeZ = Marshal.SizeOf(typeof(Z));
+        ComponentsZ = new byte[ExpectedEntities * ComponentSizeZ];
+
+        for (int e = 0; e < ExpectedEntities; e++)
+        {
+            Reset(e, false);
+        }
+    }
+
+    public unsafe override void* Get<T>(int Index)
+    {
+        int Target = GroupID.GetSelfIndexOf(typeof(T));
+        if (Target < 0 || Target >= 2)
+            return null;
+
+        byte[] TargetPtr;
+        int TargetSize; 
+        switch (Target)
+        {
+            case 0: TargetPtr = ComponentsX; TargetSize = ComponentSizeX; break;
+            case 1: TargetPtr = ComponentsY; TargetSize = ComponentSizeY; break;
+            case 2: TargetPtr = ComponentsZ; TargetSize = ComponentSizeZ; break;
+            default: throw new System.Exception("Invalid");
+        }
+
+        fixed (byte* bPtr = &TargetPtr[Index * TargetSize])
+        {
+            return bPtr;
+        }
+    }
+
+    public unsafe override void ForEach(ByteAction Action)
+    {
+        fixed (byte* xPtr = &ComponentsX[0])
+        {
+            fixed (byte* yPtr = &ComponentsY[0])
+            {
+                fixed (byte* zPtr = &ComponentsZ[0])
+                {
+                    for (int i = 0; i < IDs.Length; i++)
+                    {
+                        if (IDs[i].IsInvalid())
+                            continue;
+
+                        Action(GroupID, IDs[i], new void*[3]{
+                        xPtr + i * ComponentSizeX,
+                        yPtr + i * ComponentSizeY,
+                        zPtr + i * ComponentSizeZ,
+                    });
+                    }
+                }
+            }
+        }
+    }
+
+    public override void SetData(int Index, byte[] Data)
+    {
+        int TotalSize = ComponentSizeX + ComponentSizeY + ComponentSizeZ;
+        if (Data.Length != TotalSize)
+            return;
+
+        Array.Copy(
+            Data, 0, 
+            ComponentsX, Index * ComponentSizeX, 
+            ComponentSizeX
+        );
+        Array.Copy(
+            Data, ComponentSizeX, 
+            ComponentsY, Index * ComponentSizeY, 
+            ComponentSizeY
+        );
+        Array.Copy(
+            Data, ComponentSizeX + ComponentSizeY, 
+            ComponentsZ, Index * ComponentSizeZ, 
+            ComponentSizeZ
+        );
+    }
+
+    public override byte[] GetData(int Index)
+    {
+        byte[] Data = new byte[ComponentSizeX + ComponentSizeY + ComponentSizeZ];
+        Array.Copy(ComponentsX, Index * ComponentSizeX, Data, 0, ComponentSizeX);
+        Array.Copy(ComponentsY, Index * ComponentSizeY, Data, ComponentSizeX, ComponentSizeY);
+        Array.Copy(ComponentsZ, Index * ComponentSizeZ, Data, ComponentSizeX + ComponentSizeY, ComponentSizeZ);
+        return Data;
+    }
+
+    public unsafe override void*[] GetGroupPointers(Type[] Types)
+    {
+        List<int> Targets = new();
+        foreach (var Type in Types)
+        {
+            int Temp = GroupID.GetSelfIndexOf(Type);
+            if (Temp == -1)
+                continue;
+
+            Targets.Add(Temp);
+        }
+        if (Targets.Count == 0)
+            return null;
+
+        // can't use a list for void*
+        void*[] Result = new void*[Targets.Count + 1];
+        int ResultIndex = 0;
+        if (Targets.Contains(0))
+        {
+            fixed (byte* xPtr = &ComponentsX[0])
+            {
+                Result[ResultIndex++] = xPtr;
+            }
+        }
+        if (Targets.Contains(1))
+        {
+            fixed (byte* yPtr = &ComponentsY[0])
+            {
+                Result[ResultIndex++] = yPtr;
+            }
+        }
+        if (Targets.Contains(2))
+        {
+            fixed (byte* zPtr = &ComponentsZ[0])
+            {
+                Result[ResultIndex++] = zPtr;
+            }
+        }
+        fixed (EntityID* IDPtr = &IDs[0])
+        {
+            Result[ResultIndex++] = IDPtr;
+        }
+        return Result;
+    }
+
+    protected override void ChangeSizeComponents(int NewLength)
+    {
+        byte[] NewComponentsX = new byte[NewLength * ComponentSizeX];
+        byte[] NewComponentsY = new byte[NewLength * ComponentSizeY];
+        byte[] NewComponentsZ = new byte[NewLength * ComponentSizeZ];
+        Array.Copy(ComponentsX, NewComponentsX, ComponentsX.Length);
+        Array.Copy(ComponentsY, NewComponentsY, ComponentsY.Length);
+        Array.Copy(ComponentsZ, NewComponentsZ, ComponentsZ.Length);
+        ComponentsX = NewComponentsX;
+        ComponentsY = NewComponentsY;
+        ComponentsZ = NewComponentsZ;
+    }
+
+    protected override void ResetComponents(int Index, EntityID ID)
+    {
+        int OffsetX = Index * ComponentSizeX;
+        for (int i = 0; i < ComponentSizeX; i++)
+        {
+            ComponentsX[i + OffsetX] = 0;
+        }
+
+        int OffsetY = Index * ComponentSizeY;
+        for (int i = 0; i < ComponentSizeY; i++)
+        {
+            ComponentsY[i + OffsetY] = 0;
+        }
+
+        int OffsetZ = Index * ComponentSizeZ;
+        for (int i = 0; i < ComponentSizeZ; i++)
+        {
+            ComponentsZ[i + OffsetZ] = 0;
+        }
+    }
+
+    protected override void SwapComponents(int IndexA, int IndexB)
+    {
+        for (int i = 0; i < ComponentSizeX; i++)
+        {
+            int A = (IndexA * ComponentSizeX) + i;
+            int B = (IndexB * ComponentSizeX) + i;
+            (ComponentsX[A], ComponentsX[B]) = (ComponentsX[B], ComponentsX[A]);
+        }
+
+        for (int i = 0; i < ComponentSizeY; i++)
+        {
+            int A = (IndexA * ComponentSizeY) + i;
+            int B = (IndexB * ComponentSizeY) + i;
+            (ComponentsY[A], ComponentsY[B]) = (ComponentsY[B], ComponentsY[A]);
+        }
+
+        for (int i = 0; i < ComponentSizeZ; i++)
+        {
+            int A = (IndexA * ComponentSizeZ) + i;
+            int B = (IndexB * ComponentSizeZ) + i;
+            (ComponentsZ[A], ComponentsZ[B]) = (ComponentsZ[B], ComponentsZ[A]);
+        }
+    }
+
 }

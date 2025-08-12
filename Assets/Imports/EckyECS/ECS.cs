@@ -10,9 +10,9 @@ using UnityEngine.Assertions;
  * Central class for the ECS - should be the only class that you directly interact with
  * Is a gameservice for added convenience 
  */
-public class ECS : GameService
+public class ECS : GameService, IComponentGroupViewProvider<SparseSet>
 {
-    private Dictionary<Type, ECSSystem> Systems = new();
+    private Dictionary<Type, List<ECSSystem>> Systems = new();
 
     public Dictionary<ComponentGroupIdentifier, SparseSet> EntitySets = new();
 
@@ -47,40 +47,6 @@ public class ECS : GameService
         Profiler.EndSample();
     }
 
-    public ComponentGroupView<X> Get<X>() where X : IComponent
-    {
-        Profiler.BeginSample("ECS.Get_X");
-        ComponentGroupView<X> Groups = new();
-        foreach (var Key in EntitySets.Keys)
-        {
-            if (!Key.HasFlag(typeof(X)))
-                continue;
-
-            Groups.Add(Key);
-        }
-        Profiler.EndSample();
-        return Groups;
-    }
-
-    public ComponentGroupView<X, Y> Get<X, Y>() where X : IComponent where Y : IComponent
-    {
-        Profiler.BeginSample("ECS.Get_X_Y");
-        ComponentGroupView<X, Y> Groups = new();
-        List<Type> Reqs = new()
-        {
-            typeof(X),
-            typeof(Y)
-        };
-        foreach (var Key in EntitySets.Keys)
-        {
-            if (!Key.HasAllFlags(Reqs) )
-                continue;
-
-            Groups.Add(Key);
-        }
-        Profiler.EndSample();
-        return Groups;
-    }
 
     public void AssignComponent<T>(EntityID ID) where T : IComponent
     {
@@ -134,7 +100,15 @@ public class ECS : GameService
         if (!EntitySets.ContainsKey(GroupID))
         {
             Type[] GenTypes = GroupID.GetContainedTypes().ToArray();
-            var GenType = GenTypes.Length > 0 ? typeof(SparseSet<,>).MakeGenericType(GenTypes) : typeof(SparseSet);
+            Type GenType;
+            switch (GenTypes.Length)
+            {
+                case 0: GenType = typeof(SparseSet); break;
+                case 1: GenType = typeof(SparseSet<>).MakeGenericType(GenTypes); break;
+                case 2: GenType = typeof(SparseSet<,>).MakeGenericType(GenTypes); break;
+                case 3: GenType = typeof(SparseSet<,,>).MakeGenericType(GenTypes); break;
+                default: throw new NotImplementedException();
+            }
             var NewSet = (SparseSet)Activator.CreateInstance(GenType, new object[]
             {
                 GroupID, GetSparseSetSize(), 10
@@ -144,10 +118,10 @@ public class ECS : GameService
         return EntitySets[GroupID];
     }
 
-    public void RegisterEntity(EntityID ID, ComponentGroupIdentifier GroupID)
+    public void RegisterEntity(EntityID ID, ComponentGroupIdentifier GroupID, byte[] Data = null)
     {
         Assert.IsFalse(EntityMasks.ContainsKey(ID));
-        GetSet(GroupID).Add(ID);
+        GetSet(GroupID).Add(ID, Data);
         EntityMasks.Add(ID, GroupID);
     }
 
@@ -156,19 +130,29 @@ public class ECS : GameService
         if (!EntityMasks.ContainsKey(ID))
         {
             EntityMasks.Add(ID, EmptyGroup);
-            EntitySets[EmptyGroup].Add(ID);
+            EntitySets[EmptyGroup].Add(ID, null);
         }
         return EntityMasks[ID];
     }
 
-    public bool TryGetSystem<T>(Type Type, out T System) where T : ECSSystem
+    public bool TryGetSystem<T>(out T System) where T : ECSSystem
     {
         System = default;
-        if (!Systems.ContainsKey(Type))
+        if (!TryGetSystems<T>(out var SystemList))
             return false;
 
-        System = (T)Systems[Type];
+        System = (T)SystemList[0];
         return true;
+    }
+
+    public bool TryGetSystems<T>(out List<ECSSystem> SystemList) where T : ECSSystem
+    {
+        SystemList = default;
+        if (!Systems.ContainsKey(typeof(T)))
+            return false;
+
+        SystemList = Systems[typeof(T)];
+        return SystemList.Count != 0;
     }
 
 
@@ -181,6 +165,7 @@ public class ECS : GameService
         EntityMasks = new();
         EmptyGroup = new();
         GetSet(EmptyGroup);
+        AddSystem(new LocationSystem());
         ForEachSystem(_ => _.StartSystem());
         _OnInit?.Invoke(this);
     }
@@ -189,13 +174,22 @@ public class ECS : GameService
     {
         foreach (var Entry in Systems)
         {
-            Action?.Invoke(Entry.Value);
+            foreach (var System in Entry.Value)
+            {
+                Action?.Invoke(System);
+            }
         }
     }
 
     public void AddSystem(ECSSystem System)
     {
-        Systems.Add(System.GetType(), System);
+        var Type = System.GetType();
+        if (!Systems.ContainsKey(Type))
+        {
+            Systems.Add(System.GetType(), new());
+        }
+        Systems[Type].Add(System);
+
         if (!IsInit)
             return;
 
@@ -215,8 +209,21 @@ public class ECS : GameService
     {
         foreach (var Pair in Systems)
         {
-            Pair.Value.Destroy();
+            foreach (var System in Pair.Value)
+            {
+                System.Destroy();
+            }
         }
+    }
+
+    public Dictionary<ComponentGroupIdentifier, SparseSet> GetViewSet()
+    {
+        return EntitySets;
+    }
+
+    public IComponentGroupViewProvider<SparseSet> GetProvider()
+    {
+        return this;
     }
 
     public const int MaxEntities = 50000;

@@ -17,9 +17,7 @@ float3 WorldPos;
 float2 TexSize;
 float HeightCutoff;
 float InverseScale;
-
-// keep this same to TTGenerateCompute.Bands
-static const float Bands = 10;
+int Bands;
 
 shared static uint ThreadCount = 1;
 
@@ -52,19 +50,13 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 	float3 MinPos = PixelToWorld(Pixel);
 	float3 MaxPos = PixelToWorld(NextPixel);
 	float Length = distance(MinPos.xz, MaxPos.xz) / ThreadCount;;
-	//float3 AB = normalize(MaxPos - MinPos);
-	//float3 ABNorm = cross(AB, float3(0, 1, 0));
-	//float3 Norm = cross(ABNorm, AB);
-	//float Align = 1 ;//dot(Norm, float3(0, 1, 0));
-	//
-	//float4 HeightColor = 1;//HeightMap[Pixel];
-	//bool bShouldRender = 
-	//	HeightColor.x > HeightCutoff &&
-	//	Align > 0.8;
+	
+	bool bHighEnough = MinPos.y > 2;
+	bool bShouldRender = bHighEnough;
 	
 	// early return might not be best for shader performance
-	//if (!bShouldRender)
-	//	return;
+	if (!bShouldRender)
+		return;
 
 	float3 Pos = MinPos;
 	Pos.x += hash12(Pos.xz) * Length * .5;
@@ -74,7 +66,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 	RenderInfo Info;
 	Info.Pixel = Pixel;
 	Info.WorldMin = MinPos;
-	Info.WorldMax = MaxPos;//float3(NextPixel, Length);
+	Info.WorldMax = MaxPos;
 	Info.Pos = Pos;
 	
 	PositionBuffer.Append(Info);

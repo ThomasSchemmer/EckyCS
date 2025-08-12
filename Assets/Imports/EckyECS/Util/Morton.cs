@@ -58,6 +58,15 @@ public unsafe struct MortonSIMDJob : IJobParallelFor
         SIMDCall(i);
         StandardCall(i);
         LeftOverCall(i);
+
+        //MortonCodes[0] = 1;
+        //MortonCodes[1] = 2;
+        //MortonCodes[2] = 4;
+        //MortonCodes[3] = 5;
+        //MortonCodes[4] = 19;
+        //MortonCodes[5] = 24;
+        //MortonCodes[6] = 25;
+        //MortonCodes[7] = 30;
     }
 
     /** SIMD write a chunk of memory, starting at a chunked offset according to thread index */
@@ -251,5 +260,5 @@ public class Morton {
             Bytes.Reverse().Select(x => Convert.ToString(x, 2).PadLeft(8, '0')));
     }
 
-    private readonly static short CenterOffset = 0;// short.MaxValue;
+    private readonly static int CenterOffset = short.MaxValue;
 }

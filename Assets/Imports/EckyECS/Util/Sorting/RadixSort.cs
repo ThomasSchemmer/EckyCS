@@ -120,7 +120,7 @@ public unsafe class RadixSort
         [ReadOnly]
         public NativeArray<int> Counts;
         [ReadOnly]
-        public NativeArray<EntityID> IDs;
+        public NativeArray<int> IDIndices;
 
         public int LSBIndex;
         public uint Mask;
@@ -130,7 +130,7 @@ public unsafe class RadixSort
         [NativeDisableParallelForRestriction]
         public NativeArray<uint> Target;
         [NativeDisableParallelForRestriction]
-        public NativeArray<EntityID> TargetIDs;
+        public NativeArray<int> TargetIDIndices;
 
         public int Iteration;
 
@@ -160,7 +160,7 @@ public unsafe class RadixSort
 
             int TargetOffset = GlobalPrefixCounts[Value] + PrefixCounts[BucketIndex] + LocalCounts[Value];
             Target[TargetOffset] = MortonCode;
-            TargetIDs[TargetOffset] = IDs[Offset];
+            TargetIDIndices[TargetOffset] = IDIndices[Offset];
             LocalCounts[Value]++;
         }
     }

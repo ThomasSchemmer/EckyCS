@@ -14,4 +14,8 @@ public struct TransformComponent : IComponent
     {
         return new(PosX, PosY, PosZ);
     }
+    public readonly Vector2 GetPositionXZ()
+    {
+        return new(PosX, PosZ);
+    }
 }

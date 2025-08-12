@@ -8,7 +8,7 @@ using UnityEngine;
  * Should only be created once per project
  * If you want to add / query tags, do it here
  */
-[CreateAssetMenu(fileName = "GameplayTags", menuName = "ScriptableObjects/GameplayTags", order = 1)]
+[CreateAssetMenu(fileName = "GameplayTags", menuName = "ScriptableObjects/GAS/Tags", order = 1)]
 public class GameplayTags : ScriptableObject
 {
     public GameplayTagSourceContainer Container = new();

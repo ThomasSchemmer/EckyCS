@@ -134,7 +134,7 @@ public class SparseSet
         return Values.IDs[TargetIndex].Equals(ID);
     }
 
-    public void Add(EntityID ID)
+    public void Add(EntityID ID, byte[] Data)
     {
         Profiler.BeginSample("ECS.SparseSet.Add");
         var Page = GetPage(ID, true);
@@ -153,8 +153,17 @@ public class SparseSet
         }
 
         Page.Indices[Index] = GetFreeValueIndex();
-        Values?.Set(Page.Indices[Index], ID);
+        Values?.Set(Page.Indices[Index], ID, true, Data);
         Profiler.EndSample();
+    }
+
+    public byte[] GetData(EntityID ID)
+    {
+        var Index = GetTargetIndex(ID);
+        if (Index == -1)
+            return null;
+
+        return Values?.GetData(Index);
     }
 
     public void Remove(EntityID ID)
@@ -314,6 +323,15 @@ public class SparseSet<X, Y> : SparseSet where X : struct, IComponent where Y : 
         base(ID, NumPages, ExpectedEntities)
     {
         Values = new ComponentGroup<X, Y>(ID, ExpectedEntities);
+        FillWithEmpty(0, ExpectedEntities);
+    }
+}
+public class SparseSet<X, Y, Z> : SparseSet where X : struct, IComponent where Y : struct, IComponent where Z : struct, IComponent
+{
+    public SparseSet(ComponentGroupIdentifier ID, int NumPages, int ExpectedEntities) :
+        base(ID, NumPages, ExpectedEntities)
+    {
+        Values = new ComponentGroup<X, Y, Z>(ID, ExpectedEntities);
         FillWithEmpty(0, ExpectedEntities);
     }
 }

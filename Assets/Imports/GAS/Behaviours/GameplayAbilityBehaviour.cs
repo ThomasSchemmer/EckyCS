@@ -8,10 +8,12 @@ public class GameplayAbilityBehaviour : MonoBehaviour
     public GameplayAbilitySystem.Type Type = GameplayAbilitySystem.Type.DEFAULT;
     public AttributeSet Attributes;
     public List<GameplayAbility> GrantedOnStart = new();
+    
     private List<GameplayEffect> ActiveEffects = new();
     private List<GameplayEffect> MarkedForRemovalEffects = new();
     private List<GameplayAbility> GrantedAbilities = new();
     private GameplayTagMask GameplayTagMask = new();
+    private SerializedDictionary<Guid, List<GameplayAbilityCue>> ActiveCues = new();
 
     private bool bIsInitialized = false;
 
@@ -27,6 +29,14 @@ public class GameplayAbilityBehaviour : MonoBehaviour
             HandleOnStartAbilities(System);
 
             System.Register(this, Type);
+        });
+    }
+
+    private void OnDestroy()
+    {
+        Game.RunAfterServiceInit((GameplayAbilitySystem System) =>
+        {
+            System.DeRegister(this, Type);
         });
     }
 
@@ -50,7 +60,10 @@ public class GameplayAbilityBehaviour : MonoBehaviour
             {
                 Ability.Activate();
             }
-            Ability.Tick(Delta);
+            if (Ability.ShouldTick())
+            {
+                Ability.Tick(Delta);
+            }
         }
     }
 
@@ -105,11 +118,27 @@ public class GameplayAbilityBehaviour : MonoBehaviour
         }
     }
 
+    private void TrySpawnCues(Guid TagID)
+    {
+        Game.RunAfterServiceInit((GameplayAbilitySystem System) =>
+        {
+            foreach (var Cue in System.GetCuesForTag(this, TagID))
+            {
+                if (!ActiveCues.ContainsKey(TagID))
+                {
+                    ActiveCues.Add(TagID, new());
+                }
+                ActiveCues[TagID].Add(Cue);
+            }
+        });
+    }
+
     public void AddTagByID(Guid ID) {
         GameplayTagMask.Set(ID);
 
+        TrySpawnCues(ID);
         _OnTagsChanged?.Invoke();
-        _OnTagAdded?.Invoke(ID);
+        _OnTagAdded?.Invoke(this, ID);
     }
 
     public void AddTagsByID(List<Guid> IDs)
@@ -125,7 +154,7 @@ public class GameplayAbilityBehaviour : MonoBehaviour
         GameplayTagMask.Remove(ID);
 
         _OnTagsChanged?.Invoke();
-        _OnTagAdded?.Invoke(ID);
+        _OnTagRemoved?.Invoke(this, ID);
     }
 
     public void RemoveTags(List<Guid> IDs)
@@ -241,6 +270,7 @@ public class GameplayAbilityBehaviour : MonoBehaviour
     public void GrantAbility(GameplayAbility Ability)
     {
         GrantedAbilities.Add(Ability);
+        Ability.OnGranted();
         Ability.AssignedToBehaviour = this;
     }
 
@@ -260,8 +290,8 @@ public class GameplayAbilityBehaviour : MonoBehaviour
     }
 
     public delegate void OnTagsChanged();
-    public delegate void OnTagAdded(Guid Tag);
-    public delegate void OnTagRemoved(Guid Tag);
+    public delegate void OnTagAdded(GameplayAbilityBehaviour Behaviour, Guid Tag);
+    public delegate void OnTagRemoved(GameplayAbilityBehaviour Behaviour, Guid Tag);
     public OnTagsChanged _OnTagsChanged;
     public OnTagAdded _OnTagAdded;
     public OnTagRemoved _OnTagRemoved;

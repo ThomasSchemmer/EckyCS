@@ -1,20 +1,17 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 
 public class MovementController : IMovementComponent
 {
     [Header("Movement")]
-    public float MaxVelocity = 7;
-    public float MaxSprintVelocity = 15;
     public float MovementSpeed = 5;
     public float SprintMultiplier = 1.5f;
     public float CrouchMultiplier = 0.4f;
     public float JumpForce = 8;
     public float AirMultiplier = 0.4f;
-    public float Drag = 0.9f;
-    public float AirDrag = 0.4f;
 
     [Header("Crouch")]
     public float CrouchHeight = 0.4f;
@@ -25,9 +22,13 @@ public class MovementController : IMovementComponent
     public float SpringForce = 10;
     public float SpringDamp = 3;
 
+    [Header("Camera")]
+    public float Sensitity = 400;
+    public float Smoothness = 1;
+
     private bool bIsJumpReady = true;
     private int JumpCounter = JumpInitialCounter;
-    private Camera Cam;
+    public Camera Cam;
 
     public override void BaseInit()
     {
@@ -47,7 +48,6 @@ public class MovementController : IMovementComponent
         bool bShouldResetJump = Controller.IsGrounded() && !Controller.IsJumping();
         JumpCounter = bShouldResetJump ? JumpInitialCounter : JumpCounter;
         Controller.AddDebugText("Jump: " + JumpCounter + "\n");
-        UpdateDrag();
     }
 
     public override void FixedUpdateMovement()
@@ -76,26 +76,13 @@ public class MovementController : IMovementComponent
         transform.localScale = new(transform.localScale.x, y, transform.localScale.z);
     }
 
-
-    private void UpdateDrag()
-    {
-        var Rb = Controller.GetRigidbody();
-        Rb.drag = Controller.IsHooking() ? 0 :
-            Controller.IsGrounded() ? Drag : AirDrag;
-
-        if (!Input.GetKeyDown(Controller.CrouchKey))
-            return;
-
-        Rb.AddForce(Vector3.down * 5, ForceMode.Impulse);
-    }
-
     public override Vector3 GetMovement()
     {
         Vector3 Movement = new();
         float H = Input.GetAxis("Horizontal");
         float V = Input.GetAxis("Vertical");
-        Movement += V * transform.forward;
-        Movement += H * transform.right;
+        Movement += V * new Vector3(1, 0, 1);
+        Movement += H * new Vector3(1, 0, -1);
 
         float MoveMulti = 1;
         switch (Controller.State)

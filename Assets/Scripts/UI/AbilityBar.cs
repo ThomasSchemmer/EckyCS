@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class AbilityBarScreen : MonoBehaviour
+public class AbilityBar : MonoBehaviour
 {
     public Material AbilityMat;
     private List<AbilityScreen> AbilityScreens = new();
@@ -30,16 +30,21 @@ public class AbilityBarScreen : MonoBehaviour
         if (!Game.TryGetService(out IconFactory Icons) || PlayerBehaviour == null)
             return;
 
+        var Abilities = PlayerBehaviour.GetGrantedAbilities();
+        int AbilityCount = Mathf.Min(Abilities.Count, AbilityBar.AbilityCount);
         int TotalWidth = AbilityCount * SlotWidth + (AbilityCount - 1) * SlotOffset;
         RectTransform Rect = transform as RectTransform;
         Rect.sizeDelta = new(TotalWidth, SlotWidth);
 
-        var Abilities = PlayerBehaviour.GetGrantedAbilities();
 
         for (int i = 0; i < AbilityCount; i++)
         {
             bool bHasAbility = i < Abilities.Count;
-            Ability Ability = (Ability)(bHasAbility ? Abilities[i] : null);
+            GameplayAbility Ability = (bHasAbility ? Abilities[i] : null);
+            if (Ability == null)
+                continue;
+
+            Ability.ActivationKey = (KeyCode)((int)KeyCode.Alpha1 + i);
             GameObject AbilityGO = Icons.GetVisualsForAbility(transform, Ability);
 
             RectTransform AbilityRect = AbilityGO.GetComponent<RectTransform>();

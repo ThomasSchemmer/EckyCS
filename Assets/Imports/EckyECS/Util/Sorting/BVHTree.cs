@@ -1,6 +1,9 @@
+using log4net.Util;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -43,30 +46,29 @@ using UnityEngine;
  *      https://docs.unity3d.com/6000.1/Documentation/ScriptReference/Jobs.IJobParallelForTransform.html
  *      
  */
-public unsafe class BVHTree : ILocationProvider
+public unsafe class BVHTree 
 {
     public TransformComponent* ComponentsPtr;
     public EntityID* IDsPtr;
     public int Count;
 
-    // only Nodes, IDs and Components are persistent!
+    // only FinalNodes, (Original/Final)IDs and Components are persistent!
     private NativeArray<TransformComponent> Components;
     private NativeArray<EntityID> OriginalIDs;
-    // but we need two nodes as we can only access the one we are currently
-    // not writing to!
-    private NativeArray<RadixTree.Node> NodesA;
-    private NativeArray<RadixTree.Node> NodesB;
-    private NativeArray<EntityID> FinalIDs;
+    private NativeArray<int> FinalIDIndices;
+    private NativeArray<RadixTree.Node> FinalNodes;
 
-    private NativeArray<uint> MortonCodes;
     private NativeArray<int> Counts;                // within a thread
     private NativeArray<int> PrefixCounts;          // within a bucket
     private NativeArray<int> GlobalPrefixCounts;    // overall 
     private NativeArray<int> MortonParents;
     private NativeArray<int> NodeChildren;
-    private NativeArray<uint> Target;
-    private NativeArray<EntityID> TargetIDsA;
-    private NativeArray<EntityID> TargetIDsB;
+    // the following native arrays are flipflopping
+    private NativeArray<uint> MortonCodesA;
+    private NativeArray<uint> MortonCodesB;
+    private NativeArray<int> TargetIDIndicesA;
+    private NativeArray<int> TargetIDIndicesB;
+    private NativeArray<RadixTree.Node> Nodes;
 
     private JobHandle Handle;
     private AtomicSafetyHandle ComponentsSafetyHandle;
@@ -76,10 +78,8 @@ public unsafe class BVHTree : ILocationProvider
     
     public void Init()
     {
-        // uses flipflop bufers: nodes must be readable (which cannot be simultaneously accessed by jobs)
-        NodesA = new(Count - 1, Allocator.Persistent);
-        NodesB = new(Count - 1, Allocator.Persistent);
-        FinalIDs = new(Count, Allocator.Persistent);
+        FinalIDIndices = new(Count, Allocator.Persistent);
+        FinalNodes = new(Count - 1, Allocator.Persistent);
 
         // since we dont want to actually change the original components/IDs we use a ptr
         Components = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<TransformComponent>(ComponentsPtr, Count, Allocator.None);
@@ -97,17 +97,24 @@ public unsafe class BVHTree : ILocationProvider
 
     private void InitTemp()
     {
-        MortonCodes = new(Count, Allocator.TempJob);
+        MortonCodesA = new(Count, Allocator.TempJob);
+
+        Nodes = new(Count - 1, Allocator.TempJob);
 
         Counts = new(ThreadCount * BucketSize + BucketSize, Allocator.TempJob);
         PrefixCounts = new(ThreadCount * BucketSize + BucketSize, Allocator.TempJob);
         GlobalPrefixCounts = new(BucketSize, Allocator.TempJob);
 
-        Target = new(Count, Allocator.TempJob);
-        TargetIDsA = new(Count, Allocator.TempJob);
-        TargetIDsB = new(Count, Allocator.TempJob);
-        MortonParents = new(MortonCodes.Length, Allocator.TempJob);
-        NodeChildren = new(NodesA.Length, Allocator.TempJob);
+        MortonCodesB = new(Count, Allocator.TempJob);
+        // initialize with "standard" distribution
+        TargetIDIndicesA = new(Count, Allocator.TempJob);
+        for (int i = 0; i < TargetIDIndicesA.Length; i++)
+        {
+            TargetIDIndicesA[i] = i;
+        }
+        TargetIDIndicesB = new(Count, Allocator.TempJob);
+        MortonParents = new(MortonCodesA.Length, Allocator.TempJob);
+        NodeChildren = new(Nodes.Length, Allocator.TempJob);
     }
 
     public void Run()
@@ -117,8 +124,7 @@ public unsafe class BVHTree : ILocationProvider
 
         int Start = 0;
         InitTemp();
-        ClearArray(GetWriteNodeArray());
-        ClearArray(FinalIDs);
+        ClearArray(Nodes);
         Handle = ComputeMortonCodes(Start);
 
         for (int i = Start; i < GetMaxIteration(); i++)  
@@ -150,7 +156,7 @@ public unsafe class BVHTree : ILocationProvider
         MortonSIMDJob Job = new()
         {
             Components = Components,
-            MortonCodes = bIsEven ? MortonCodes : Target,
+            MortonCodes = bIsEven ? MortonCodesA : MortonCodesB,
             WorkerCount = ThreadCount,
         };
 
@@ -164,8 +170,8 @@ public unsafe class BVHTree : ILocationProvider
         RadixSort.Count Job = new()
         {
             Counts = Counts,
-            MortonCodes = bIsEven ? MortonCodes : Target,
-            Target = bIsEven ? Target : MortonCodes,
+            MortonCodes = bIsEven ? MortonCodesA : MortonCodesB,
+            Target = bIsEven ? MortonCodesB : MortonCodesA,
             LSBIndex = LSBIndex,
             Mask = Mask,
             ThreadCount = ThreadCount,
@@ -179,7 +185,7 @@ public unsafe class BVHTree : ILocationProvider
         bool bIsEven = (Index % 2) == 0;
         RadixSort.PrefixCount Job = new()
         {
-            Target = bIsEven ? Target : MortonCodes,
+            Target = bIsEven ? MortonCodesB : MortonCodesA,
             Counts = Counts,
             PrefixCounts = PrefixCounts,
             BucketSize = BucketSize,
@@ -198,10 +204,10 @@ public unsafe class BVHTree : ILocationProvider
         {
             PrefixCounts = PrefixCounts,
             GlobalPrefixCounts = GlobalPrefixCounts,
-            MortonCodes = bIsEven ? MortonCodes : Target,
-            Target = bIsEven ? Target : MortonCodes,
-            IDs = bIsFirst ? OriginalIDs : (bIsEven ? TargetIDsA : TargetIDsB),
-            TargetIDs = bIsLast ? FinalIDs : (bIsEven ? TargetIDsB : TargetIDsA),
+            MortonCodes = bIsEven ? MortonCodesA : MortonCodesB,
+            Target = bIsEven ? MortonCodesB : MortonCodesA,
+            IDIndices = bIsEven ? TargetIDIndicesA : TargetIDIndicesB,
+            TargetIDIndices = bIsEven ? TargetIDIndicesB : TargetIDIndicesA,
 
             LSBIndex = LSBIndex,
             Mask = Mask,
@@ -217,9 +223,9 @@ public unsafe class BVHTree : ILocationProvider
     {
         RadixTree.Create Job = new()
         {
-            MortonCodes = MortonCodes,
+            MortonCodes = MortonCodesA,
             ThreadCount = ThreadCount,
-            Nodes = GetWriteNodeArray(),
+            Nodes = Nodes,
             MortonParents = MortonParents
         };
         return Job.Schedule(ThreadCount, 1, Dependency);
@@ -229,9 +235,9 @@ public unsafe class BVHTree : ILocationProvider
     {
         RadixTree.CalculateBB Job = new()
         {
-            MortonCodes = MortonCodes,
+            MortonCodes = MortonCodesA,
             MortonParents = MortonParents,
-            Nodes = GetWriteNodeArray(),
+            Nodes = Nodes,
             NodeChildren = NodeChildren,
             ThreadCount = ThreadCount,
         };
@@ -257,19 +263,9 @@ public unsafe class BVHTree : ILocationProvider
         );
     }
 
-    private NativeArray<RadixTree.Node> GetWriteNodeArray()
-    {
-        return bWritesToNodesA ? NodesA : NodesB;
-    }
-
-    private NativeArray<RadixTree.Node> GetReadNodeArray()
-    {
-        return bWritesToNodesA ? NodesB : NodesA;
-    }
-
     public void Destroy()
     {
-        if (!Handle.IsCompleted)
+        if (!Handle.IsCompleted || bIsActive)
         {
             Handle.Complete();
         }
@@ -277,14 +273,14 @@ public unsafe class BVHTree : ILocationProvider
         if (Counts.IsCreated) Counts.Dispose();
         if (PrefixCounts.IsCreated) PrefixCounts.Dispose();
         if (GlobalPrefixCounts.IsCreated) GlobalPrefixCounts.Dispose();
-        if (MortonCodes.IsCreated) MortonCodes.Dispose();
-        if (Target.IsCreated) Target.Dispose();
-        if (NodesA.IsCreated) NodesA.Dispose();
-        if (NodesB.IsCreated) NodesB.Dispose();
-        if (TargetIDsA.IsCreated) TargetIDsA.Dispose();
-        if (TargetIDsB.IsCreated) TargetIDsB.Dispose();
+        if (MortonCodesA.IsCreated) MortonCodesA.Dispose();
+        if (MortonCodesB.IsCreated) MortonCodesB.Dispose();
+        if (Nodes.IsCreated) Nodes.Dispose();
+        if (TargetIDIndicesA.IsCreated) TargetIDIndicesA.Dispose();
+        if (TargetIDIndicesB.IsCreated) TargetIDIndicesB.Dispose();
         if (MortonParents.IsCreated) MortonParents.Dispose();
-        if (FinalIDs.IsCreated) FinalIDs.Dispose();
+        if (FinalIDIndices.IsCreated) FinalIDIndices.Dispose();
+        if (FinalNodes.IsCreated) FinalNodes.Dispose();
 
         // dont need to dispose components / IDs, as they are non-alloc calls
         if (!AtomicSafetyHandle.IsDefaultValue(ComponentsSafetyHandle) && AtomicSafetyHandle.IsHandleValid(ComponentsSafetyHandle))
@@ -310,27 +306,32 @@ public unsafe class BVHTree : ILocationProvider
 
         Handle.Complete();
 
+        FinalIDIndices.CopyFrom(TargetIDIndicesA);
+        FinalNodes.CopyFrom(Nodes);
+
         //Validate();
-        MortonCodes.Dispose();
         Counts.Dispose();
         PrefixCounts.Dispose();
         GlobalPrefixCounts.Dispose();
         MortonParents.Dispose();
         NodeChildren.Dispose();
-        Target.Dispose();
-        TargetIDsA.Dispose();
-        TargetIDsB.Dispose();
+        MortonCodesA.Dispose();
+        MortonCodesB.Dispose();
+        TargetIDIndicesA.Dispose();
+        TargetIDIndicesB.Dispose();
+        Nodes.Dispose();
 
         Handle = default;
         bIsActive = false;
         bWritesToNodesA = !bWritesToNodesA;
+
     }
 
     public void Debug()
     {
         /** Needs to be called from OnDrawGizmos() */
         Gizmos.color = Color.green;
-        foreach (var Node in GetReadNodeArray())
+        foreach (var Node in Nodes)
         {
             Vector3 Center = (Node.Min + Node.Max) / 2f;
             Vector3 Range = Node.Max - Center;
@@ -340,22 +341,69 @@ public unsafe class BVHTree : ILocationProvider
 
     private void Validate()
     {
-        for (int i = 1; i < MortonCodes.Length; i++)
+        for (int i = 1; i < MortonCodesA.Length; i++)
         {
-            if (MortonCodes[i] >= MortonCodes[i - 1])
+            if (MortonCodesA[i] >= MortonCodesA[i - 1])
                 continue;
 
-            UnityEngine.Debug.Log("Found wrong at " + i + ": " + MortonCodes[i - 1] + " !< " + MortonCodes[i]);
+            UnityEngine.Debug.Log("Found wrong at " + i + ": " + MortonCodesA[i - 1] + " !< " + MortonCodesA[i]);
         }
     }
 
-    public List<EntityID> GetAllAt(Vector3 Position, float Range)
+    public unsafe List<EntityID> GetAllAt(Rect Target)
     {
-        return null;
+        if (FinalNodes.Length == 0)
+        {
+            var Temp = new Vector2(Components[0].PosX, Components[0].PosZ);
+            if (Target.Contains(Temp)) 
+                return new List<EntityID>() { OriginalIDs[FinalIDIndices[0]] };
+            else 
+                return new();
+        }
+
+        return GetAllAtRec(ref FinalNodes, 0, Target);
+    }
+
+    private List<EntityID> GetAllAtRec(ref NativeArray<RadixTree.Node> Nodes, int Index, Rect Target)
+    {
+        List<EntityID> List = new();
+        var Node = Nodes[Index];
+        Vector3 Size = Node.Max - Node.Min;
+        Rect Temp = new(new Vector2(Node.Min.x, Node.Min.z), new(Size.x, Size.z));
+        if (!Temp.Overlaps(Target))
+            return List;
+
+        Node.GetLeft(out var LeftIndex, out var bIsLeftLeaf);
+        Node.GetRight(out var RightIndex, out var bIsRightLeaf);
+        if (bIsLeftLeaf)
+        {
+            var LeftTemp = Components[FinalIDIndices[LeftIndex]].GetPositionXZ();
+            if (Target.Contains(LeftTemp))
+            {
+                List.Add(OriginalIDs[FinalIDIndices[LeftIndex]]);
+            }
+        }
+        else
+        {
+            List.AddRange(GetAllAtRec(ref Nodes, LeftIndex, Target));
+        }
+        if (bIsRightLeaf)
+        {
+            var RightTemp = Components[FinalIDIndices[RightIndex]].GetPositionXZ();
+            if (Target.Contains(RightTemp))
+            {
+                List.Add(OriginalIDs[FinalIDIndices[RightIndex]]);
+            }
+        }
+        else
+        {
+            List.AddRange(GetAllAtRec(ref Nodes, RightIndex, Target));
+        }
+        return List;
     }
 
     private const int LSBWidth = 2;
     private const int MortonWidth = 32;
     private const int BucketSize = 4;
-    private readonly static int ThreadCount = JobsUtility.JobWorkerCount;
+    private readonly static int ThreadCount = 1;// JobsUtility.JobWorkerCount;
 }

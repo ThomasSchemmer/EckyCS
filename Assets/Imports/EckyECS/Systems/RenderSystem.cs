@@ -21,7 +21,7 @@ public class RenderSystem : MonoBehaviour, ECSSystem
 
     private ECS ECS;
 
-    private readonly Dictionary<ComponentGroupIdentifier, RenderInfo> Infos = new();
+    public Dictionary<ComponentGroupIdentifier, RenderInfo> Infos = new();
 
     public void StartSystem() {
 
@@ -39,10 +39,6 @@ public class RenderSystem : MonoBehaviour, ECSSystem
 
     private unsafe void Register(ComponentGroupIdentifier Group, void*[] Ptrs, int Count)
     {
-        int Target = Group.GetSelfIndexOf(typeof(TransformComponent));
-        if (Target < 0)
-            return;
-
         if (Infos.ContainsKey(Group) && Count > Infos[Group].Count)
         {
             Infos[Group].Dispose();
@@ -63,7 +59,7 @@ public class RenderSystem : MonoBehaviour, ECSSystem
         foreach (var Pair in Infos)
         {
             var Info = Pair.Value;
-            Graphics.RenderMeshIndirect(Info.RP, Mesh, Info.CommandBuffer, RenderInfo.CommandCount);
+            Graphics.RenderMeshIndirect(Info.RP, Mesh, Info.ArgsBuffer, RenderInfo.CommandCount);
         }
         Profiler.EndSample();
     }
@@ -74,7 +70,7 @@ public class RenderSystem : MonoBehaviour, ECSSystem
             return;
 
         Profiler.BeginSample("ECS.RenderSystem.Tick");
-        ECS.Get<TransformComponent, SpriteComponent>().ForEachGroup((Group, Ptrs, Count) =>
+        ECS.GetProvider().Get<TransformComponent, SpriteComponent>().ForEachGroup((Group, Ptrs, Count) =>
         {
             Register(Group, Ptrs, Count);
         });
@@ -96,11 +92,11 @@ public class RenderSystem : MonoBehaviour, ECSSystem
     }
 
     /** Holds necessary data for rendering a single group */
-    private unsafe class RenderInfo
+    public unsafe class RenderInfo
     {
         public GraphicsBuffer PositionBuffer;
         public GraphicsBuffer IDBuffer;
-        public GraphicsBuffer CommandBuffer;
+        public GraphicsBuffer ArgsBuffer;
         public IndirectDrawIndexedArgs[] CommandData;
         public const int CommandCount = 1;
         public RenderParams RP;
@@ -114,8 +110,8 @@ public class RenderSystem : MonoBehaviour, ECSSystem
             PositionBuffer = null;
             IDBuffer?.Dispose();
             IDBuffer = null;
-            CommandBuffer?.Dispose();
-            CommandBuffer = null;
+            ArgsBuffer?.Dispose();
+            ArgsBuffer = null;
             Destroy(Mat);
             Mat = null;
         }
@@ -128,7 +124,7 @@ public class RenderSystem : MonoBehaviour, ECSSystem
             RP.matProps = new MaterialPropertyBlock();
             Cam = Camera.main;
 
-            CommandBuffer = new GraphicsBuffer(Target.IndirectArguments, CommandCount, IndirectDrawIndexedArgs.size);
+            ArgsBuffer = new GraphicsBuffer(Target.IndirectArguments, CommandCount, IndirectDrawIndexedArgs.size);
             CommandData = new IndirectDrawIndexedArgs[CommandCount];
             PositionBuffer = new GraphicsBuffer(Target.Structured, Count, GetPositionStride());
             IDBuffer = new GraphicsBuffer(Target.Structured, Count, GetIDStride());
@@ -141,13 +137,9 @@ public class RenderSystem : MonoBehaviour, ECSSystem
 
         public void Update(void*[] Ptrs, int Count)
         {
-            int Target = GroupID.GetSelfIndexOf(typeof(TransformComponent));
-            if (Target < 0)
-                return;
-
             // would be good to move this into its own functions, but calling generic functions with 
             // ref params and no way to infer their type is.. mid at best. So we dupe the code
-            NativeArray<TransformComponent> Transforms = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<TransformComponent>(Ptrs[Target], Count, Allocator.None);
+            NativeArray<TransformComponent> Transforms = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<TransformComponent>(Ptrs[0], Count, Allocator.None);
             NativeArray<EntityID> IDs = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<EntityID>(Ptrs[Ptrs.Length - 1], Count, Allocator.None);
 
             AtomicSafetyHandle TransformSH = AtomicSafetyHandle.Create();
@@ -166,7 +158,7 @@ public class RenderSystem : MonoBehaviour, ECSSystem
             // we don't need to deallocate the NativeArrays as they are repurposed pointers anyway
 
             CommandData[0].instanceCount = (uint)Count;
-            CommandBuffer.SetData(CommandData);
+            ArgsBuffer.SetData(CommandData);
             RP.matProps.SetFloat("_Count", Count);
             Vector3 CamForward = Vector3.Normalize(Vector3.Cross(new(0, 1, 0), Cam.transform.forward));
             RP.matProps.SetVector("_CamForward", CamForward);
