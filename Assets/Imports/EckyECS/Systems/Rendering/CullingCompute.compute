@@ -1,0 +1,31 @@
+#pragma kernel Cull
+
+#define THREADCOUNT 8
+
+AppendStructuredBuffer<float3> PositionAppendBuffer;
+RWStructuredBuffer<float3> PositionBuffer;
+RWByteAddressBuffer CullingDataBuffer;
+
+uint GroupCountX, GroupCountY, GroupCountZ;
+uint TotalCount;
+uint TargetPlant;
+uint DataStride;
+
+[numthreads(THREADCOUNT,THREADCOUNT,1)]
+void Cull (uint3 GroupID : SV_GROUPID, uint3 ThreadID : SV_GROUPTHREADID)
+{
+	uint GroupIndex = GroupID.z * GroupCountY * GroupCountX + GroupID.y * GroupCountX + GroupID.x;
+	uint ThreadIndex = ThreadID.z * THREADCOUNT * THREADCOUNT + ThreadID.y * THREADCOUNT + ThreadID.x;
+	uint TotalThreadCount = THREADCOUNT * THREADCOUNT * 1;
+	uint TotalIndex = GroupIndex * TotalThreadCount + ThreadIndex;
+	if (TotalIndex >= TotalCount)
+		return;
+
+	uint Offset = TotalIndex * DataStride;
+	uint Data = CullingDataBuffer.Load(Offset);
+
+	if (Data != TargetPlant)
+		return;
+
+	PositionAppendBuffer.Append(PositionBuffer[TotalIndex]);
+}

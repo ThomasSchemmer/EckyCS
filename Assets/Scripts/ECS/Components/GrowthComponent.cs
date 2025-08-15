@@ -7,4 +7,10 @@ using UnityEngine;
 public struct GrowthComponent : IComponent
 {
     public int Growth;
+    public PlantType Plant; 
+
+    public enum PlantType
+    {
+        Wheat
+    }
 }

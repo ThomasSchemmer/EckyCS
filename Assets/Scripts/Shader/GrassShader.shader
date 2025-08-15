@@ -57,7 +57,7 @@ Shader "Custom/Grass"
 	            float3 Pos;
             };
 
-            StructuredBuffer<RenderInfo> PositionBuffer;
+            StructuredBuffer<float3> PositionBuffer;
             
             struct appdata
             {
@@ -92,10 +92,10 @@ Shader "Custom/Grass"
                 float3 Offset = 
                     Vert.x * _CamRight.xyz +
                     Vert.y * _CamUp.xyz;
-                float3 Pos = PositionBuffer[InstanceID].Pos + Offset * 2;
+                float3 Pos = PositionBuffer[InstanceID] + Offset * 2;
                     
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(Pos);
-                VertexPositionInputs BaseVertexInput = GetVertexPositionInputs(PositionBuffer[InstanceID].Pos);
+                VertexPositionInputs BaseVertexInput = GetVertexPositionInputs(PositionBuffer[InstanceID]);
                 
                 o.vertex = vertexInput.positionCS;
                 o.normal = -_CamForward.xyz;

@@ -5,7 +5,7 @@ using UnityEngine;
 [RequireComponentType(
     //typeof(HealthComponent), 
     typeof(TransformComponent),
-    typeof(SpriteComponent)
+    typeof(RenderComponent)
 )]  
 public class Enemy : Entity
 {

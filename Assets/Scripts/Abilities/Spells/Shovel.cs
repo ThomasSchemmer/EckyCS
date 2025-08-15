@@ -54,16 +54,17 @@ public class Shovel : GameplayAbility
         // ugly data formatting, otherwise we have to iterate through ECS
         // TODO: should prolly be made an actual function but will prolly use
         // reflection for datatypes :/
+
         byte[] Data = new byte[EntityGenerator.GetSize<Plant>()];
         var TmpX = BitConverter.GetBytes(Position.x);
         var TmpY = BitConverter.GetBytes(Position.y);
         var TmpZ = BitConverter.GetBytes(Position.z);
 
-        var Start = EntityGenerator.GetOffsetOf<Plant>(typeof(TransformComponent));
-        var Length = sizeof(float);
-        Array.Copy(TmpX, 0, Data, Start, Length);
-        Array.Copy(TmpY, 0, Data, Start + Length, Length);
-        Array.Copy(TmpZ, 0, Data, Start + Length * 2, Length);
+        var StartPos = EntityGenerator.GetOffsetOf<Plant>(typeof(TransformComponent));
+        var LengthPos = sizeof(float);
+        Array.Copy(TmpX, 0, Data, StartPos, LengthPos);
+        Array.Copy(TmpY, 0, Data, StartPos + LengthPos, LengthPos);
+        Array.Copy(TmpZ, 0, Data, StartPos + LengthPos * 2, LengthPos);
 
         if (!EntityGenerator.TryCreate(out Plant Plant, Data))
             return;

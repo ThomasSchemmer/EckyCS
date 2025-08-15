@@ -6,7 +6,7 @@ using UnityEngine;
 [RequireComponentType(
     typeof(GrowthComponent), 
     typeof(TransformComponent),
-    typeof(SpriteComponent)
+    typeof(RenderComponent)
 )]
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
 public class Plant : Entity

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
-public struct SpriteComponent : IComponent
+public struct RenderComponent : IComponent
 {
 
 }

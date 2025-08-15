@@ -47,7 +47,7 @@ public abstract class ComponentGroupView
             var SparseSet = ECS.EntitySets[Group];
             Action?.Invoke(
                 Group, 
-                SparseSet.GetGroupPointers(GetTypeSet()),
+                SparseSet.GetGroupPointers(),
                 SparseSet.GetCount()
             );
         }
@@ -63,7 +63,7 @@ public abstract class ComponentGroupView
             var SparseSet = ECS.EntitySets[Group];
             bool bResult = (bool)Action?.Invoke(
                 Group,
-                SparseSet.GetGroupPointers(GetTypeSet()),
+                SparseSet.GetGroupPointers(),
                 SparseSet.GetCount()
             );
             if (bResult != bExpectedResult)
@@ -91,5 +91,14 @@ public class ComponentGroupView<X, Y> : ComponentGroupView where X: IComponent w
     public override Type[] GetTypeSet()
     {
         return new Type[2] { typeof(X), typeof(Y) };
+    }
+}
+
+public class ComponentGroupView<X, Y, Z> : ComponentGroupView where X : IComponent where Y : IComponent where Z : IComponent
+{
+
+    public override Type[] GetTypeSet()
+    {
+        return new Type[3] { typeof(X), typeof(Y), typeof(Z) };
     }
 }

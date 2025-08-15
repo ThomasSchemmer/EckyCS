@@ -28,7 +28,7 @@ public abstract class ComponentGroup
     /** Executes the provided action for each valid entity in the group */
     public unsafe abstract void ForEach(ByteAction Action);
     /** Returns an array of ptrs to any components[] requested via Types, as well as to the ID array*/
-    public unsafe abstract void*[] GetGroupPointers(Type[] Types);
+    public unsafe abstract void*[] GetGroupPointers();
 
     public abstract void SetData(int Index, byte[] Data);
     public abstract byte[] GetData(int Index);
@@ -172,29 +172,14 @@ public unsafe class ComponentGroup<T> : ComponentGroup where T : struct, ICompon
         }
     }
 
-    public unsafe override void*[] GetGroupPointers(Type[] Types) 
+    public unsafe override void*[] GetGroupPointers() 
     {
-        List<int> Targets = new();
-        foreach (var Type in Types)
-        {
-            int Temp = GroupID.GetSelfIndexOf(Type);
-            if (Temp == -1)
-                continue;
-
-            Targets.Add(Temp);
-        }
-        if (Targets.Count == 0)
-            return null;
-
         // can't use a list for void*
-        void*[] Result = new void*[Targets.Count + 1];
+        void*[] Result = new void*[1 + 1];
         int ResultIndex = 0;
-        if (Targets.Contains(0))
+        fixed (byte* xPtr = &Components[0])
         {
-            fixed (byte* xPtr = &Components[0])
-            {
-                Result[ResultIndex++] = xPtr;
-            }
+            Result[ResultIndex++] = xPtr;
         }
         fixed (EntityID* IDPtr = &IDs[0])
         {
@@ -306,36 +291,18 @@ public unsafe class ComponentGroup<X, Y> : ComponentGroup where X : struct, ICom
         }
     }
 
-    public unsafe override void*[] GetGroupPointers(Type[] Types)
+    public unsafe override void*[] GetGroupPointers()
     {
-        List<int> Targets = new();
-        foreach (var Type in Types)
-        {
-            int Temp = GroupID.GetSelfIndexOf(Type);
-            if (Temp == -1)
-                continue;
-
-            Targets.Add(Temp);
-        }
-        if (Targets.Count == 0)
-            return null;
-
         // can't use a list for void*
-        void*[] Result = new void*[Targets.Count + 1];
+        void*[] Result = new void*[2 + 1];
         int ResultIndex = 0;
-        if (Targets.Contains(0))
+        fixed (byte* xPtr = &ComponentsX[0])
         {
-            fixed (byte* xPtr = &ComponentsX[0])
-            {
-                Result[ResultIndex++] = xPtr;
-            }
+            Result[ResultIndex++] = xPtr;
         }
-        if (Targets.Contains(1))
+        fixed (byte* yPtr = &ComponentsY[0])
         {
-            fixed (byte* yPtr = &ComponentsY[0])
-            {
-                Result[ResultIndex++] = yPtr;
-            }
+            Result[ResultIndex++] = yPtr;
         }
         fixed (EntityID* IDPtr = &IDs[0])
         {
@@ -492,43 +459,21 @@ public unsafe class ComponentGroup<X, Y, Z> : ComponentGroup where X : struct, I
         return Data;
     }
 
-    public unsafe override void*[] GetGroupPointers(Type[] Types)
+    public unsafe override void*[] GetGroupPointers()
     {
-        List<int> Targets = new();
-        foreach (var Type in Types)
-        {
-            int Temp = GroupID.GetSelfIndexOf(Type);
-            if (Temp == -1)
-                continue;
-
-            Targets.Add(Temp);
-        }
-        if (Targets.Count == 0)
-            return null;
-
-        // can't use a list for void*
-        void*[] Result = new void*[Targets.Count + 1];
+        void*[] Result = new void*[3 + 1];
         int ResultIndex = 0;
-        if (Targets.Contains(0))
+        fixed (byte* xPtr = &ComponentsX[0])
         {
-            fixed (byte* xPtr = &ComponentsX[0])
-            {
-                Result[ResultIndex++] = xPtr;
-            }
+            Result[ResultIndex++] = xPtr;
         }
-        if (Targets.Contains(1))
+        fixed (byte* yPtr = &ComponentsY[0])
         {
-            fixed (byte* yPtr = &ComponentsY[0])
-            {
-                Result[ResultIndex++] = yPtr;
-            }
+            Result[ResultIndex++] = yPtr;
         }
-        if (Targets.Contains(2))
+        fixed (byte* zPtr = &ComponentsZ[0])
         {
-            fixed (byte* zPtr = &ComponentsZ[0])
-            {
-                Result[ResultIndex++] = zPtr;
-            }
+            Result[ResultIndex++] = zPtr;
         }
         fixed (EntityID* IDPtr = &IDs[0])
         {

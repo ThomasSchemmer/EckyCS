@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using static UnityEngine.GraphicsBuffer;
 
 public class DownSamplingPass : ScriptableRenderPass
 {
@@ -59,7 +60,10 @@ public class DownSamplingPass : ScriptableRenderPass
             {
                 foreach (var System in SystemList)
                 {
-                    RenderSystem(Cmd, (RenderSystem)System);
+                    if (System is not RenderSystem RenderSystem)
+                        continue;
+
+                    RenderSystem.AddToRenderBuffer(ref Cmd);
                 }
             }
 
@@ -74,29 +78,4 @@ public class DownSamplingPass : ScriptableRenderPass
         CommandBufferPool.Release(Cmd);
     }
 
-    private void RenderSystem(CommandBuffer Cmd, RenderSystem System)
-    {
-        if (Cmd == null || System == null)
-            return;
-
-        foreach (var Pair in System.Infos) {
-
-            var Info = Pair.Value;
-            System.BaseMat.SetBuffer("_Positions", Info.PositionBuffer);
-            System.BaseMat.SetBuffer("_IDs", Info.IDBuffer);
-            Cmd.DrawMeshInstancedIndirect(
-                System.Mesh,
-                0,
-                System.BaseMat,
-                0,
-                Info.ArgsBuffer
-            );
-        }
-    }
-
-
-    // DO NOT DELETE _ FALLBACK FOR IMG COPY
-    //Context.ExecuteCommandBuffer(Cmd);
-    //Cmd.Clear();
-    //Cmd.Blit(renderingData.cameraData.renderer.cameraColorTargetHandle, PixelizeHandle);
 }

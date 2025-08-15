@@ -22,9 +22,10 @@ public class TTTerrainPass : ScriptableRenderPass
     {
         renderPassEvent = RenderPassEvent.BeforeRenderingOpaques;
 
-        PixColorHandle = RTHandles.Alloc(width: Width, height: Height);
-        PixDepthHandle = RTHandles.Alloc(width: Width, height: Height, depthBufferBits: DepthBits.Depth16);
-        PixTerrainColorHandle = RTHandles.Alloc(width: PixColorHandle.rt.width / 2, height: PixColorHandle.rt.height / 2);
+        // todo: stop flickering of color info
+        PixColorHandle = RTHandles.Alloc(width: Width, height: Height, filterMode: FilterMode.Point);
+        PixDepthHandle = RTHandles.Alloc(width: Width, height: Height, depthBufferBits: DepthBits.Depth16, filterMode: FilterMode.Point);
+        PixTerrainColorHandle = RTHandles.Alloc(width: PixColorHandle.rt.width / 2, height: PixColorHandle.rt.height / 2, filterMode: FilterMode.Point);
 
         GameObject Terrain = GameObject.Find("Terrain");
         if (!Terrain)
@@ -78,7 +79,7 @@ public class TTTerrainPass : ScriptableRenderPass
                 MeshTopology.Triangles,
                 Manager.RenderArgsBuffer
             );
-
+            
             // depth pass for terrain
             if (CamDepthHandle != null) {
                 Cmd.SetRenderTarget(

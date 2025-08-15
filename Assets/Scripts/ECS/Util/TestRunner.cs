@@ -26,18 +26,14 @@ public class TestRunner : MonoBehaviour
         if (!Game.TryGetService(out ECS ECS))
             return;
 
-        CreatePlantAt(new(6, 0, -6));
-        CreatePlantAt(new(12, 0, -9));
-        CreatePlantAt(new(3, 0, -3));
-        CreatePlantAt(new(-3, 0, -6));
-
-        CreatePlantAt(new(12, 0, 3));
-        CreatePlantAt(new(0, 0, -9));
-        CreatePlantAt(new(3, 0, -12));
-        CreatePlantAt(new(6, 0, -15));
-        CreatePlantAt(new(0, 0, -15));
-
-        CreatePlantAt(new(-3, 0, -15));
+        for (int i = 0; i < 5; i++)
+        {
+            CreatePlantAt(new(
+                i * 3, //UnityEngine.Random.Range(-5, 5),
+                1, //1,
+                0//UnityEngine.Random.Range(-5, 5)
+            ));
+        }
     }
 
 
@@ -50,17 +46,19 @@ public class TestRunner : MonoBehaviour
         var TmpX = BitConverter.GetBytes(Position.x);
         var TmpY = BitConverter.GetBytes(Position.y);
         var TmpZ = BitConverter.GetBytes(Position.z);
+        var bGrowth = BitConverter.GetBytes(2);
 
         var Start = EntityGenerator.GetOffsetOf<Plant>(typeof(TransformComponent));
         var Length = sizeof(float);
+        var StartGrowth = EntityGenerator.GetOffsetOf<Plant>(typeof(GrowthComponent));
+        var LengthGrowth = sizeof(int);
         Array.Copy(TmpX, 0, Data, Start, Length);
         Array.Copy(TmpY, 0, Data, Start + Length, Length);
         Array.Copy(TmpZ, 0, Data, Start + Length * 2, Length);
+        Array.Copy(bGrowth, 0, Data, StartGrowth, LengthGrowth);
 
         if (!EntityGenerator.TryCreate(out Plant _, Data))
             return;
-
-        Debug.Log("Created Plant");
     }
 
 }

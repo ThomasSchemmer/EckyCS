@@ -57,7 +57,7 @@ public class GrassPass : ScriptableRenderPass
         RenderTexture HeightTex = TerrainManager.HeightRT;
         const float Scale = .75f;
         const float InverseScale = 1 / Scale;
-        const int MemSize = sizeof(uint) * 2 + sizeof(float) * (3 + 3 + 3);
+        const int MemSize = sizeof(float) * 3;
         
         MainKernel = HeightCompute.FindKernel("CSMain");
         PositionAppendBuffer = new ComputeBuffer(100000, MemSize, ComputeBufferType.Append);
@@ -73,19 +73,14 @@ public class GrassPass : ScriptableRenderPass
 
         HeightCompute.Dispatch(MainKernel, Mathf.RoundToInt(HeightTex.width * Scale), Mathf.RoundToInt(HeightTex.height * Scale), 1);
 
-        // read out the actually found grass positions
-        ArgsBuffer = new ComputeBuffer(1, Args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
-        ArgsBuffer.SetData(Args);
-        ComputeBuffer.CopyCount(PositionAppendBuffer, ArgsBuffer, 0);
-        ArgsBuffer.GetData(Args);
-        var TempGrassCount = Args[0];
-
         // now we can actually fill in the data
         Args[0] = QuadMesh.GetIndexCount(SubMeshIndex);
-        Args[1] = TempGrassCount;
+        Args[1] = 0;    // to be filled by compute
         Args[2] = QuadMesh.GetIndexStart(SubMeshIndex);
         Args[3] = QuadMesh.GetBaseVertex(SubMeshIndex);
+        ArgsBuffer = new ComputeBuffer(1, Args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
         ArgsBuffer.SetData(Args);
+        ComputeBuffer.CopyCount(PositionAppendBuffer, ArgsBuffer, sizeof(uint));
 
         GrassMat.SetBuffer("PositionBuffer", PositionAppendBuffer);
         GrassMat.SetTexture("_CopyTex", PixTerrainHandle.rt);

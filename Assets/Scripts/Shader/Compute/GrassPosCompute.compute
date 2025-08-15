@@ -1,15 +1,7 @@
 #pragma kernel CSMain
 
-struct RenderInfo{
-	uint2 Pixel;
-	float3 WorldMin;
-	float3 WorldMax;
-	float3 Pos;
-};
-
-
 RWTexture2D<float4> HeightMap;
-AppendStructuredBuffer<RenderInfo> PositionBuffer;
+AppendStructuredBuffer<float3> PositionBuffer;
 RWTexture2D<float4> Output;
 
 float3 WorldSize;
@@ -51,7 +43,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 	float3 MaxPos = PixelToWorld(NextPixel);
 	float Length = distance(MinPos.xz, MaxPos.xz) / ThreadCount;;
 	
-	bool bHighEnough = MinPos.y > 2;
+	bool bHighEnough = MinPos.y > -.5;
 	bool bShouldRender = bHighEnough;
 	
 	// early return might not be best for shader performance
@@ -61,14 +53,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 	float3 Pos = MinPos;
 	Pos.x += hash12(Pos.xz) * Length * .5;
 	Pos.z += hash12(Pos.zx) * Length * .5;
-			
-
-	RenderInfo Info;
-	Info.Pixel = Pixel;
-	Info.WorldMin = MinPos;
-	Info.WorldMax = MaxPos;
-	Info.Pos = Pos;
 	
-	PositionBuffer.Append(Info);
+	PositionBuffer.Append(Pos);
 	
 }

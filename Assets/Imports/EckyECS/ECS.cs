@@ -147,11 +147,20 @@ public class ECS : GameService, IComponentGroupViewProvider<SparseSet>
 
     public bool TryGetSystems<T>(out List<ECSSystem> SystemList) where T : ECSSystem
     {
-        SystemList = default;
-        if (!Systems.ContainsKey(typeof(T)))
-            return false;
+        SystemList = new();
+        List<Type> Targets = new();
+        foreach (var Key in Systems.Keys)
+        {
+            if (!typeof(T).IsAssignableFrom(Key))
+                continue;
 
-        SystemList = Systems[typeof(T)];
+            Targets.Add(Key);
+        }
+
+        foreach (var Key in Targets)
+        {
+            SystemList.AddRange(Systems[Key]);
+        }
         return SystemList.Count != 0;
     }
 

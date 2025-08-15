@@ -39,7 +39,6 @@ public struct RadixTree
             CountPerThread = Nodes.Length / ThreadCount;
             NodePtr = (Node*)Nodes.GetUnsafePtr();
             int LeftOverAmount = Nodes.Length - ThreadCount * CountPerThread;
-            Morton.DeInterlace(MortonCodes[0], out var X, out var Z);
             for (int j = 0; j < CountPerThread; j++)
             {
                 Execute(i, j);
@@ -109,13 +108,19 @@ public struct RadixTree
         private int GetNodeSplit(int i, int Range, int Dir, int PrefixNode)
         {
             int Split = 0;
-            for (int t = Mathf.RoundToInt(Range / 2f + .5f); t >= 1; t /= 2)
+            int t = (int)Math.Round(Range / 2f, MidpointRounding.AwayFromZero);
+            while (t >= 1)
             {
                 int PrefixTemp = GetPrefixLength(i, i + (Split + t) * Dir);
                 if (PrefixTemp > PrefixNode)
                 {
                     Split += t;
                 }
+                // ugly rounding loop escape
+                if (t <= 1)
+                    break;
+
+                t = (int)Math.Round(t / 2f, MidpointRounding.AwayFromZero);
             }
             return i + Split * Dir + Mathf.Min(Dir, 0);
         }
@@ -138,7 +143,11 @@ public struct RadixTree
                 {
                     Range += T;
                 }
-                T /= 2;
+                // ugly rounding loop escape
+                if (T <= 1)
+                    break;
+
+                T = (int)Math.Round(T / 2f, MidpointRounding.AwayFromZero);
             }
             return Range;
         }

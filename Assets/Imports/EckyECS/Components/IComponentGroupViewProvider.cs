@@ -43,5 +43,25 @@ public interface IComponentGroupViewProvider<T>
         Profiler.EndSample();
         return Groups;
     }
+    public ComponentGroupView<X, Y, Z> Get<X, Y, Z>() where X : IComponent where Y : IComponent where Z : IComponent
+    {
+        Profiler.BeginSample("ICGVProvider.Get_X_Y_Z");
+        ComponentGroupView<X, Y, Z> Groups = new();
+        List<System.Type> Reqs = new()
+        {
+            typeof(X),
+            typeof(Y),
+            typeof(Z)
+        };
+        foreach (var Key in GetViewSet().Keys)
+        {
+            if (!Key.HasAllFlags(Reqs))
+                continue;
+
+            Groups.Add(Key);
+        }
+        Profiler.EndSample();
+        return Groups;
+    }
 
 }

@@ -331,7 +331,7 @@ public unsafe class BVHTree
     {
         /** Needs to be called from OnDrawGizmos() */
         Gizmos.color = Color.green;
-        foreach (var Node in Nodes)
+        foreach (var Node in FinalNodes)
         {
             Vector3 Center = (Node.Min + Node.Max) / 2f;
             Vector3 Range = Node.Max - Center;
@@ -405,5 +405,5 @@ public unsafe class BVHTree
     private const int LSBWidth = 2;
     private const int MortonWidth = 32;
     private const int BucketSize = 4;
-    private readonly static int ThreadCount = 1;// JobsUtility.JobWorkerCount;
+    private readonly static int ThreadCount = JobsUtility.JobWorkerCount;
 }

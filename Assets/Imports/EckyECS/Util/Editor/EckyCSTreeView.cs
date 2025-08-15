@@ -57,7 +57,7 @@ class EckyCSTreeView : TreeView
 
             Register(
                 Tuple.Key, 
-                Tuple.Value.GetGroupPointers(Tuple.Key.GetContainedTypes().ToArray()), 
+                Tuple.Value.GetGroupPointers(), 
                 Tuple.Value.GetCount()
             );
         }

@@ -56,9 +56,10 @@ public class LocationSystem : ECSSystem, IComponentGroupViewProvider<BVHTree>
         {
             Trees.Add(Group, new());
         }
+        int TrasnformTarget = Group.GetSelfIndexOf(typeof(TransformComponent));
         int IDsTarget = Ptrs.Length - 1;
         Trees[Group].Register(
-            (TransformComponent*)Ptrs[0], 
+            (TransformComponent*)Ptrs[TrasnformTarget], 
             (EntityID*)Ptrs[IDsTarget], 
             Count
         );
