@@ -46,7 +46,7 @@ public class TestRunner : MonoBehaviour
         var TmpX = BitConverter.GetBytes(Position.x);
         var TmpY = BitConverter.GetBytes(Position.y);
         var TmpZ = BitConverter.GetBytes(Position.z);
-        var bGrowth = BitConverter.GetBytes(2);
+        var bGrowth = BitConverter.GetBytes((int)Position.x);
 
         var Start = EntityGenerator.GetOffsetOf<Plant>(typeof(TransformComponent));
         var Length = sizeof(float);

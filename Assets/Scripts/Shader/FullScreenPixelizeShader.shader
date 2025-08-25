@@ -19,6 +19,7 @@ Shader "Custom/FullscreenPixelize"
 
         [Header(Debug)][Space]
         _Debug("Debug", Float) = 0
+        _MainTex ("MainTex", 2D) = "white" {}
     }
 
     
@@ -137,6 +138,7 @@ Shader "Custom/FullscreenPixelize"
             {   
                 float2 uv = Quantize(i.uv);
                 float4 Color = tex2D(_MainTex, uv);
+                return Color;
                 float Edge = max(SampleDepth(uv), SampleNormal(uv));
                 float Desaturated = dot(Color.xyz, float3(0.2126, 0.7152, 0.0722));
                 Color.xyz += (1 - Desaturated) * Edge * _Highlight;

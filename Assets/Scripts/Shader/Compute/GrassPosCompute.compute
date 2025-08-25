@@ -37,6 +37,8 @@ float hash12(float2 p)
 [numthreads(ThreadCount,ThreadCount,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
+	if (id.x != 0 || id.y != 0 || id.z != 0)
+		return;
 	uint2 Pixel = id.xy * InverseScale;
 	uint2 NextPixel = clamp(Pixel + 1 * InverseScale, 0, TexSize);
 	float3 MinPos = PixelToWorld(Pixel);
@@ -53,7 +55,8 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 	float3 Pos = MinPos;
 	Pos.x += hash12(Pos.xz) * Length * .5;
 	Pos.z += hash12(Pos.zx) * Length * .5;
-	
+	Pos = 0;
+	Pos.y = 1;
 	PositionBuffer.Append(Pos);
 	
 }

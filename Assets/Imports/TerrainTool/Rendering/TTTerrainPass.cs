@@ -11,7 +11,7 @@ public class TTTerrainPass : ScriptableRenderPass
     private readonly RTHandle PixColorHandle;
     private readonly RTHandle PixDepthHandle;
     private readonly RTHandle PixTerrainColorHandle;
-    private const int Height = 512, Width = (int)(Height * 1.7777f);
+    private const int Width = 1920, Height = 1080;
 
     public readonly TTManager Manager;
 
@@ -23,9 +23,10 @@ public class TTTerrainPass : ScriptableRenderPass
         renderPassEvent = RenderPassEvent.BeforeRenderingOpaques;
 
         // todo: stop flickering of color info
-        PixColorHandle = RTHandles.Alloc(width: Width, height: Height, filterMode: FilterMode.Point);
+        PixColorHandle = RTHandles.Alloc(width: Width, height: Height, filterMode: FilterMode.Trilinear);
         PixDepthHandle = RTHandles.Alloc(width: Width, height: Height, depthBufferBits: DepthBits.Depth16, filterMode: FilterMode.Point);
         PixTerrainColorHandle = RTHandles.Alloc(width: PixColorHandle.rt.width / 2, height: PixColorHandle.rt.height / 2, filterMode: FilterMode.Point);
+
 
         GameObject Terrain = GameObject.Find("Terrain");
         if (!Terrain)

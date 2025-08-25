@@ -72,9 +72,11 @@ Shader "Custom/Grass"
             {
                 float4 vertex : SV_POSITION;
                 float3 normal : NORMAL;
-                float2 uv : TEXCOORD0;
-                float2 screen : TEXCOORD1;
-                float3 world : TEXCOORD2;
+                // contains vertexSP (x, y) and centerSP(z,w)
+                float4 screen : TEXCOORD0;
+                float3 world : TEXCOORD1;
+                // used to interpolate UVs, contains min(x,y) and max(z, w)
+                float4 screenDims : TEXCOORD2;
             };
 
             static float3 Vertices[] = {
@@ -83,39 +85,85 @@ Shader "Custom/Grass"
                 float3(-.5, 1, 0),
                 float3(.5, 1, 0),
             };
+
+            static int ColorHeight = 256;
+            static int ColorWidth = 455;
+            static float Size = 2;
+            static float2 ColorSize = float2(ColorHeight, ColorWidth);
+            static float2 WorldSpaceScreen = float2(37.6, 41.66);
+
+            float2 GetScreenPos(float3 Pos){
+                VertexPositionInputs vertexInput = GetVertexPositionInputs(Pos);
+                float2 ScreenPos = (vertexInput.positionCS.xy / vertexInput.positionCS.w) * .5 + .5;
+                //ScreenPos = (int2)(ScreenPos * _ScreenParams.xy) / _ScreenParams.xy;
+                return ScreenPos;
+            }
+
+            float4 SnapToPixelCS(float3 Pos){
+                // transform to screen pos, snap to pixel, convert back to clip
+                VertexPositionInputs vertexInput = GetVertexPositionInputs(Pos.xyz);
+                float2 ScreenPos = GetScreenPos(Pos);
+                float4 PositionCS = float4(ScreenPos, vertexInput.positionCS.zw);
+                PositionCS.xy = (PositionCS.xy * 2 - 1) / vertexInput.positionCS.w;
+                return PositionCS;
+            }
+
+            float4 GetWorldPos(int VertexIndex, int InstanceID){
+                float3 Vert = Vertices[VertexIndex];
+                float3 Offset = 
+                    Vert.x * _CamRight.xyz +
+                    Vert.y * _CamUp.xyz;
+                float3 Pos = PositionBuffer[InstanceID] + Offset * Size;
+                return float4(Pos, 1);
+            }
             
             v2f vert (appdata v, uint InstanceID : SV_INSTANCEID)
             {
                 UNITY_SETUP_INSTANCE_ID(v);
                 v2f o;
-                float3 Vert = Vertices[v.vertexID];
-                float3 Offset = 
-                    Vert.x * _CamRight.xyz +
-                    Vert.y * _CamUp.xyz;
-                float3 Pos = PositionBuffer[InstanceID] + Offset * 2;
-                    
-                VertexPositionInputs vertexInput = GetVertexPositionInputs(Pos);
+
+                float3 Pos = GetWorldPos(v.vertexID, InstanceID).xyz;
+                VertexPositionInputs VertexInput = GetVertexPositionInputs(Pos);
                 VertexPositionInputs BaseVertexInput = GetVertexPositionInputs(PositionBuffer[InstanceID]);
+                VertexPositionInputs Vertex0Input = GetVertexPositionInputs(GetWorldPos(0, InstanceID));
+                VertexPositionInputs Vertex3Input = GetVertexPositionInputs(GetWorldPos(3, InstanceID));
                 
-                o.vertex = vertexInput.positionCS;
+                o.vertex = VertexInput.positionCS;//SnapToPixelCS(Pos); 
                 o.normal = -_CamForward.xyz;
-                o.uv  = v.uv * 2;
                 o.world = BaseVertexInput.positionWS;
-                o.screen = ComputeScreenPos(BaseVertexInput.positionCS).xy;
+                o.screen = float4(
+                    ComputeScreenPos(VertexInput.positionCS).xy,
+                    ComputeScreenPos(BaseVertexInput.positionCS).xy//GetScreenPos(PositionBuffer[InstanceID]).xy
+                );
+                o.screenDims = float4(
+                    ComputeScreenPos(Vertex0Input.positionCS).xy, 
+                    ComputeScreenPos(Vertex3Input.positionCS).xy
+                );
+                
                 return o;
             }
 
             float4 frag (v2f i) : SV_Target
             {
+                float4 ColorA = float4(i.screen.xy, 0, 1);
+                float2 uv = (i.screen.xy - i.screenDims.xy) / (i.screenDims.zw - i.screenDims.xy); //
+                float4 ColorB = float4(uv, 0, 1);
+                return uv.x < .5 ? ColorB : ColorA;
+
+                /*
                 float Depth = tex2D(_CameraDepthTexture, i.screen).x;
                 float3 WorldDepthPos = ComputeWorldSpacePosition(i.screen, Depth, UNITY_MATRIX_I_VP);
                 float Dis = distance(WorldDepthPos, i.world);
                 clip(_Cutoff - Dis);
 
-                float4 GrassColor = tex2D(_GrassTex, i.uv);
+                float4 GrassColor = tex2D(_GrassTex, uv);
                 clip(GrassColor.a - 0.5);
-                float4 Color = tex2D(_CopyTex, i.screen);
+
+                float2 ScreenUV = (i.screen.zw * ColorSize) / ColorSize;
+                ScreenUV = clamp(ScreenUV, 0, 1);
+                float4 Color = tex2D(_CopyTex, ScreenUV);
                 return float4(Color.xyz, 1);
+                */
             }
             ENDHLSL
         }
