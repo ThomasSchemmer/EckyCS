@@ -23,15 +23,17 @@ public class TestRunner : MonoBehaviour
 
 
     private void ECSTest() {
-        if (!Game.TryGetService(out ECS ECS))
+        if (!Game.TryGetService(out EckyCS ECS))
             return;
 
+        ECS.AddSystem(new GrowthSystem());
+        return;
         for (int i = 0; i < 5; i++)
         {
             CreatePlantAt(new(
-                i * 3, //UnityEngine.Random.Range(-5, 5),
-                1, //1,
-                0//UnityEngine.Random.Range(-5, 5)
+                UnityEngine.Random.Range(-5, 5),
+                0,
+                UnityEngine.Random.Range(-5, 5)
             ));
         }
     }
@@ -46,7 +48,7 @@ public class TestRunner : MonoBehaviour
         var TmpX = BitConverter.GetBytes(Position.x);
         var TmpY = BitConverter.GetBytes(Position.y);
         var TmpZ = BitConverter.GetBytes(Position.z);
-        var bGrowth = BitConverter.GetBytes((int)Position.x);
+        var bGrowth = BitConverter.GetBytes(0);
 
         var Start = EntityGenerator.GetOffsetOf<Plant>(typeof(TransformComponent));
         var Length = sizeof(float);

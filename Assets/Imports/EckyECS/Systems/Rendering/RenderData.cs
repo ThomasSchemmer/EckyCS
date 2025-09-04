@@ -23,6 +23,7 @@ public unsafe class RenderData
     // only one of each buffer, as they are shared
     private ComputeBuffer PositionBuffer;
     private ComputeBuffer CullingDataBuffer;
+    private ComputeBuffer IDBuffer;
 
     private const int CullKernel = 0;
     private int DataStride;
@@ -36,6 +37,11 @@ public unsafe class RenderData
         PositionBuffer = new ComputeBuffer(
             Count, 
             ComponentAllocator.GetSize(typeof(TransformComponent)), 
+            ComputeBufferType.Structured
+        );
+        IDBuffer = new ComputeBuffer(
+            Count, 
+            sizeof(uint), 
             ComputeBufferType.Structured
         );
         CullingDataBuffer = new ComputeBuffer(Count, DataStride, ComputeBufferType.Raw);
@@ -53,29 +59,46 @@ public unsafe class RenderData
         int TransformTarget = GroupID.GetSelfIndexOf(typeof(TransformComponent));
         NativeArray<TransformComponent> Transforms = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<TransformComponent>(Ptrs[TransformTarget], Count, Allocator.None);
         NativeArray<byte> DataArray = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<byte>(Data, Count * DataStride, Allocator.None);
+        NativeArray<uint> IDArray = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<uint>(Ptrs[Ptrs.Length - 1], Count, Allocator.None);
 
         AtomicSafetyHandle TransformSH = AtomicSafetyHandle.Create();
         AtomicSafetyHandle DataSH = AtomicSafetyHandle.Create();
+        AtomicSafetyHandle IDSH = AtomicSafetyHandle.Create();
         NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref Transforms, TransformSH);
         NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref DataArray, DataSH);
+        NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref IDArray, IDSH);
 
         PositionBuffer.SetData(Transforms);
         CullingDataBuffer.SetData(DataArray);
+        IDBuffer.SetData(IDArray);
 
         // we don't need to deallocate the NativeArrays as they are repurposed pointers anyway
         AtomicSafetyHandle.CheckDeallocateAndThrow(TransformSH);
         AtomicSafetyHandle.CheckDeallocateAndThrow(DataSH);
+        AtomicSafetyHandle.CheckDeallocateAndThrow(IDSH);
         AtomicSafetyHandle.Release(TransformSH);
         AtomicSafetyHandle.Release(DataSH);
+        AtomicSafetyHandle.Release(IDSH);
     }
 
-    public void AddToRenderBuffer(ref List<RenderInfo> Infos, ref CommandBuffer Cmd, ComputeShader CullingCompute)
+    public void AddToRenderBuffer<T>(ref List<T> Infos, ref CommandBuffer Cmd, ComputeShader CullingCompute) where T : RenderInfo
     {
         Vector3 CamForward = Vector3.Normalize(Vector3.Cross(new(0, 1, 0), Cam.transform.forward));
 
         foreach (var Info in Infos)
         {
-            ComputeCull(Info, CullingCompute);
+            ComputeCull(Info, ref Cmd, CullingCompute);
+
+
+            Vector3[] PosAppend = new Vector3[this.Count];
+            EntityID[] IDs = new EntityID[this.Count];
+            byte[] Datas = new byte[CullingDataBuffer.stride * Count];
+            byte[] Args = new byte[IndirectDrawIndexedArgs.size];
+            Info.PositionAppendBuffer.GetData(PosAppend);
+            IDBuffer.GetData(IDs);
+            CullingDataBuffer.GetData(Datas);
+            Info.ArgsBuffer.GetData(Args);
+
 
             Info.Mat.SetBuffer("PositionBuffer", Info.PositionAppendBuffer);
             Info.Mat.SetVector("_CamForward", CamForward);
@@ -83,6 +106,7 @@ public unsafe class RenderData
             Info.Mat.SetVector("_CamRight", Cam.transform.right);
             Info.Mat.SetVector("_CamPos", Cam.transform.position);
             Info.Mat.SetVector("_Scale", Info.Scale);
+            Info.Mat.SetInt("_Type", (int)Info.TargetData + 1);
 
             Cmd.DrawMeshInstancedIndirect(
                 Info.Mesh,
@@ -94,25 +118,25 @@ public unsafe class RenderData
         }
     }
 
-    private void ComputeCull(RenderInfo Info, ComputeShader CullingCompute)
+    private void ComputeCull(RenderInfo Info, ref CommandBuffer Cmd, ComputeShader CullingCompute)
     {
-        CullingCompute.SetBuffer(CullKernel, "PositionAppendBuffer", Info.PositionAppendBuffer);
-        CullingCompute.SetBuffer(CullKernel, "PositionBuffer", PositionBuffer);
-        CullingCompute.SetBuffer(CullKernel, "CullingDataBuffer", CullingDataBuffer);
-        CullingCompute.SetInt("DataStride", DataStride);
-        CullingCompute.SetInt("GroupCountX", 8);
-        CullingCompute.SetInt("GroupCountY", 8);
-        CullingCompute.SetInt("GroupCountZ", 1);
-        CullingCompute.SetInt("TotalCount", Count);
-        CullingCompute.SetInt("TargetPlant", (int)Info.TargetData);
+        Cmd.SetComputeBufferParam(CullingCompute, CullKernel, "PositionAppendBuffer", Info.PositionAppendBuffer);
+        Cmd.SetComputeBufferParam(CullingCompute, CullKernel, "PositionBuffer", PositionBuffer);
+        Cmd.SetComputeBufferParam(CullingCompute, CullKernel, "CullingDataBuffer", CullingDataBuffer);
+        Cmd.SetComputeBufferParam(CullingCompute, CullKernel, "IDBuffer", IDBuffer);
+        Cmd.SetComputeIntParam(CullingCompute, "DataStride", DataStride);
+        Cmd.SetComputeIntParam(CullingCompute, "GroupCountX", 8);
+        Cmd.SetComputeIntParam(CullingCompute, "GroupCountY", 8);
+        Cmd.SetComputeIntParam(CullingCompute, "GroupCountZ", 1);
+        Cmd.SetComputeIntParam(CullingCompute, "TotalCount", Count);
+        Cmd.SetComputeIntParam(CullingCompute, "TargetPlant", (int)Info.TargetData);
 
-        // cull anything of the wrong type //TODO: make type/data unspecific
-        Info.PositionAppendBuffer.SetCounterValue(0);
-        CullingCompute.Dispatch(CullKernel, 8, 8, 1);
+        Cmd.SetBufferCounterValue(Info.PositionAppendBuffer, 0);
+        Cmd.DispatchCompute(CullingCompute, CullKernel, 8, 8, 1);
 
         // tell the gpu how many entities there are
         // note: the offset lets us write into [1], which is the instanceCount - and not the vertices per instance!
-        ComputeBuffer.CopyCount(
+        Cmd.CopyCounterValue(
             Info.PositionAppendBuffer, 
             Info.ArgsBuffer, 
             sizeof(uint)

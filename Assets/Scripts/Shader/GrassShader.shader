@@ -145,12 +145,12 @@ Shader "Custom/Grass"
 
             float4 frag (v2f i) : SV_Target
             {
-                float4 ColorA = float4(i.screen.xy, 0, 1);
-                float2 uv = (i.screen.xy - i.screenDims.xy) / (i.screenDims.zw - i.screenDims.xy); //
-                float4 ColorB = float4(uv, 0, 1);
-                return uv.x < .5 ? ColorB : ColorA;
+                //float4 ColorA = float4(i.screen.xy, 0, 1);
+                //float2 uv = (i.screen.xy - i.screenDims.xy) / (i.screenDims.zw - i.screenDims.xy); //
+                //float4 ColorB = float4(uv, 0, 1);
+                //return uv.x < .5 ? ColorB : ColorA;
 
-                /*
+                float2 uv = (i.screen.xy - i.screenDims.xy) / (i.screenDims.zw - i.screenDims.xy); 
                 float Depth = tex2D(_CameraDepthTexture, i.screen).x;
                 float3 WorldDepthPos = ComputeWorldSpacePosition(i.screen, Depth, UNITY_MATRIX_I_VP);
                 float Dis = distance(WorldDepthPos, i.world);
@@ -163,7 +163,6 @@ Shader "Custom/Grass"
                 ScreenUV = clamp(ScreenUV, 0, 1);
                 float4 Color = tex2D(_CopyTex, ScreenUV);
                 return float4(Color.xyz, 1);
-                */
             }
             ENDHLSL
         }

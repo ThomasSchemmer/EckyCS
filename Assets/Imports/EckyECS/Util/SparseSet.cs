@@ -41,6 +41,43 @@ public class SparseSet
         return Values?.GetGroupPointers();
     }
 
+    public bool CheckEntity(EntityID ID, ComponentGroup.EntityCheck Check)
+    {
+        // title kinda implies immutability :/
+        int TargetIndex = GetTargetIndex(ID);
+        if (TargetIndex < 0)
+            return false;
+
+        if (Values == null)
+            return false;
+
+        return Values.CheckEntity(TargetIndex, Check);
+    }
+
+    public EntityID SelectEntityFrom(List<EntityID> IDs, ComponentGroup.EntityCheck Check)
+    {
+        return Values.SelectEntityFrom(GetTargetIndices(IDs), Check);
+    }
+
+    public void ForEachEntityFrom(List<EntityID> IDs, ComponentGroup.EntityCheck Check)
+    {
+        Values.ForEachEntityFrom(GetTargetIndices(IDs), Check);
+    }
+
+    private List<int> GetTargetIndices(List<EntityID> IDs)
+    {
+        List<int> Indices = new(IDs.Count);
+        for (int i = 0; i < IDs.Count; i++)
+        {
+            int Index = GetTargetIndex(IDs[i]);
+            if (Index < 0 || Index > Values.Length())
+                continue;
+
+            Indices.Add(Index);
+        }
+        return Indices;
+    }
+
     public int GetCount()
     {
         return Values.IDs.Length - Available;
@@ -175,15 +212,20 @@ public class SparseSet
         int Index = Page.Indices[IndexInPage];
 
         EntityID Temp = NextAvailable;
-        ID = new EntityID(ID.ID, ID.Version + 1);
-        NextAvailable = ID;
+        NextAvailable = new EntityID(Index, EntityID.INVALID);
         if (Values != null)
         {
             Values.Reset(Index);
             Values.IDs[Index] = Temp;
         }
+        Page.Indices[IndexInPage] = -1;
         Available++;
         Profiler.EndSample();
+    }
+
+    public void RemoveRange(List<EntityID> List)
+    {
+        List.ForEach(e => Remove(e));
     }
 
     public void Swap(EntityID A, EntityID B)
@@ -259,7 +301,8 @@ public class SparseSet
             return INVALID_INDEX;
 
         Assert.IsFalse(Has(NextAvailable));
-        int TargetIndex = GetTargetIndex(NextAvailable);
+
+        var TargetIndex = GetIndexInPage(NextAvailable);
         NextAvailable = Values.IDs[TargetIndex];
         Available--;
         return TargetIndex;
@@ -288,7 +331,7 @@ public class SparseSet
             EntityID Temp = EntityID.Invalid(i);
             var Page = GetPage(Temp, true);
             var Index = GetIndexInPage(Temp);
-            Page.Indices[Index] = i;
+            Page.Indices[Index] = -1;
         }
         NextAvailable = EntityID.Invalid(Start);
         Available += (End - Start);

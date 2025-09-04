@@ -18,11 +18,13 @@ public class GameplayAbility : ScriptableObject
 
     public AbilityType Type;
     public State Status = State.Invalid;
-    public KeyCode ActivationKey = KeyCode.Alpha1;
+    public bool bIsHidden = false;
+    public KeyCode ActivationKey = KeyCode.F12;
     public float Cooldown = -1;
     public GameplayAbilityBehaviour AssignedToBehaviour = null;
     public GameplayTagRegularContainer AbilityTags = new("Ability Tags");
-    public GameplayTagRegularContainer ActivationRequiredTags = new("Activation required Tags");
+    public GameplayTagRegularContainer ActivationRequiredTags = new("Tags that are required for Activation");
+    public GameplayTagRegularContainer DeActivationTriggerTags = new("Tags that trigger a deactivation");
 
     public ActionList<GameplayAbilityBehaviour> OnTargetHit = new();
 
@@ -46,6 +48,13 @@ public class GameplayAbility : ScriptableObject
         Commit();
     }
 
+    public virtual void Deactivate()
+    {
+        Status = State.Granted;
+        CurrentCooldown = Cooldown;
+        _OnEndAbility?.Invoke();
+    }
+
     public virtual void Commit()
     {
         Status = State.Committed;
@@ -67,13 +76,22 @@ public class GameplayAbility : ScriptableObject
         return Status == State.Committed;
     }
 
-    public virtual bool CanActivate()
+    public virtual bool ShouldActivate()
     {
         bool bIsOffCooldown = CurrentCooldown == -1 || CurrentCooldown == 0;
         bool bIsGranted = Status == State.Granted;
         bool bIsKeyDown = Input.GetKeyDown(ActivationKey);
-        bool bHasTags = AssignedToBehaviour.HasTags(ActivationRequiredTags.IDs);
+        bool bHasTags = AssignedToBehaviour.HasAllTags(ActivationRequiredTags.IDs);
         return bIsOffCooldown && bIsGranted && bIsKeyDown && bHasTags;
+    }
+
+    public virtual bool ShouldDeactivate()
+    {
+        bool bIsActive = Status >= State.Activated;
+        bool bIsKeyDown = Input.GetKeyDown(ActivationKey);
+        bool bHasTags = AssignedToBehaviour.HasAnyTags(DeActivationTriggerTags.IDs);
+
+        return bIsActive && (bIsKeyDown || bHasTags);
     }
 
     public virtual void End()

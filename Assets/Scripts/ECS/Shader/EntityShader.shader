@@ -1,21 +1,20 @@
-Shader "Custom/SpriteShader"
+Shader "Custom/EntityShader"
 {
     Properties
     {
-        _MainTex ("Texture2D", 2D) = "white" {}
+        _ColorTex ("Texture2D", 2D) = "white" {}
     }
     
     HLSLINCLUDE
     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
     #include "../../Shader/Util/WorldPos.cginc" 
 	
+    #pragma enable_d3d11_debug_symbols
+
     CBUFFER_START(UnityPerMaterial)
-    
-        TEXTURE2D(_MainTex);
-        SAMPLER(sampler_MainTex);
-        float4 _MainTex_ST;
-        float4 _Color;
+        sampler2D _ColorTex;
         float4 _Scale;
+        uint _Type;
     CBUFFER_END
 
     ENDHLSL
@@ -35,10 +34,10 @@ Shader "Custom/SpriteShader"
 
             StructuredBuffer<float3> PositionBuffer;
 
+
             struct appdata
             {
                 float4 vertex : POSITION;
-                uint vertexID : SV_VERTEXID;
                 float2 uv : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
@@ -49,38 +48,37 @@ Shader "Custom/SpriteShader"
                 float4 vertex : SV_POSITION;
                 uint InstanceID : TEXCOORD1;
             };
-                   
-            static float3 Vertices[] = {
-                float3(-.5, 0, 0),
-                float3(.5, 0, 0),
-                float3(-.5, 1, 0),
-                float3(.5, 1, 0),
-            };
 
             v2f vert (appdata v, uint InstanceID : SV_InstanceID)
             {
                 v2f o;
                 UNITY_SETUP_INSTANCE_ID(v);
                 
-                float3 Vert = Vertices[v.vertexID];
-                
-                float3 Offset = 
-                    Vert.x * _CamRight.xyz +
-                    Vert.y * _CamUp.xyz;
                 float3 Pos = v.vertex.xyz * _Scale.xyz + PositionBuffer[InstanceID];
                     
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(Pos);
                 o.vertex = vertexInput.positionCS;
-                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+                o.uv = v.uv;
                 o.InstanceID = InstanceID;
                 return o;
             }
 
+            
+            float4 getRegularColor(v2f i){
+                // as we have a split uv map we need to wrap around
+                int xType = _Type / 16.0;
+                int yType = _Type % 16;
+                float StandardColor = (i.uv.x * 16.0) + xType * 8.0;
+                float u = StandardColor;
+                float v = yType;
+                float2 uv = float2(u, v) / 16.0;
+                float4 color = tex2D(_ColorTex, uv);
+                return color;
+            }
+
             half4 frag (v2f i) : SV_Target
             {
-                return float4(_Scale.xyz, 1);
-                //fixed4 col = tex2D(_MainTex, i.uv);
-                return half4(1, 0, 0, 1);
+                return getRegularColor(i);
             }
             
             ENDHLSL

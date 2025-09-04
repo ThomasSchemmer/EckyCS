@@ -30,12 +30,19 @@ public class AbilityBar : MonoBehaviour
         if (!Game.TryGetService(out IconFactory Icons) || PlayerBehaviour == null)
             return;
 
-        var Abilities = PlayerBehaviour.GetGrantedAbilities();
+        var Abilities = new List<GameplayAbility>();
+        Abilities.AddRange(PlayerBehaviour.GetGrantedAbilities());
+        for (int i = Abilities.Count - 1; i >= 0; i--)
+        {
+            if (!Abilities[i].bIsHidden)
+                continue;
+
+            Abilities.RemoveAt(i);
+        }
         int AbilityCount = Mathf.Min(Abilities.Count, AbilityBar.AbilityCount);
         int TotalWidth = AbilityCount * SlotWidth + (AbilityCount - 1) * SlotOffset;
         RectTransform Rect = transform as RectTransform;
         Rect.sizeDelta = new(TotalWidth, SlotWidth);
-
 
         for (int i = 0; i < AbilityCount; i++)
         {

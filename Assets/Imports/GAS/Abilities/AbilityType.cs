@@ -6,5 +6,7 @@ public enum AbilityType
 {
     DEFAULT,
     Fireball,
-    Shovel
+    Shovel,
+    Interact,
+    Harvest
 }

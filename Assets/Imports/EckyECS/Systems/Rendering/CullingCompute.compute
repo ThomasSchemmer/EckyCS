@@ -5,11 +5,19 @@
 AppendStructuredBuffer<float3> PositionAppendBuffer;
 RWStructuredBuffer<float3> PositionBuffer;
 RWByteAddressBuffer CullingDataBuffer;
+RWStructuredBuffer<uint> IDBuffer;
 
+static const uint VERSION_MASK =0x000000FF;
+static const uint ID_MASK =		0xFFFFFF00;
 uint GroupCountX, GroupCountY, GroupCountZ;
 uint TotalCount;
 uint TargetPlant;
 uint DataStride;
+
+bool IsValid(uint ID){
+    return (ID & VERSION_MASK) != 255;
+}
+
 
 [numthreads(THREADCOUNT,THREADCOUNT,1)]
 void Cull (uint3 GroupID : SV_GROUPID, uint3 ThreadID : SV_GROUPTHREADID)
@@ -18,7 +26,7 @@ void Cull (uint3 GroupID : SV_GROUPID, uint3 ThreadID : SV_GROUPTHREADID)
 	uint ThreadIndex = ThreadID.z * THREADCOUNT * THREADCOUNT + ThreadID.y * THREADCOUNT + ThreadID.x;
 	uint TotalThreadCount = THREADCOUNT * THREADCOUNT * 1;
 	uint TotalIndex = GroupIndex * TotalThreadCount + ThreadIndex;
-	if (TotalIndex >= TotalCount)
+	if (TotalIndex >= TotalCount || !IsValid(IDBuffer[TotalIndex]))
 		return;
 
 	uint Offset = TotalIndex * DataStride;
@@ -29,3 +37,4 @@ void Cull (uint3 GroupID : SV_GROUPID, uint3 ThreadID : SV_GROUPTHREADID)
 
 	PositionAppendBuffer.Append(PositionBuffer[TotalIndex]);
 }
+

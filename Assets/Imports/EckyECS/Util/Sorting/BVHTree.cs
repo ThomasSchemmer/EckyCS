@@ -79,7 +79,7 @@ public unsafe class BVHTree
     public void Init()
     {
         FinalIDIndices = new(Count, Allocator.Persistent);
-        FinalNodes = new(Count - 1, Allocator.Persistent);
+        FinalNodes = new(Mathf.Max(Count - 1, 1), Allocator.Persistent);
 
         // since we dont want to actually change the original components/IDs we use a ptr
         Components = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<TransformComponent>(ComponentsPtr, Count, Allocator.None);
@@ -125,6 +125,10 @@ public unsafe class BVHTree
         int Start = 0;
         InitTemp();
         ClearArray(Nodes);
+        bIsActive = true;
+        if (TryExecuteSingleNode())
+            return;
+
         Handle = ComputeMortonCodes(Start);
 
         for (int i = Start; i < GetMaxIteration(); i++)  
@@ -135,7 +139,30 @@ public unsafe class BVHTree
         }
         Handle = CreateRadixTreeCreateJob(Handle);
         Handle = CreateRadixTreeBBJob(Handle);
-        bIsActive = true;
+    }
+
+    private bool TryExecuteSingleNode()
+    {
+        // A single entity will not create a BVH tree for itself
+        // so just fake it and terminate
+        if (Count != 1)
+            return false;
+
+        FinalIDIndices[0] = 0;
+        Vector3 Pos = Components[0].GetPosition();
+        Pos.y = 0;
+        FinalNodes[0] = new()
+        {
+            First = 0,
+            Last = 0,
+            Min = Pos,
+            Max = Pos,
+            Split = 0,
+            Parent = 0
+        };
+
+        bIsActive = false;
+        return true;
     }
 
     public void Register(TransformComponent* ComponentsPtr, EntityID* IDsPtr, int Count)
@@ -367,10 +394,13 @@ public unsafe class BVHTree
     private List<EntityID> GetAllAtRec(ref NativeArray<RadixTree.Node> Nodes, int Index, Rect Target)
     {
         List<EntityID> List = new();
+        if (Index >= Nodes.Length)
+            return List;
+
         var Node = Nodes[Index];
         Vector3 Size = Node.Max - Node.Min;
         Rect Temp = new(new Vector2(Node.Min.x, Node.Min.z), new(Size.x, Size.z));
-        if (!Temp.Overlaps(Target))
+        if (!Target.Overlaps(Temp))
             return List;
 
         Node.GetLeft(out var LeftIndex, out var bIsLeftLeaf);
@@ -378,9 +408,10 @@ public unsafe class BVHTree
         if (bIsLeftLeaf)
         {
             var LeftTemp = Components[FinalIDIndices[LeftIndex]].GetPositionXZ();
-            if (Target.Contains(LeftTemp))
+            EntityID ID = OriginalIDs[FinalIDIndices[LeftIndex]];
+            if (Target.Contains(LeftTemp) && !ID.IsInvalid())
             {
-                List.Add(OriginalIDs[FinalIDIndices[LeftIndex]]);
+                List.Add(ID);
             }
         }
         else
@@ -390,9 +421,10 @@ public unsafe class BVHTree
         if (bIsRightLeaf)
         {
             var RightTemp = Components[FinalIDIndices[RightIndex]].GetPositionXZ();
-            if (Target.Contains(RightTemp))
+            EntityID ID = OriginalIDs[FinalIDIndices[RightIndex]];
+            if (Target.Contains(RightTemp) && !ID.IsInvalid())
             {
-                List.Add(OriginalIDs[FinalIDIndices[RightIndex]]);
+                List.Add(ID);
             }
         }
         else

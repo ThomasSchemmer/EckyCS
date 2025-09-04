@@ -56,9 +56,13 @@ public class GameplayAbilityBehaviour : MonoBehaviour
     {
         foreach (var Ability in GrantedAbilities)
         {
-            if (Ability.CanActivate())
+            if (Ability.ShouldActivate())
             {
                 Ability.Activate();
+            }
+            else if (Ability.ShouldDeactivate())
+            {
+                Ability.Deactivate();
             }
             if (Ability.ShouldTick())
             {
@@ -73,7 +77,7 @@ public class GameplayAbilityBehaviour : MonoBehaviour
         foreach (GameplayEffect ActiveEffect in ActiveEffects)
         {
             bool bIsExpired = ActiveEffect.IsExpired(Delta);
-            bool bHasTags = HasTags(ActiveEffect.OngoingRequirementTags.IDs);
+            bool bHasTags = HasAllTags(ActiveEffect.OngoingRequirementTags.IDs);
             if (!bHasTags || bIsExpired)
             {
                 MarkedForRemovalEffects.Add(ActiveEffect);
@@ -170,7 +174,7 @@ public class GameplayAbilityBehaviour : MonoBehaviour
         return GameplayTagMask.HasID(Tag);
     }
 
-    public bool HasTags(List<Guid> IDs)
+    public bool HasAllTags(List<Guid> IDs)
     {
         foreach (var ID in IDs)
         {
@@ -178,6 +182,16 @@ public class GameplayAbilityBehaviour : MonoBehaviour
                 return false;
         }
         return true;
+    }
+
+    public bool HasAnyTags(List<Guid> IDs)
+    {
+        foreach (var ID in IDs)
+        {
+            if (HasTag(ID))
+                return true;
+        }
+        return false;
     }
 
     //don't call this directly, call @GAS.TryApplyEffectTo instead!
@@ -259,7 +273,7 @@ public class GameplayAbilityBehaviour : MonoBehaviour
         if (Effect.GrantedAbility == null || Effect.DurationPolicy == GameplayEffect.Duration.Instant)
             return;
 
-        GrantedAbilities.Remove(Effect.GrantedAbility);
+        RemoveAbility(Effect.GrantedAbility);
     }
 
     public void RemoveEffect(GameplayEffect Effect)
@@ -270,8 +284,9 @@ public class GameplayAbilityBehaviour : MonoBehaviour
     public void GrantAbility(GameplayAbility Ability)
     {
         GrantedAbilities.Add(Ability);
-        Ability.OnGranted();
         Ability.AssignedToBehaviour = this;
+        _OnAbilityGranted?.Invoke(Ability);
+        Ability.OnGranted();
     }
 
     public bool HasAbility(GameplayAbility Ability)
@@ -282,6 +297,8 @@ public class GameplayAbilityBehaviour : MonoBehaviour
     public void RemoveAbility(GameplayAbility Ability)
     {
         GrantedAbilities.Remove(Ability);
+        _OnAbilityRemoved?.Invoke(Ability);
+        Ability.OnRemoved();
     }
 
     public List<GameplayAbility> GetGrantedAbilities()
@@ -292,6 +309,11 @@ public class GameplayAbilityBehaviour : MonoBehaviour
     public delegate void OnTagsChanged();
     public delegate void OnTagAdded(GameplayAbilityBehaviour Behaviour, Guid Tag);
     public delegate void OnTagRemoved(GameplayAbilityBehaviour Behaviour, Guid Tag);
+    public delegate void OnAbilityGranted(GameplayAbility Ability);
+    public delegate void OnAbilityRemoved(GameplayAbility Ability);
+
+    public OnAbilityGranted _OnAbilityGranted;
+    public OnAbilityRemoved _OnAbilityRemoved;
     public OnTagsChanged _OnTagsChanged;
     public OnTagAdded _OnTagAdded;
     public OnTagRemoved _OnTagRemoved;

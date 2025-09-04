@@ -9,17 +9,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c28a2a46a4c651f41b83c7e8b0cdb1ca, type: 3}
-  m_Name: Fireball
+  m_Script: {fileID: 11500000, guid: 53389ea1de8729f4aa824f2d4f821cad, type: 3}
+  m_Name: Interact
   m_EditorClassIdentifier: 
-  Type: 1
+  Type: 3
   Status: 0
-  ActivationKey: 49
-  Cooldown: 1
+  bIsHidden: 1
+  ActivationKey: 101
+  Cooldown: -1
   AssignedToBehaviour: {fileID: 0}
   AbilityTags:
-    _SerializedIDs:
-    - ec381ef9-a8db-455d-a7b8-9b26ce6583bb
+    _SerializedIDs: []
     bIsEditing: 0
     Name: Ability Tags
     bIsEditable: 1
@@ -28,4 +28,3 @@ MonoBehaviour:
     bIsEditing: 0
     Name: Activation required Tags
     bIsEditable: 1
-  OnHitEffect: {fileID: 11400000, guid: 33753c8baba831641933cc5e58ce76a7, type: 2}

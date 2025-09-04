@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="128"
+   height="128"
+   viewBox="0 0 33.866666 33.866666"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)"
+   sodipodi:docname="Sickle.svg"
+   inkscape:export-filename="arrows.png"
+   inkscape:export-xdpi="384"
+   inkscape:export-ydpi="384"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="mm"
+     inkscape:zoom="1.9526749"
+     inkscape:cx="-3.5848261"
+     inkscape:cy="54.540569"
+     inkscape:window-width="1920"
+     inkscape:window-height="1009"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       d="M 20.187055,3.1229549 C 15.597974,3.2132329 11.483572,5.9731145 9.6591537,10.18492 8.0017329,14.045906 7.7089739,17.589723 9.218143,23.217376 L 8.1249443,24.071364 9.8379752,26.3436 13.029617,23.936844 C 11.019368,20.87004 10.671394,17.037353 12.101227,13.7113 14.49076,8.1944182 20.983435,5.6952949 26.602737,8.1294619 28.909677,9.1292686 30.814534,10.869159 32.004778,13.063669 31.39245,9.0794842 28.776318,5.6891877 25.07761,4.0866172 23.535347,3.4185743 21.867461,3.0899248 20.187055,3.1229549 Z"
+       style="fill:#ded4c8;stroke:#645c59;stroke-width:0.3;stroke-linejoin:round;stroke-miterlimit:5.2"
+       id="path4"
+       sodipodi:nodetypes="ccccccccccc" />
+    <path
+       d="m 7.8776688,23.105544 -5.6104317,4.177097 c -1.0488757,0.781008 -1.2661094,2.26439 -0.4852241,3.313355 0.7809275,1.049125 2.2644977,1.266508 3.3135844,0.485534 l 5.6104316,-4.177098 z"
+       style="fill:#624a30;stroke:#2f2114;stroke-width:0.222831;stroke-linejoin:round;stroke-miterlimit:5.2"
+       id="path6" />
+  </g>
+</svg>

@@ -10,9 +10,9 @@ using UnityEngine.Assertions;
  * Central class for the ECS - should be the only class that you directly interact with
  * Is a gameservice for added convenience 
  */
-public class ECS : GameService, IComponentGroupViewProvider<SparseSet>
+public class EckyCS : GameService, IComponentGroupViewProvider<SparseSet>
 {
-    private Dictionary<Type, List<ECSSystem>> Systems = new();
+    private Dictionary<Type, List<EckyCSSystem>> Systems = new();
 
     public Dictionary<ComponentGroupIdentifier, SparseSet> EntitySets = new();
 
@@ -135,7 +135,7 @@ public class ECS : GameService, IComponentGroupViewProvider<SparseSet>
         return EntityMasks[ID];
     }
 
-    public bool TryGetSystem<T>(out T System) where T : ECSSystem
+    public bool TryGetSystem<T>(out T System) where T : EckyCSSystem
     {
         System = default;
         if (!TryGetSystems<T>(out var SystemList))
@@ -145,7 +145,7 @@ public class ECS : GameService, IComponentGroupViewProvider<SparseSet>
         return true;
     }
 
-    public bool TryGetSystems<T>(out List<ECSSystem> SystemList) where T : ECSSystem
+    public bool TryGetSystems<T>(out List<EckyCSSystem> SystemList) where T : EckyCSSystem
     {
         SystemList = new();
         List<Type> Targets = new();
@@ -179,7 +179,7 @@ public class ECS : GameService, IComponentGroupViewProvider<SparseSet>
         _OnInit?.Invoke(this);
     }
 
-    protected void ForEachSystem(Action<ECSSystem> Action)
+    protected void ForEachSystem(Action<EckyCSSystem> Action)
     {
         foreach (var Entry in Systems)
         {
@@ -190,7 +190,7 @@ public class ECS : GameService, IComponentGroupViewProvider<SparseSet>
         }
     }
 
-    public void AddSystem(ECSSystem System)
+    public void AddSystem(EckyCSSystem System)
     {
         var Type = System.GetType();
         if (!Systems.ContainsKey(Type))

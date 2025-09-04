@@ -26,30 +26,31 @@ public class Shovel : GameplayAbility
         if (IsPlantAt())
             return;
 
-        CreatePlantAt(GetPlantPosition());
+        Shovel.TryCreatePlantAt(Position, GrowthComponent.PlantType.Wheat, out var Plant);
     }
 
     private bool IsPlantAt()
     {
-        if (!Game.TryGetService(out ECS ECS))
+        if (!Game.TryGetService(out EckyCS ECS))
             return true;
 
         if (!ECS.TryGetSystem(out LocationSystem LocSys))
             return true;
 
-        return LocSys.IsEntityAt<GrowthComponent, TransformComponent>(GetPlantPosition());
+        return LocSys.IsEntityAt<GrowthComponent, TransformComponent>(GetPlantPosition(), 0.1f);
     }
 
     private Vector3 GetPlantPosition()
     {
+        // todo: geet heeight from terrain
         Vector3 Temp = AssignedToBehaviour.transform.position + AssignedToBehaviour.transform.forward;
         Temp.x = Mathf.RoundToInt(Temp.x / GridSize) * GridSize;
-        Temp.y = Mathf.RoundToInt(Temp.y / GridSize) * GridSize;
+        Temp.y = 0;
         Temp.z = Mathf.RoundToInt(Temp.z / GridSize) * GridSize;
         return Temp;
     }
 
-    private void CreatePlantAt(Vector3 Position)
+    public static bool TryCreatePlantAt(Vector3 Position, GrowthComponent.PlantType Type, out Plant Plant)
     {
         // ugly data formatting, otherwise we have to iterate through ECS
         // TODO: should prolly be made an actual function but will prolly use
@@ -66,8 +67,18 @@ public class Shovel : GameplayAbility
         Array.Copy(TmpY, 0, Data, StartPos + LengthPos, LengthPos);
         Array.Copy(TmpZ, 0, Data, StartPos + LengthPos * 2, LengthPos);
 
-        if (!EntityGenerator.TryCreate(out Plant Plant, Data))
-            return;
+
+        var StartGrowth = EntityGenerator.GetOffsetOf<Plant>(typeof(GrowthComponent));
+        int Growth = 0;
+        int PlantedAtS = (int)Time.realtimeSinceStartup;
+        var bGrowth = BitConverter.GetBytes(Growth);
+        var bType = BitConverter.GetBytes((int)Type);
+        var bPlantedAt = BitConverter.GetBytes(PlantedAtS);
+        Array.Copy(bGrowth, 0, Data, StartGrowth, sizeof(int));
+        Array.Copy(bType, 0, Data, StartGrowth + sizeof(int), sizeof(GrowthComponent.PlantType));
+        Array.Copy(bPlantedAt, 0, Data, StartGrowth + sizeof(int) + sizeof(GrowthComponent.PlantType), sizeof(int));
+
+        return EntityGenerator.TryCreate(out Plant, Data);
     }
 
 

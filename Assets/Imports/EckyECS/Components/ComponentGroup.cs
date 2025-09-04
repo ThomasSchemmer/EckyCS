@@ -29,9 +29,12 @@ public abstract class ComponentGroup
     public unsafe abstract void ForEach(ByteAction Action);
     /** Returns an array of ptrs to any components[] requested via Types, as well as to the ID array*/
     public unsafe abstract void*[] GetGroupPointers();
-
+    /** Overrides component data at the provided index */
     public abstract void SetData(int Index, byte[] Data);
     public abstract byte[] GetData(int Index);
+    /** Returns the ID of the first Entity to pass the Check*/
+    public abstract EntityID SelectEntityFrom(List<int> Indices, EntityCheck Check);
+    public abstract void ForEachEntityFrom(List<int> Indices, EntityCheck Check);
     protected abstract void ResetComponents(int Index, EntityID ID);
     protected abstract void ChangeSizeComponents(int NewLength);
     protected abstract void SwapComponents(int IndexA, int IndexB);
@@ -106,7 +109,13 @@ public abstract class ComponentGroup
         return !IDs[TargetIndex].IsInvalid();
     }
 
+    public bool CheckEntity(int Index, EntityCheck Check)
+    {
+        return !SelectEntityFrom(new() { Index }, Check).IsInvalid();
+    }
+
     public unsafe delegate void ByteAction(ComponentGroupIdentifier Group, EntityID ID, void*[] ptr);
+    public unsafe delegate bool EntityCheck(ComponentGroupIdentifier Group, void*[] ptr, int Index);
     public unsafe delegate void GroupByteAction(ComponentGroupIdentifier Group, void*[] Ptrs, int Count);
     public unsafe delegate bool GroupByteCheck(ComponentGroupIdentifier Group, void*[] Ptrs, int Count);
 }
@@ -168,6 +177,30 @@ public unsafe class ComponentGroup<T> : ComponentGroup where T : struct, ICompon
                     continue;
 
                 Action(GroupID, IDs[i], new void*[1] { bPtr + i * ComponentSize });
+            }
+        }
+    }
+
+    public unsafe override EntityID SelectEntityFrom(List<int> Indices, EntityCheck Check)
+    { 
+        fixed (byte* bPtr = &Components[0])
+        {
+            foreach (var Index in Indices)
+            {
+                if (Check(GroupID, new[] { (void*)bPtr }, Index))
+                    return IDs[Index];
+            }
+            return EntityID.Invalid();
+        }
+    }
+
+    public unsafe override void ForEachEntityFrom(List<int> Indices, EntityCheck Check)
+    {
+        fixed (byte* bPtr = &Components[0])
+        {
+            foreach (var Index in Indices)
+            {
+                Check(GroupID, new[] { (void*)bPtr }, Index);
             }
         }
     }
@@ -286,6 +319,37 @@ public unsafe class ComponentGroup<X, Y> : ComponentGroup where X : struct, ICom
                         xPtr + i * ComponentSizeX,
                         yPtr + i * ComponentSizeY,
                     });   
+                }
+            }
+        }
+    }
+    
+    public unsafe override EntityID SelectEntityFrom(List<int> Indices, EntityCheck Check)
+    {
+        fixed (byte* bPtrX = &ComponentsX[0])
+        {
+            fixed (byte* bPtrY = &ComponentsY[0])
+            {
+                foreach (var Index in Indices)
+                {
+                    if (Check(GroupID, new[] { (void*)bPtrX, bPtrY }, Index))
+                        return IDs[Index];
+                }
+            }
+        }
+        return EntityID.Invalid();
+    }
+
+
+    public unsafe override void ForEachEntityFrom(List<int> Indices, EntityCheck Check)
+    {
+        fixed (byte* bPtrX = &ComponentsX[0])
+        {
+            fixed (byte* bPtrY = &ComponentsY[0])
+            {
+                foreach (var Index in Indices)
+                {
+                    Check(GroupID, new[] { (void*)bPtrX, bPtrY }, Index);
                 }
             }
         }
@@ -421,6 +485,43 @@ public unsafe class ComponentGroup<X, Y, Z> : ComponentGroup where X : struct, I
                         yPtr + i * ComponentSizeY,
                         zPtr + i * ComponentSizeZ,
                     });
+                    }
+                }
+            }
+        }
+    }
+
+    public unsafe override EntityID SelectEntityFrom(List<int> Indices, EntityCheck Check)
+    {
+        fixed (byte* bPtrX = &ComponentsX[0])
+        {
+            fixed (byte* bPtrY = &ComponentsY[0])
+            {
+                fixed (byte* bPtrZ = &ComponentsZ[0])
+                {
+                    foreach (var Index in Indices)
+                    {
+                        if (Check(GroupID, new[] { (void*)bPtrX, bPtrY, bPtrZ }, ComponentAmount))
+                            return IDs[Index];
+                    }
+                }
+            }
+        }
+        return EntityID.Invalid();
+    }
+
+
+    public override unsafe void ForEachEntityFrom(List<int> Indices, EntityCheck Check)
+    {
+        fixed (byte* bPtrX = &ComponentsX[0])
+        {
+            fixed (byte* bPtrY = &ComponentsY[0])
+            {
+                fixed (byte* bPtrZ = &ComponentsZ[0])
+                {
+                    foreach (var Index in Indices)
+                    {
+                        Check(GroupID, new[] { (void*)bPtrX, bPtrY, bPtrZ }, Index);
                     }
                 }
             }

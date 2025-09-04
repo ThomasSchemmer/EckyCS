@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VectorGraphics;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 [RequireComponent(typeof(SVGImage))]
 public class AbilityScreen : MonoBehaviour
@@ -9,9 +10,11 @@ public class AbilityScreen : MonoBehaviour
     public GameplayAbility Ability;
 
     private SVGImage Image;
+    private SVGImage Background;
 
     public void Initialize(GameplayAbility Ability, Material Mat)
     {
+        Background = transform.parent.GetComponent<SVGImage>();
         Image = GetComponent<SVGImage>();
         Image.material = Instantiate(Mat);
         RectTransform Rect = GetComponent<RectTransform>();
@@ -32,8 +35,7 @@ public class AbilityScreen : MonoBehaviour
             return;
 
         Image.sprite = Icons.GetIconForAbility(Ability != null ? Ability.Type : AbilityType.DEFAULT);
-        float Alpha = Image.sprite != null ? SlotAlpha : EmptySlotAlpha;
-        Image.color = new(1, 1, 1, Alpha);
+        Image.enabled = Image.sprite != null;
     }
 
     private void Update()
@@ -42,9 +44,18 @@ public class AbilityScreen : MonoBehaviour
             return;
 
         Image.material.SetFloat("_Cutoff", Ability.GetCooldownCutoff());
+        Background.color = IsActive() ? ActiveColor : InactiveColor;
     }
 
+    private bool IsActive()
+    {
+        if (Ability == null)
+            return false;
 
-    public static float SlotAlpha = 1f;
-    public static float EmptySlotAlpha = 0.6f;
+        return Ability.Status >= GameplayAbility.State.Activated && Ability.Status <= GameplayAbility.State.Ended;
+    }
+
+    private static Color ActiveColor = new(1, 1, .5f, 1);
+    private static Color InactiveColor = new(1, 1, 1, 1);
+
 }

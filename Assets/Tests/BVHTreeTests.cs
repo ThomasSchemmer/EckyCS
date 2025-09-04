@@ -19,7 +19,7 @@ public class BVHTreeTests
             EntityGenerator.TryCreate<TestEntity>(out var Entity, GetTransformCompData());
         }
 
-        if (!Game.TryGetService(out ECS ECS))
+        if (!Game.TryGetService(out EckyCS ECS))
             return;
 
         if (!ECS.TryGetSystem(out LocationSystem LocSys))
@@ -39,7 +39,7 @@ public class BVHTreeTests
     {
         GameObject ECSObj = new();
         var Game = ECSObj.AddComponent<Game>();
-        var ECS = ECSObj.AddComponent<ECS>();
+        var ECS = ECSObj.AddComponent<EckyCS>();
         Game.Services.Add(new()
         {
             TargetScript = ECS

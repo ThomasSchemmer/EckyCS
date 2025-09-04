@@ -85,7 +85,7 @@ public class GameplayAbilitySystem : GameService
         if (Target == null)
             return false;
 
-        if (!Target.HasTags(Effect.ApplicationRequirementTags.IDs))
+        if (!Target.HasAllTags(Effect.ApplicationRequirementTags.IDs))
             return false;
 
         GameplayEffect Clone = Effect.GetByInstancing(Target) as GameplayEffect;
@@ -109,7 +109,7 @@ public class GameplayAbilitySystem : GameService
         if (!TryGiveAbilityTo(Target, Ability))
             return false;
 
-        if (!Ability.CanActivate())
+        if (!Ability.ShouldActivate())
             return false;
 
         Ability.Activate();

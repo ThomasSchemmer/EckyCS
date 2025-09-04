@@ -46,7 +46,7 @@ class EckyCSTreeView : TreeView
 
     private unsafe void LoadECSList()
     {
-        if (!Game.TryGetService(out ECS ECS))
+        if (!Game.TryGetService(out EckyCS ECS))
             return;
 
         ID = 0;
@@ -58,7 +58,7 @@ class EckyCSTreeView : TreeView
             Register(
                 Tuple.Key, 
                 Tuple.Value.GetGroupPointers(), 
-                Tuple.Value.GetCount()
+                Tuple.Value.Values.Length()
             );
         }
     }
@@ -70,7 +70,11 @@ class EckyCSTreeView : TreeView
             return;
 
         TransformComponent* Ptr = (TransformComponent*)Ptrs[Target];
+        EntityID* IDPtr = (EntityID*)Ptrs[Ptrs.Length - 1];
         for (int i = 0; i < Count; i++) {
+            if ((IDPtr + i)->IsInvalid())
+                continue;
+
             EckyCSTreeItem Item = new(ID++);
             Item.Comp0 = (Ptr + i)->GetPosition().ToString();
             AllItems.Add(Item);

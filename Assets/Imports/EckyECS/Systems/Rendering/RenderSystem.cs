@@ -12,24 +12,29 @@ using UnityEngine.Rendering;
  * by iterating and batching each group. This is obviously slower for a small amount of entities, 
  * so be careful!
  */
-public abstract class RenderSystem : MonoBehaviour, ECSSystem
+public abstract class RenderSystem : MonoBehaviour, EckyCSSystem
 {
     public Material BaseMat;
     public ComputeShader CullingCompute;
 
-    public List<RenderInfo> Infos = new();
 
-    protected ECS ECS;
+    protected EckyCS ECS;
 
     public Dictionary<ComponentGroupIdentifier, RenderData> Datas = new();
 
-    public void StartSystem() {
+
+    public abstract void Init();
+    public abstract void AddToRenderBuffer(ref CommandBuffer Cmd);
+    public abstract void Destroy();
+
+    public void StartSystem()
+    {
 
     }
 
-    public void Start()
+    public virtual void Start()
     {
-        Game.RunAfterServiceInit((ECS ECS) =>
+        Game.RunAfterServiceInit((EckyCS ECS) =>
         {
             this.ECS = ECS;
             ECS.AddSystem(this);
@@ -37,24 +42,6 @@ public abstract class RenderSystem : MonoBehaviour, ECSSystem
         });
     }
 
-    private void Init()
-    {
-        foreach (var Info in Infos)
-        {
-            Info.Init(BaseMat);
-        }
-    }
-
-    public void AddToRenderBuffer(ref CommandBuffer Cmd)
-    {
-        if (Cmd == null)
-            return;
-
-        foreach (var DataPair in Datas)
-        {
-            DataPair.Value.AddToRenderBuffer(ref Infos, ref Cmd, CullingCompute);
-        }
-    }
 
     public unsafe void Register(ComponentGroupIdentifier Group, void*[] Ptrs, void* Data, int DataStride, int Count)
     {
@@ -72,7 +59,35 @@ public abstract class RenderSystem : MonoBehaviour, ECSSystem
         Datas[Group].UpdateBuffers(Group, Ptrs, Data, Count);
     }
 
-    public void Destroy()
+    public void LateTick(float Delta)
+    {
+    }
+
+}
+public abstract class RenderSystem<T> : RenderSystem where T : RenderInfo
+{
+    public List<T> Infos = new();
+
+    public override void Init()
+    {
+        foreach (var Info in Infos)
+        {
+            Info.Init(BaseMat);
+        }
+    }
+
+    public override void AddToRenderBuffer(ref CommandBuffer Cmd)
+    {
+        if (Cmd == null)
+            return;
+
+        foreach (var DataPair in Datas)
+        {
+            DataPair.Value.AddToRenderBuffer(ref Infos, ref Cmd, CullingCompute);
+        }
+    }
+
+    public override void Destroy()
     {
         foreach (var Tuple in Datas)
         {
@@ -84,9 +99,5 @@ public abstract class RenderSystem : MonoBehaviour, ECSSystem
         }
         Datas.Clear();
         Infos.Clear();
-    }
-
-    public void LateTick(float Delta)
-    {
     }
 }

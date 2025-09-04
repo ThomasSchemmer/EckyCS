@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "Fireball", menuName = "ScriptableObjects/Abilities/Fireball", order = 0)]
+[CreateAssetMenu(fileName = "Fireball", menuName = "ScriptableObjects/Abilities/Fireball", order = 1)]
 public class Fireball : GameplayAbility
 {
     public GameplayEffect OnHitEffect;

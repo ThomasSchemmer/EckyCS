@@ -23,7 +23,7 @@ public abstract class ComponentGroupView
      */
     public virtual unsafe void ForEach(ComponentGroup.ByteAction Action)
     {
-        if (!Game.TryGetService(out ECS ECS))
+        if (!Game.TryGetService(out EckyCS ECS))
             return;
 
         foreach (var Group in Groups)
@@ -36,26 +36,27 @@ public abstract class ComponentGroupView
     /**
      * Executes the provided action once for each contained group
      * Can be performant as it allows to directly work on memory blocks instead
+     * Warning: This will include invalid IDs due to fragmentation, so always check
      */
     public unsafe void ForEachGroup(ComponentGroup.GroupByteAction Action)
     {
-        if (!Game.TryGetService(out ECS ECS))
+        if (!Game.TryGetService(out EckyCS ECS))
             return;
 
         foreach (var Group in Groups)
         {
             var SparseSet = ECS.EntitySets[Group];
             Action?.Invoke(
-                Group, 
+                Group,
                 SparseSet.GetGroupPointers(),
-                SparseSet.GetCount()
+                SparseSet.Values.Length()
             );
         }
     }
 
     public unsafe bool CheckEachGroup(ComponentGroup.GroupByteCheck Action, bool bExpectedResult)
     {
-        if (!Game.TryGetService(out ECS ECS))
+        if (!Game.TryGetService(out EckyCS ECS))
             return false;
 
         foreach (var Group in Groups)
@@ -64,7 +65,7 @@ public abstract class ComponentGroupView
             bool bResult = (bool)Action?.Invoke(
                 Group,
                 SparseSet.GetGroupPointers(),
-                SparseSet.GetCount()
+                SparseSet.Values.Length()
             );
             if (bResult != bExpectedResult)
                 return false;
@@ -72,7 +73,7 @@ public abstract class ComponentGroupView
 
         return true;
     }
-
+    
     public abstract Type[] GetTypeSet();
 }
 

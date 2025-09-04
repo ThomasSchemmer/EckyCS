@@ -11,7 +11,7 @@ public class EntityGenerator
     {
         Profiler.BeginSample("ECS.EntityGen.TryCreate");
         Entity = new T();
-        if (!Game.TryGetService(out ECS ECS))
+        if (!Game.TryGetService(out EckyCS ECS))
             return false;
 
         Entity.ID = new(CurrentID++);
@@ -71,5 +71,5 @@ public class EntityGenerator
     }
 
 
-    private static int CurrentID = 0;
+    private static int CurrentID = 5;
 }

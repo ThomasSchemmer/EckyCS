@@ -56,7 +56,7 @@ public class DownSamplingPass : ScriptableRenderPass
             FilteringSettings TerrainFilter = new FilteringSettings(layerMask: 1 << LayerMask.NameToLayer("Terrain"));
             Context.DrawRenderers(renderingData.cullResults, ref DrawSettings, ref TerrainFilter);
 
-            if (Game.TryGetService(out ECS ECS) && ECS.TryGetSystems<RenderSystem>(out var SystemList))
+            if (Game.TryGetService(out EckyCS ECS) && ECS.TryGetSystems<RenderSystem>(out var SystemList))
             {
                 foreach (var System in SystemList)
                 {
