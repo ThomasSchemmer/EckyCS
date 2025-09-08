@@ -1,0 +1,56 @@
+todos
+
+- Harvesting System
+	- scalable radius GAS (make attribute list nice to work with UI)
+	- make ForEachEntityFrom remmbr comp ptr
+
+- Inventory System
+	- items
+	- collectables
+	- screen / overview
+
+- Seed System
+	- add Grapes, ore, flax, wood, lifebloom/fruits/honey?
+
+- SparseSet: Try void* instead of byte
+
+- GAS: make components removeable on the fly
+
+- weapon system
+	- spellcaster, melee, bow?
+
+- Movement Controller
+	- jump
+	- dash
+	- auto fire abilities
+
+- Terrain
+	- actually usable rasing
+	- normals
+	- efficient height storing, not float but prolly byte?
+	- efficient height querying, prolly array
+	- chunking
+
+- Enemies
+	- Spawning
+	- Pathfinding
+	- Attacking
+
+- Combat
+	- example Abilities: Fireball, Sweep, Poison Prolif
+
+- Cue system GAS, see PlantSelectionPreview
+
+- Sample world
+	- Trees?
+
+- savegame
+
+- Wine System
+
+- Smithing System
+
+
+
+- fix BVH Tree failing
+- fix rendering crumbling

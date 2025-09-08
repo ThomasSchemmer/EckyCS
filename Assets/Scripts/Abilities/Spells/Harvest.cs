@@ -10,6 +10,7 @@ public class Harvest : GameplayAbility
     private Dictionary<ComponentGroupIdentifier, List<EntityID>> FoundIDs;
 
     private GameObject Preview;
+    private float Scale = 1;
 
     private bool ArePlantsInRange()
     {
@@ -17,24 +18,33 @@ public class Harvest : GameplayAbility
             return false;
 
         FoundIDs = new();
+        Vector3 Target = GetTargetPosition();
+        Preview.SetActive(true);
+        Preview.transform.position = Target;
+        Preview.transform.localScale = Vector3.one * Scale;
+        return Locations.TryGetEntityListsAt<GrowthComponent, TransformComponent>(Target, out FoundIDs, Scale);
+    }
+
+    public Vector3 GetTargetPosition()
+    {
         Vector3 Target = AssignedToBehaviour.transform.position + AssignedToBehaviour.transform.forward;
         Target.y = 0.5f;
-        Preview.transform.position = Target;
-        return Locations.TryGetEntityListsAt<GrowthComponent, TransformComponent>(Target, out FoundIDs, 1f);
+        return Target; 
     }
 
 
-    public override void Tick(float Delta)
+    protected override void TickInternal(float Delta)
     {
-        base.Tick(Delta);
+        base.TickInternal(Delta);
 
         if (Status != State.Committed)
             return;
-
-        if (!Input.GetMouseButtonDown(0))
+        
+        // query it before the mouse down to update the preview cue implicitly
+        if (!ArePlantsInRange())
             return;
 
-        if (!ArePlantsInRange())
+        if (!Input.GetMouseButtonDown(0))
             return;
 
         Execute();
@@ -49,6 +59,7 @@ public class Harvest : GameplayAbility
             var Set = ECS.GetSet(Pair.Key);
             Set.ForEachEntityFrom(Pair.Value, (Group, Ptrs, Index) =>
             {
+                // todo: inefficient self index search for every entity!
                 int GrowthIndex = Group.GetSelfIndexOf(typeof(GrowthComponent));
                 if (GrowthIndex < 0)
                     return false;
@@ -82,6 +93,8 @@ public class Harvest : GameplayAbility
 
         this.ECS = ECS;
         Preview = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        Hide();
+        _OnEndAbility += Hide;
     }
 
     public override void OnGranted()
@@ -91,5 +104,20 @@ public class Harvest : GameplayAbility
         {
             Init(ECS);
         });
+    }
+
+    private void Hide()
+    {
+        if (Preview) Preview.SetActive(false);
+    }
+
+    public Dictionary<ComponentGroupIdentifier, List<EntityID>> GetTargets()
+    {
+        return FoundIDs;
+    }
+
+    private void OnDestroy()
+    {
+        _OnEndAbility -= Hide;
     }
 }

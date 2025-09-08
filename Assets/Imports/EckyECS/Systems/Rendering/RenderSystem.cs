@@ -14,23 +14,22 @@ using UnityEngine.Rendering;
  */
 public abstract class RenderSystem : MonoBehaviour, EckyCSSystem
 {
+    public void StartSystem() {
+        // handled in subclasses 
+    }
+    public abstract void Destroy();
+    public abstract void AddToRenderBuffer(ref CommandBuffer Cmd);
+}
+
+public abstract class RenderSystem<D, T> : RenderSystem where T : RenderInfo where D : RenderData, new()
+{
     public Material BaseMat;
     public ComputeShader CullingCompute;
 
-
     protected EckyCS ECS;
 
-    public Dictionary<ComponentGroupIdentifier, RenderData> Datas = new();
-
-
-    public abstract void Init();
-    public abstract void AddToRenderBuffer(ref CommandBuffer Cmd);
-    public abstract void Destroy();
-
-    public void StartSystem()
-    {
-
-    }
+    public Dictionary<ComponentGroupIdentifier, D> Datas = new();
+    public List<T> Infos = new();
 
     public virtual void Start()
     {
@@ -41,7 +40,6 @@ public abstract class RenderSystem : MonoBehaviour, EckyCSSystem
             Init();
         });
     }
-
 
     public unsafe void Register(ComponentGroupIdentifier Group, void*[] Ptrs, void* Data, int DataStride, int Count)
     {
@@ -63,12 +61,8 @@ public abstract class RenderSystem : MonoBehaviour, EckyCSSystem
     {
     }
 
-}
-public abstract class RenderSystem<T> : RenderSystem where T : RenderInfo
-{
-    public List<T> Infos = new();
 
-    public override void Init()
+    public void Init()
     {
         foreach (var Info in Infos)
         {
@@ -100,4 +94,5 @@ public abstract class RenderSystem<T> : RenderSystem where T : RenderInfo
         Datas.Clear();
         Infos.Clear();
     }
+
 }

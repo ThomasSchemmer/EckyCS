@@ -9,11 +9,11 @@ using UnityEngine.UIElements;
 public class Shovel : GameplayAbility
 {
     public GameObject Preview;
+    public int Range = 1;
 
-
-    public override void Tick(float Delta)
+    protected override void TickInternal(float Delta)
     {
-        base.Tick(Delta);
+        base.TickInternal(Delta);
         Vector3 Position = GetPlantPosition();
         Preview.transform.position = Position;
 
@@ -40,7 +40,7 @@ public class Shovel : GameplayAbility
         return LocSys.IsEntityAt<GrowthComponent, TransformComponent>(GetPlantPosition(), 0.1f);
     }
 
-    private Vector3 GetPlantPosition()
+    public Vector3 GetPlantPosition()
     {
         // todo: geet heeight from terrain
         Vector3 Temp = AssignedToBehaviour.transform.position + AssignedToBehaviour.transform.forward;

@@ -33,6 +33,7 @@ Shader "Custom/EntityShader"
             #pragma multi_compile_instancing
 
             StructuredBuffer<float3> PositionBuffer;
+            StructuredBuffer<uint> HighlightBuffer;
 
 
             struct appdata
@@ -58,7 +59,8 @@ Shader "Custom/EntityShader"
                     
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(Pos);
                 o.vertex = vertexInput.positionCS;
-                o.uv = v.uv;
+                // uv (0,0) is selected color in lookup
+                o.uv = HighlightBuffer[InstanceID] > 0 ? 0.5/16 : v.uv;
                 o.InstanceID = InstanceID;
                 return o;
             }

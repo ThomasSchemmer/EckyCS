@@ -7,6 +7,8 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using static PlasticGui.WorkspaceWindow.Merge.MergeInProgress;
+using static Unity.Burst.Intrinsics.X86.Avx;
 using static UnityEngine.GraphicsBuffer;
 
 
@@ -31,9 +33,8 @@ public unsafe class RenderData
 
     private Camera Cam;
 
-    public void Create(int Count, int DataStride)
+    public virtual void Create(int Count, int DataStride)
     {
-
         PositionBuffer = new ComputeBuffer(
             Count, 
             ComponentAllocator.GetSize(typeof(TransformComponent)), 
@@ -52,7 +53,7 @@ public unsafe class RenderData
     }
 
 
-    public void UpdateBuffers(ComponentGroupIdentifier GroupID, void*[] Ptrs, void* Data, int Count)
+    public virtual void UpdateBuffers(ComponentGroupIdentifier GroupID, void*[] Ptrs, void* Data, int Count)
     {
         // would be good to move this into its own functions, but calling generic functions with 
         // ref params and no way to infer their type is.. mid at best. So we dupe the code
@@ -87,27 +88,9 @@ public unsafe class RenderData
 
         foreach (var Info in Infos)
         {
-            ComputeCull(Info, ref Cmd, CullingCompute);
+            SetRenderInfo(Info, ref Cmd, CullingCompute);
 
-
-            Vector3[] PosAppend = new Vector3[this.Count];
-            EntityID[] IDs = new EntityID[this.Count];
-            byte[] Datas = new byte[CullingDataBuffer.stride * Count];
-            byte[] Args = new byte[IndirectDrawIndexedArgs.size];
-            Info.PositionAppendBuffer.GetData(PosAppend);
-            IDBuffer.GetData(IDs);
-            CullingDataBuffer.GetData(Datas);
-            Info.ArgsBuffer.GetData(Args);
-
-
-            Info.Mat.SetBuffer("PositionBuffer", Info.PositionAppendBuffer);
             Info.Mat.SetVector("_CamForward", CamForward);
-            Info.Mat.SetVector("_CamUp", Cam.transform.up);
-            Info.Mat.SetVector("_CamRight", Cam.transform.right);
-            Info.Mat.SetVector("_CamPos", Cam.transform.position);
-            Info.Mat.SetVector("_Scale", Info.Scale);
-            Info.Mat.SetInt("_Type", (int)Info.TargetData + 1);
-
             Cmd.DrawMeshInstancedIndirect(
                 Info.Mesh,
                 0,
@@ -116,6 +99,18 @@ public unsafe class RenderData
                 Info.ArgsBuffer
             );
         }
+    }
+
+    protected virtual void SetRenderInfo(RenderInfo Info, ref CommandBuffer Cmd, ComputeShader CullingCompute)
+    {
+        ComputeCull(Info, ref Cmd, CullingCompute);
+        Info.Mat.SetBuffer("PositionBuffer", Info.PositionAppendBuffer);
+        Info.Mat.SetVector("_CamUp", Cam.transform.up);
+        Info.Mat.SetVector("_CamRight", Cam.transform.right);
+        Info.Mat.SetVector("_CamPos", Cam.transform.position);
+        Info.Mat.SetVector("_Scale", Info.Scale);
+        // type 0 is reserved for general highlights in UV lookup table
+        Info.Mat.SetInt("_Type", (int)Info.TargetData + 1);
     }
 
     private void ComputeCull(RenderInfo Info, ref CommandBuffer Cmd, ComputeShader CullingCompute)
@@ -143,11 +138,13 @@ public unsafe class RenderData
         );
     }
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         PositionBuffer?.Dispose();
         PositionBuffer = null;
         CullingDataBuffer?.Dispose();
         CullingDataBuffer = null;
+        IDBuffer?.Dispose();
+        IDBuffer = null;
     }
 }

@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlantRenderSystem : RenderSystem<PlantInfo>
+public class PlantRenderSystem : RenderSystem<PlantRenderData, PlantInfo>
 {
     public override void Start()
     {

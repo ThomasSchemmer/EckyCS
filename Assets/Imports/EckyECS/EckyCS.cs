@@ -107,6 +107,7 @@ public class EckyCS : GameService, IComponentGroupViewProvider<SparseSet>
                 case 1: GenType = typeof(SparseSet<>).MakeGenericType(GenTypes); break;
                 case 2: GenType = typeof(SparseSet<,>).MakeGenericType(GenTypes); break;
                 case 3: GenType = typeof(SparseSet<,,>).MakeGenericType(GenTypes); break;
+                case 4: GenType = typeof(SparseSet<,,,>).MakeGenericType(GenTypes); break;
                 default: throw new NotImplementedException();
             }
             var NewSet = (SparseSet)Activator.CreateInstance(GenType, new object[]

@@ -378,6 +378,15 @@ public class SparseSet<X, Y, Z> : SparseSet where X : struct, IComponent where Y
         FillWithEmpty(0, ExpectedEntities);
     }
 }
+public class SparseSet<W, X, Y, Z> : SparseSet where W : struct, IComponent where X : struct, IComponent where Y : struct, IComponent where Z : struct, IComponent
+{
+    public SparseSet(ComponentGroupIdentifier ID, int NumPages, int ExpectedEntities) :
+        base(ID, NumPages, ExpectedEntities)
+    {
+        Values = new ComponentGroup<W, X, Y, Z>(ID, ExpectedEntities);
+        FillWithEmpty(0, ExpectedEntities);
+    }
+}
 
 
 public class SparseSetPage

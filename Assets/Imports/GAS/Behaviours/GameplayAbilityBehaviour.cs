@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class GameplayAbilityBehaviour : MonoBehaviour
 {
@@ -11,9 +13,11 @@ public class GameplayAbilityBehaviour : MonoBehaviour
     
     private List<GameplayEffect> ActiveEffects = new();
     private List<GameplayEffect> MarkedForRemovalEffects = new();
-    private List<GameplayAbility> GrantedAbilities = new();
+    private Dictionary<AbilityType, GameplayAbility> GrantedAbilities = new();
+    private SerializedDictionary<AbilityType, UnityAction<GameplayAbility>> OnGrantedAbilityCallbacks = new();
+
     private GameplayTagMask GameplayTagMask = new();
-    private SerializedDictionary<Guid, List<GameplayAbilityCue>> ActiveCues = new();
+
 
     private bool bIsInitialized = false;
 
@@ -54,8 +58,9 @@ public class GameplayAbilityBehaviour : MonoBehaviour
 
     private void TickAbilities(float Delta)
     {
-        foreach (var Ability in GrantedAbilities)
+        foreach (var Tuple in GrantedAbilities)
         {
+            var Ability = Tuple.Value;
             if (Ability.ShouldActivate())
             {
                 Ability.Activate();
@@ -122,25 +127,9 @@ public class GameplayAbilityBehaviour : MonoBehaviour
         }
     }
 
-    private void TrySpawnCues(Guid TagID)
-    {
-        Game.RunAfterServiceInit((GameplayAbilitySystem System) =>
-        {
-            foreach (var Cue in System.GetCuesForTag(this, TagID))
-            {
-                if (!ActiveCues.ContainsKey(TagID))
-                {
-                    ActiveCues.Add(TagID, new());
-                }
-                ActiveCues[TagID].Add(Cue);
-            }
-        });
-    }
-
     public void AddTagByID(Guid ID) {
         GameplayTagMask.Set(ID);
 
-        TrySpawnCues(ID);
         _OnTagsChanged?.Invoke();
         _OnTagAdded?.Invoke(this, ID);
     }
@@ -283,27 +272,44 @@ public class GameplayAbilityBehaviour : MonoBehaviour
 
     public void GrantAbility(GameplayAbility Ability)
     {
-        GrantedAbilities.Add(Ability);
+        GrantedAbilities.Add(Ability.Type, Ability);
         Ability.AssignedToBehaviour = this;
         _OnAbilityGranted?.Invoke(Ability);
+        if (OnGrantedAbilityCallbacks.ContainsKey(Ability.Type))
+        {
+            OnGrantedAbilityCallbacks[Ability.Type].Invoke(Ability);
+            OnGrantedAbilityCallbacks.Remove(Ability.Type);
+        }
         Ability.OnGranted();
     }
 
     public bool HasAbility(GameplayAbility Ability)
     {
-        return GrantedAbilities.Contains(Ability);
+        return GrantedAbilities.ContainsKey(Ability.Type);
     }
 
     public void RemoveAbility(GameplayAbility Ability)
     {
-        GrantedAbilities.Remove(Ability);
+        GrantedAbilities.Remove(Ability.Type);
         _OnAbilityRemoved?.Invoke(Ability);
         Ability.OnRemoved();
     }
 
     public List<GameplayAbility> GetGrantedAbilities()
     {
-        return GrantedAbilities;
+        return GrantedAbilities.Values.ToList();
+    }
+
+    public void RunAfterAbilityGranted(AbilityType Type, UnityAction<GameplayAbility> Action)
+    {
+        if (GrantedAbilities.ContainsKey(Type))
+        {
+            Action.Invoke(GrantedAbilities[Type]);
+        }
+        else
+        {
+            OnGrantedAbilityCallbacks.Add(Type, Action);
+        }
     }
 
     public delegate void OnTagsChanged();

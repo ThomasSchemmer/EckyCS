@@ -27,6 +27,7 @@ public class GameplayAbility : ScriptableObject
     public GameplayTagRegularContainer DeActivationTriggerTags = new("Tags that trigger a deactivation");
 
     public ActionList<GameplayAbilityBehaviour> OnTargetHit = new();
+    public List<GameplayAbilityCue> AssignedCues = new();
 
     protected float CurrentCooldown;
 
@@ -60,7 +61,20 @@ public class GameplayAbility : ScriptableObject
         Status = State.Committed;
     }
 
-    public virtual void Tick(float Delta)
+    public void Tick(float Delta)
+    {
+        for (int i = 0; i < AssignedCues.Count; i++)
+        {
+            AssignedCues[i].OnBeforeAbilityTick();
+        }
+        TickInternal(Delta);
+        for (int i = 0; i < AssignedCues.Count; i++)
+        {
+            AssignedCues[i].OnAfterAbilityTick();
+        }
+    }
+
+    protected virtual void TickInternal(float Delta)
     {
         CurrentCooldown = CurrentCooldown != -1 ? Mathf.Max(CurrentCooldown - Delta, 0) : CurrentCooldown;
 

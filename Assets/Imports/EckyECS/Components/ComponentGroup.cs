@@ -642,3 +642,268 @@ public unsafe class ComponentGroup<X, Y, Z> : ComponentGroup where X : struct, I
     }
 
 }
+
+
+public unsafe class ComponentGroup<W, X, Y, Z> : ComponentGroup where W : struct, IComponent where X : struct, IComponent where Y : struct, IComponent where Z : struct, IComponent
+{
+    // raw byte data as we cannot store it in T due to boxing
+    public byte[] ComponentsW;
+    public byte[] ComponentsX;
+    public byte[] ComponentsY;
+    public byte[] ComponentsZ;
+
+    private readonly int ComponentSizeW, ComponentSizeX, ComponentSizeY, ComponentSizeZ;
+
+    public ComponentGroup(ComponentGroupIdentifier ID, int ExpectedEntities) :
+        base(ID, ExpectedEntities)
+    {
+        ComponentSizeW = Marshal.SizeOf(typeof(W));
+        ComponentsW = new byte[ExpectedEntities * ComponentSizeW];
+        ComponentSizeX = Marshal.SizeOf(typeof(X));
+        ComponentsX = new byte[ExpectedEntities * ComponentSizeX];
+        ComponentSizeY = Marshal.SizeOf(typeof(Y));
+        ComponentsY = new byte[ExpectedEntities * ComponentSizeY];
+        ComponentSizeZ = Marshal.SizeOf(typeof(Z));
+        ComponentsZ = new byte[ExpectedEntities * ComponentSizeZ];
+
+        for (int e = 0; e < ExpectedEntities; e++)
+        {
+            Reset(e, false);
+        }
+    }
+
+    public unsafe override void* Get<T>(int Index)
+    {
+        int Target = GroupID.GetSelfIndexOf(typeof(T));
+        if (Target < 0 || Target >= 2)
+            return null;
+
+        byte[] TargetPtr;
+        int TargetSize;
+        switch (Target)
+        {
+            case 0: TargetPtr = ComponentsW; TargetSize = ComponentSizeW; break;
+            case 1: TargetPtr = ComponentsX; TargetSize = ComponentSizeX; break;
+            case 2: TargetPtr = ComponentsY; TargetSize = ComponentSizeY; break;
+            case 3: TargetPtr = ComponentsZ; TargetSize = ComponentSizeZ; break;
+            default: throw new System.Exception("Invalid");
+        }
+
+        fixed (byte* bPtr = &TargetPtr[Index * TargetSize])
+        {
+            return bPtr;
+        }
+    }
+
+    public unsafe override void ForEach(ByteAction Action)
+    {
+        fixed (byte* wPtr = &ComponentsW[0])
+        {
+            fixed (byte* xPtr = &ComponentsX[0])
+            {
+                fixed (byte* yPtr = &ComponentsY[0])
+                {
+                    fixed (byte* zPtr = &ComponentsZ[0])
+                    {
+                        for (int i = 0; i < IDs.Length; i++)
+                        {
+                            if (IDs[i].IsInvalid())
+                                continue;
+
+                            Action(GroupID, IDs[i], new void*[4]{
+                                wPtr + i * ComponentSizeW,
+                                xPtr + i * ComponentSizeX,
+                                yPtr + i * ComponentSizeY,
+                                zPtr + i * ComponentSizeZ,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public unsafe override EntityID SelectEntityFrom(List<int> Indices, EntityCheck Check)
+    {
+        fixed (byte* bPtrW = &ComponentsW[0])
+        {
+            fixed (byte* bPtrX = &ComponentsX[0])
+            {
+                fixed (byte* bPtrY = &ComponentsY[0])
+                {
+                    fixed (byte* bPtrZ = &ComponentsZ[0])
+                    {
+                        foreach (var Index in Indices)
+                        {
+                            if (Check(GroupID, new[] { (void*)bPtrW, bPtrX, bPtrY, bPtrZ }, ComponentAmount))
+                                return IDs[Index];
+                        }
+                    }
+                }
+            }
+        }
+        return EntityID.Invalid();
+    }
+
+
+    public override unsafe void ForEachEntityFrom(List<int> Indices, EntityCheck Check)
+    {
+        fixed (byte* bPtrW = &ComponentsW[0])
+        {
+            fixed (byte* bPtrX = &ComponentsX[0])
+            {
+                fixed (byte* bPtrY = &ComponentsY[0])
+                {
+                    fixed (byte* bPtrZ = &ComponentsZ[0])
+                    {
+                        foreach (var Index in Indices)
+                        {
+                            Check(GroupID, new[] { (void*)bPtrW, bPtrX, bPtrY, bPtrZ }, Index);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public override void SetData(int Index, byte[] Data)
+    {
+        int TotalSize = ComponentSizeW + ComponentSizeX + ComponentSizeY + ComponentSizeZ;
+        if (Data.Length != TotalSize)
+            return;
+
+        Array.Copy(
+            Data, 0,
+            ComponentsW, Index * ComponentSizeW,
+            ComponentSizeW
+        );
+
+        Array.Copy(
+            Data, ComponentSizeW,
+            ComponentsX, Index * ComponentSizeX,
+            ComponentSizeX
+        );
+        Array.Copy(
+            Data, ComponentSizeW + ComponentSizeX,
+            ComponentsY, Index * ComponentSizeY,
+            ComponentSizeY
+        );
+        Array.Copy(
+            Data, ComponentSizeW + ComponentSizeX + ComponentSizeY,
+            ComponentsZ, Index * ComponentSizeZ,
+            ComponentSizeZ
+        );
+    }
+
+    public override byte[] GetData(int Index)
+    {
+        byte[] Data = new byte[ComponentSizeW + ComponentSizeX + ComponentSizeY + ComponentSizeZ];
+        Array.Copy(ComponentsW, Index * ComponentSizeW, Data, 0, ComponentSizeW);
+        Array.Copy(ComponentsX, Index * ComponentSizeX, Data, ComponentSizeW, ComponentSizeX);
+        Array.Copy(ComponentsY, Index * ComponentSizeY, Data, ComponentSizeW + ComponentSizeX, ComponentSizeY);
+        Array.Copy(ComponentsZ, Index * ComponentSizeZ, Data, ComponentSizeW + ComponentSizeX + ComponentSizeY, ComponentSizeZ);
+        return Data;
+    }
+
+    public unsafe override void*[] GetGroupPointers()
+    {
+        void*[] Result = new void*[4 + 1];
+        int ResultIndex = 0;
+        fixed (byte* wPtr = &ComponentsW[0])
+        {
+            Result[ResultIndex++] = wPtr;
+        }
+        fixed (byte* xPtr = &ComponentsX[0])
+        {
+            Result[ResultIndex++] = xPtr;
+        }
+        fixed (byte* yPtr = &ComponentsY[0])
+        {
+            Result[ResultIndex++] = yPtr;
+        }
+        fixed (byte* zPtr = &ComponentsZ[0])
+        {
+            Result[ResultIndex++] = zPtr;
+        }
+        fixed (EntityID* IDPtr = &IDs[0])
+        {
+            Result[ResultIndex++] = IDPtr;
+        }
+        return Result;
+    }
+
+    protected override void ChangeSizeComponents(int NewLength)
+    {
+        byte[] NewComponentsW = new byte[NewLength * ComponentSizeW];
+        byte[] NewComponentsX = new byte[NewLength * ComponentSizeX];
+        byte[] NewComponentsY = new byte[NewLength * ComponentSizeY];
+        byte[] NewComponentsZ = new byte[NewLength * ComponentSizeZ];
+        Array.Copy(ComponentsW, NewComponentsW, ComponentsW.Length);
+        Array.Copy(ComponentsX, NewComponentsX, ComponentsX.Length);
+        Array.Copy(ComponentsY, NewComponentsY, ComponentsY.Length);
+        Array.Copy(ComponentsZ, NewComponentsZ, ComponentsZ.Length);
+        ComponentsW = NewComponentsW;
+        ComponentsX = NewComponentsX;
+        ComponentsY = NewComponentsY;
+        ComponentsZ = NewComponentsZ;
+    }
+
+    protected override void ResetComponents(int Index, EntityID ID)
+    {
+        int OffsetW = Index * ComponentSizeW;
+        for (int i = 0; i < ComponentSizeW; i++)
+        {
+            ComponentsW[i + OffsetW] = 0;
+        }
+
+        int OffsetX = Index * ComponentSizeX;
+        for (int i = 0; i < ComponentSizeX; i++)
+        {
+            ComponentsX[i + OffsetX] = 0;
+        }
+
+        int OffsetY = Index * ComponentSizeY;
+        for (int i = 0; i < ComponentSizeY; i++)
+        {
+            ComponentsY[i + OffsetY] = 0;
+        }
+
+        int OffsetZ = Index * ComponentSizeZ;
+        for (int i = 0; i < ComponentSizeZ; i++)
+        {
+            ComponentsZ[i + OffsetZ] = 0;
+        }
+    }
+
+    protected override void SwapComponents(int IndexA, int IndexB)
+    {
+        for (int i = 0; i < ComponentSizeW; i++)
+        {
+            int A = (IndexA * ComponentSizeW) + i;
+            int B = (IndexB * ComponentSizeW) + i;
+            (ComponentsW[A], ComponentsW[B]) = (ComponentsW[B], ComponentsW[A]);
+        }
+
+        for (int i = 0; i < ComponentSizeX; i++)
+        {
+            int A = (IndexA * ComponentSizeX) + i;
+            int B = (IndexB * ComponentSizeX) + i;
+            (ComponentsX[A], ComponentsX[B]) = (ComponentsX[B], ComponentsX[A]);
+        }
+
+        for (int i = 0; i < ComponentSizeY; i++)
+        {
+            int A = (IndexA * ComponentSizeY) + i;
+            int B = (IndexB * ComponentSizeY) + i;
+            (ComponentsY[A], ComponentsY[B]) = (ComponentsY[B], ComponentsY[A]);
+        }
+
+        for (int i = 0; i < ComponentSizeZ; i++)
+        {
+            int A = (IndexA * ComponentSizeZ) + i;
+            int B = (IndexB * ComponentSizeZ) + i;
+            (ComponentsZ[A], ComponentsZ[B]) = (ComponentsZ[B], ComponentsZ[A]);
+        }
+    }
+
+}

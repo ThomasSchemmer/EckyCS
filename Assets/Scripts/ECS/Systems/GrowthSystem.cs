@@ -48,6 +48,7 @@ public class GrowthSystem : EckyCSSystem
 
     private void Init()
     {
+        // try to find any registered plant maps
         if (!ECS.TryGetSystems<RenderSystem>(out var List))
             return;
 

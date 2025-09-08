@@ -18,12 +18,12 @@ MonoBehaviour:
       Value:
         Type: 1
         BaseValue: 100
-        CurrentValue: 0
+        CurrentValue: 100
     - Key: 2
       Value:
         Type: 2
         BaseValue: 100
-        CurrentValue: 0
+        CurrentValue: 100
     - Key: 3
       Value:
         Type: 3

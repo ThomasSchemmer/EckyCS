@@ -8,14 +8,14 @@ public class InteractAbility : GameplayAbility
     public List<IInteractableAbility> Interactables = new();
     private GameplayAbility LastAbility;
 
-    public override void Tick(float Delta)
+    protected override void TickInternal(float Delta)
     {
-        base.Tick(Delta);
+        base.TickInternal(Delta);
 
         if (LastAbility == null)
             return;
 
-        Debug.Log("Harveest is ready");
+        Debug.Log("Harvest is ready");
         if (!Input.GetKeyDown(ActivationKey))
             return;
 

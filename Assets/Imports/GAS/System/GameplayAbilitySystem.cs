@@ -14,8 +14,9 @@ public class GameplayAbilitySystem : GameService
     }
 
     public SerializedDictionary<Type, GameplayAbilityBehaviour> Behaviours = new();
-    private SerializedDictionary<Type, UnityAction<GameplayAbilityBehaviour>> OnInitializedCallbacks = new();
-    public List<GameplayAbilityCue> Cues = new();
+
+    private readonly SerializedDictionary<Type, UnityAction<GameplayAbilityBehaviour>> OnInitializedCallbacks = new();
+    private readonly List<GameplayAbilityCue> LoadedCues = new();
 
 
     public void Update()
@@ -31,7 +32,8 @@ public class GameplayAbilitySystem : GameService
         Behaviours.Add(Type, Behaviour);
         if (OnInitializedCallbacks.ContainsKey(Type))
         {
-            OnInitializedCallbacks[Type]?.Invoke(Behaviour);
+            OnInitializedCallbacks[Type].Invoke(Behaviour);
+            OnInitializedCallbacks.Remove(Type);
         }
         _OnBehaviourRegistered?.Invoke(Behaviour);
     }
@@ -47,29 +49,27 @@ public class GameplayAbilitySystem : GameService
         AttributeSet.Get().Reset();
     }
 
-    public List<GameplayAbilityCue> GetCuesForTag(GameplayAbilityBehaviour Target, Guid Tag)
-    {
-        List<GameplayAbilityCue> Result = new();
-        foreach (var Cue in Cues)
-        {
-            if (!Cue.AssignedTags.IDs.Contains(Tag))
-                continue;
-
-            Result.Add(Cue.GetByInstancing(Target) as GameplayAbilityCue);
-        }
-        return Result;
-    }
 
     private void LoadCues()
     {
-        Cues.Clear();
+        DestroyCues();
         foreach (var Obj in Resources.LoadAll(CuesPath))
         {
             if (Obj is not GameplayAbilityCue Cue)
                 continue;
 
-            Cues.Add(Cue);
+            var Instance = (GameplayAbilityCue)Cue.GetByInstancing(null);
+            Instance.Init();
         }
+    }
+
+    private void DestroyCues()
+    {
+        for (int i = LoadedCues.Count - 1; i >= 0; i--)
+        {
+            Destroy(LoadedCues[i]);
+        }
+        LoadedCues.Clear();
     }
 
     protected override void StartServiceInternal()
@@ -78,7 +78,9 @@ public class GameplayAbilitySystem : GameService
         _OnInit?.Invoke(this);
     }
 
-    protected override void StopServiceInternal() {}
+    protected override void StopServiceInternal() {
+        DestroyCues();
+    }
 
     public bool TryApplyEffectTo(GameplayAbilityBehaviour Target, GameplayEffect Effect)
     {
@@ -131,5 +133,5 @@ public class GameplayAbilitySystem : GameService
     public delegate void OnBehaviourRegistered(GameplayAbilityBehaviour Behavior);
     public static OnBehaviourRegistered _OnBehaviourRegistered;
 
-    private const string CuesPath = "/GAS/Cues/";
+    private const string CuesPath = "GAS/Cues/";
 }
