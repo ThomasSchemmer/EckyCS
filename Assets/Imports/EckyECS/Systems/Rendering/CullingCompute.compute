@@ -11,8 +11,9 @@ static const uint VERSION_MASK =0x000000FF;
 static const uint ID_MASK =		0xFFFFFF00;
 uint GroupCountX, GroupCountY, GroupCountZ;
 uint TotalCount;
-uint TargetPlant;
+uint TargetData;
 uint DataStride;
+uint CheckData;
 
 bool IsValid(uint ID){
     return (ID & VERSION_MASK) != 255;
@@ -32,7 +33,7 @@ void Cull (uint3 GroupID : SV_GROUPID, uint3 ThreadID : SV_GROUPTHREADID)
 	uint Offset = TotalIndex * DataStride;
 	uint Data = CullingDataBuffer.Load(Offset);
 
-	if (Data != TargetPlant)
+	if (CheckData > 0 && Data != TargetData)
 		return;
 
 	PositionAppendBuffer.Append(PositionBuffer[TotalIndex]);

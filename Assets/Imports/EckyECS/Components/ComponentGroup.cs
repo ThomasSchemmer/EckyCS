@@ -198,9 +198,12 @@ public unsafe class ComponentGroup<T> : ComponentGroup where T : struct, ICompon
     {
         fixed (byte* bPtr = &Components[0])
         {
-            foreach (var Index in Indices)
+            fixed (EntityID* IDPtr = &IDs[0])
             {
-                Check(GroupID, new[] { (void*)bPtr }, Index);
+                foreach (var Index in Indices)
+                {
+                    Check(GroupID, new[] { (void*)bPtr, IDPtr }, Index);
+                }
             }
         }
     }
@@ -343,13 +346,13 @@ public unsafe class ComponentGroup<X, Y> : ComponentGroup where X : struct, ICom
 
     public unsafe override void ForEachEntityFrom(List<int> Indices, EntityCheck Check)
     {
-        fixed (byte* bPtrX = &ComponentsX[0])
+        fixed (byte* bPtrX = &ComponentsX[0], bPtrY = &ComponentsY[0])
         {
-            fixed (byte* bPtrY = &ComponentsY[0])
+            fixed (EntityID* IDPtr = &IDs[0])
             {
                 foreach (var Index in Indices)
                 {
-                    Check(GroupID, new[] { (void*)bPtrX, bPtrY }, Index);
+                    Check(GroupID, new[] { (void*)bPtrX, bPtrY, IDPtr }, Index);
                 }
             }
         }
@@ -513,16 +516,13 @@ public unsafe class ComponentGroup<X, Y, Z> : ComponentGroup where X : struct, I
 
     public override unsafe void ForEachEntityFrom(List<int> Indices, EntityCheck Check)
     {
-        fixed (byte* bPtrX = &ComponentsX[0])
-        {
-            fixed (byte* bPtrY = &ComponentsY[0])
+        fixed (byte* bPtrX = &ComponentsX[0], bPtrY = &ComponentsY[0], bPtrZ = &ComponentsZ[0])
+        { 
+            fixed (EntityID* IDPtr = &IDs[0])
             {
-                fixed (byte* bPtrZ = &ComponentsZ[0])
+                foreach (var Index in Indices)
                 {
-                    foreach (var Index in Indices)
-                    {
-                        Check(GroupID, new[] { (void*)bPtrX, bPtrY, bPtrZ }, Index);
-                    }
+                    Check(GroupID, new[] { (void*)bPtrX, bPtrY, bPtrZ, IDPtr }, Index);
                 }
             }
         }
@@ -748,19 +748,13 @@ public unsafe class ComponentGroup<W, X, Y, Z> : ComponentGroup where W : struct
 
     public override unsafe void ForEachEntityFrom(List<int> Indices, EntityCheck Check)
     {
-        fixed (byte* bPtrW = &ComponentsW[0])
+        fixed (byte* bPtrW = &ComponentsW[0], bPtrX = &ComponentsX[0], bPtrY = &ComponentsY[0], bPtrZ = &ComponentsZ[0])
         {
-            fixed (byte* bPtrX = &ComponentsX[0])
+            fixed (EntityID* IDPtr = &IDs[0])
             {
-                fixed (byte* bPtrY = &ComponentsY[0])
+                foreach (var Index in Indices)
                 {
-                    fixed (byte* bPtrZ = &ComponentsZ[0])
-                    {
-                        foreach (var Index in Indices)
-                        {
-                            Check(GroupID, new[] { (void*)bPtrW, bPtrX, bPtrY, bPtrZ }, Index);
-                        }
-                    }
+                    Check(GroupID, new[] { (void*)bPtrW, bPtrX, bPtrY, bPtrZ, IDPtr }, Index);
                 }
             }
         }

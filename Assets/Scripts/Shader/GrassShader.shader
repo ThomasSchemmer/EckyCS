@@ -49,14 +49,6 @@ Shader "Custom/Grass"
 
             #pragma multi_compile_instancing
 
-            
-            struct RenderInfo{
-	            uint2 Pixel;
-	            float3 WorldMin;
-	            float3 WorldMax;
-	            float3 Pos;
-            };
-
             StructuredBuffer<float3> PositionBuffer;
             
             struct appdata

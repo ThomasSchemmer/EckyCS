@@ -15,7 +15,7 @@ public class PlantRenderSystem : RenderSystem<PlantRenderData, PlantInfo>
 
     public unsafe void Update()
     {
-        ECS.GetProvider().Get<TransformComponent, RenderComponent, GrowthComponent>().ForEachGroup((Group, Ptrs, Count) =>
+        ECS.GetProvider().Get<TransformComponent, GrowthComponent>().ForEachGroup((Group, Ptrs, Count) =>
         {
             int DataTarget = Group.GetSelfIndexOf(typeof(GrowthComponent));
             int DataStride = ComponentAllocator.GetSize(typeof(GrowthComponent));

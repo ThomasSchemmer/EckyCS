@@ -7,7 +7,7 @@ public class Harvest : GameplayAbility
 {
     private LocationSystem Locations;
     private EckyCS ECS;
-    private Dictionary<ComponentGroupIdentifier, List<EntityID>> FoundIDs;
+    private Dictionary<ComponentGroupIdentifier, List<EntityID>> FoundPlantIDs;
 
     private GameObject Preview;
     private float Scale = 1;
@@ -17,12 +17,12 @@ public class Harvest : GameplayAbility
         if (Locations == null || ECS == null)
             return false;
 
-        FoundIDs = new();
+        FoundPlantIDs = new();
         Vector3 Target = GetTargetPosition();
         Preview.SetActive(true);
         Preview.transform.position = Target;
         Preview.transform.localScale = Vector3.one * Scale;
-        return Locations.TryGetEntityListsAt<GrowthComponent, TransformComponent>(Target, out FoundIDs, Scale);
+        return Locations.TryGetEntityListsAt<GrowthComponent, TransformComponent>(Target, out FoundPlantIDs, Scale);
     }
 
     public Vector3 GetTargetPosition()
@@ -52,38 +52,56 @@ public class Harvest : GameplayAbility
 
     private unsafe void Execute()
     {
-        Dictionary<GrowthComponent.PlantType, int> Harvested = new();
-        foreach (var Pair in FoundIDs)
+        List<EntityID> ItemIDs = new();
+        Dictionary<EntityID, ItemComponent.ItemType> ItemTypes = new();
+        // check which plants are harvested and generate drops
+        foreach (var Pair in FoundPlantIDs)
         {
 
-            var Set = ECS.GetSet(Pair.Key);
-            Set.ForEachEntityFrom(Pair.Value, (Group, Ptrs, Index) =>
-            {
-                // todo: inefficient self index search for every entity!
-                int GrowthIndex = Group.GetSelfIndexOf(typeof(GrowthComponent));
-                if (GrowthIndex < 0)
-                    return false;
+            var PlantSet = ECS.GetSet(Pair.Key);
+            int GrowthIndex = Pair.Key.GetSelfIndexOf(typeof(GrowthComponent));
+            if (GrowthIndex < 0)
+                continue;
 
+            PlantSet.ForEachEntityFrom(Pair.Value, (Group, Ptrs, Index) =>
+            {
                 var Ptr = ((GrowthComponent*)Ptrs[GrowthIndex]) + Index;
                 if (Ptr->Growth != 2)
                     return false;
 
                 GrowthComponent.PlantType Type = Ptr->Plant;
-                if (!Harvested.ContainsKey(Type)){
-                    Harvested.Add(Type, 0);
-                }
-                Harvested[Type]++;
+                if (!EntityGenerator.TryCreate(out Item Item))
+                    return false;
+
+                ItemIDs.Add(Item.ID);
+                ItemTypes.Add(Item.ID, PlantItemMap.GetFor(Type));
                 return true;
             });
-            Set.RemoveRange(Pair.Value);
+            PlantSet.RemoveRange(Pair.Value);
         }
 
-        int Count = 0;
-        foreach (var item in Harvested)
+        // move drops to player location
+        foreach (var GroupID in ECS.GetProvider().Get<ItemComponent, TransformComponent>().Groups)
         {
-            Count += item.Value;
+            var Set = ECS.GetSet(GroupID);
+            int TransformIndex = GroupID.GetSelfIndexOf(typeof(TransformComponent));
+            int ItemIndex = GroupID.GetSelfIndexOf(typeof(ItemComponent));
+            if (TransformIndex < 0 || ItemIndex < 0)
+                continue;
+
+            Set.ForEachEntityFrom(ItemIDs, (Group, Ptrs, Index) =>
+            {
+                var TransformPtr = ((TransformComponent*)Ptrs[TransformIndex]) + Index;
+                var ItemPtr = ((ItemComponent*)Ptrs[ItemIndex]) + Index;
+                var IDPtr = ((EntityID*)Ptrs[Ptrs.Length - 1]) + Index;
+                Vector3 RandomPos = AssignedToBehaviour.transform.position + new Vector3(Random.Range(-1.0f, 1.0f), 0, Random.Range(-1.0f, 1.0f));
+                TransformPtr->PosX = RandomPos.x;
+                TransformPtr->PosY = RandomPos.y;
+                TransformPtr->PosZ = RandomPos.z;
+                ItemPtr->Type = ItemTypes[*IDPtr];
+                return true;
+            });
         }
-        Debug.Log("Harvested: " + Count);
     }
 
     private void Init(EckyCS ECS)
@@ -113,7 +131,7 @@ public class Harvest : GameplayAbility
 
     public Dictionary<ComponentGroupIdentifier, List<EntityID>> GetTargets()
     {
-        return FoundIDs;
+        return FoundPlantIDs;
     }
 
     private void OnDestroy()

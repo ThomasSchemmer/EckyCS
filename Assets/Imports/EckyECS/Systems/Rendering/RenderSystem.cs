@@ -11,6 +11,7 @@ using UnityEngine.Rendering;
  * Renders every entity with both SpriteComponent and TransformComponent,
  * by iterating and batching each group. This is obviously slower for a small amount of entities, 
  * so be careful!
+ * The updating occurs async from rendering as well, so there might be some inconsistencies
  */
 public abstract class RenderSystem : MonoBehaviour, EckyCSSystem
 {
@@ -21,6 +22,7 @@ public abstract class RenderSystem : MonoBehaviour, EckyCSSystem
     public abstract void AddToRenderBuffer(ref CommandBuffer Cmd);
 }
 
+
 public abstract class RenderSystem<D, T> : RenderSystem where T : RenderInfo where D : RenderData, new()
 {
     public Material BaseMat;
@@ -29,6 +31,7 @@ public abstract class RenderSystem<D, T> : RenderSystem where T : RenderInfo whe
     protected EckyCS ECS;
 
     public Dictionary<ComponentGroupIdentifier, D> Datas = new();
+
     public List<T> Infos = new();
 
     public virtual void Start()

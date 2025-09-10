@@ -60,11 +60,14 @@ public class GrowthSystem : EckyCSSystem
 
             foreach (var Info in PlantSystem.Infos)
             {
-                if (!GrowthMap.ContainsKey(Info.PlantType))
+                if (Info is not PlantInfo Plant)
+                    continue;
+
+                if (!GrowthMap.ContainsKey(Plant.PlantType))
                 {
-                    GrowthMap.Add(Info.PlantType, new());
+                    GrowthMap.Add(Plant.PlantType, new());
                 }
-                GrowthMap[Info.PlantType].Add(new(Info.GrowthTimeS, (int)Info.TargetData));
+                GrowthMap[Plant.PlantType].Add(new(Plant.GrowthTimeS, (int)Info.TargetData));
             }
         }
     }

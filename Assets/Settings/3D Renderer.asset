@@ -101,5 +101,6 @@ MonoBehaviour:
   bEnableEdge: 1
   GrassMat: {fileID: 2100000, guid: 6ee3ecb57c2cc0c499d7970240fc0b0c, type: 2}
   EdgeMaterial: {fileID: 2100000, guid: ccf21574a7c49474b988b0f2db1e15d9, type: 2}
-  QuadMesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
+  QuadMesh: {fileID: -3781860745874542921, guid: 889a983da664d244c83c86fd7b8474a9,
+    type: 3}
   HeightCompute: {fileID: 7200000, guid: 4c568638c9ba6674ca47cf41c64780b5, type: 3}

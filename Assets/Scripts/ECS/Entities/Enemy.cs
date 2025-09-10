@@ -4,8 +4,7 @@ using UnityEngine;
 
 [RequireComponentType(
     //typeof(HealthComponent), 
-    typeof(TransformComponent),
-    typeof(RenderComponent)
+    typeof(TransformComponent)
 )]  
 public class Enemy : Entity
 {

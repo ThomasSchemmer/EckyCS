@@ -7,9 +7,6 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
-using static PlasticGui.WorkspaceWindow.Merge.MergeInProgress;
-using static Unity.Burst.Intrinsics.X86.Avx;
-using static UnityEngine.GraphicsBuffer;
 
 
 /** Holds necessary data for rendering a single entity group (ie a chunk of memory)
@@ -92,7 +89,7 @@ public unsafe class RenderData
 
             Info.Mat.SetVector("_CamForward", CamForward);
             Cmd.DrawMeshInstancedIndirect(
-                Info.Mesh,
+                Info.GetMesh(),
                 0,
                 Info.Mat,
                 0,
@@ -124,7 +121,8 @@ public unsafe class RenderData
         Cmd.SetComputeIntParam(CullingCompute, "GroupCountY", 8);
         Cmd.SetComputeIntParam(CullingCompute, "GroupCountZ", 1);
         Cmd.SetComputeIntParam(CullingCompute, "TotalCount", Count);
-        Cmd.SetComputeIntParam(CullingCompute, "TargetPlant", (int)Info.TargetData);
+        Cmd.SetComputeIntParam(CullingCompute, "TargetData", (int)Info.TargetData);
+        Cmd.SetComputeIntParam(CullingCompute, "CheckData", ShouldCheckData() ? 1 : 0);
 
         Cmd.SetBufferCounterValue(Info.PositionAppendBuffer, 0);
         Cmd.DispatchCompute(CullingCompute, CullKernel, 8, 8, 1);
@@ -146,5 +144,10 @@ public unsafe class RenderData
         CullingDataBuffer = null;
         IDBuffer?.Dispose();
         IDBuffer = null;
+    }
+
+    public virtual bool ShouldCheckData()
+    {
+        return true;
     }
 }

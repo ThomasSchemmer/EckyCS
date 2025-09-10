@@ -13,6 +13,7 @@ public struct GrowthComponent : IComponent
     public enum PlantType
     {
         ANY,
-        Wheat
+        Corn
     }
+
 }

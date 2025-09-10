@@ -26,7 +26,7 @@ public class Shovel : GameplayAbility
         if (IsPlantAt())
             return;
 
-        Shovel.TryCreatePlantAt(Position, GrowthComponent.PlantType.Wheat, out var Plant);
+        Shovel.TryCreatePlantAt(Position, GrowthComponent.PlantType.Corn, out var Plant);
     }
 
     private bool IsPlantAt()

@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
 
+
 [RequireComponentType(
-    typeof(GrowthComponent), 
-    typeof(TransformComponent),
-    typeof(HighlightComponent)
+    typeof(ItemComponent),
+    typeof(TransformComponent)
 )]
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-public class Plant : Entity
+public class Item : Entity
 {
 }

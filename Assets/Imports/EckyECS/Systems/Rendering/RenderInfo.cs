@@ -9,9 +9,8 @@ using static UnityEngine.GraphicsBuffer;
  * regarding target data (aka "is this a fitting mesh rn?")
  */
 [Serializable]
-public class RenderInfo
+public abstract class RenderInfo
 {
-    public Mesh Mesh;
     public uint TargetData;
     public Vector3 Scale;
 
@@ -45,10 +44,11 @@ public class RenderInfo
         Mat = Material.Instantiate(BaseMat);
 
         // rest is either 0 or will be filled by compute
-        CommandData[0].indexCountPerInstance = Mesh.GetIndexCount(0);
+        CommandData[0].indexCountPerInstance = GetMesh().GetIndexCount(0);
         ArgsBuffer.SetData(CommandData);
     }
 
+    public abstract Mesh GetMesh();
 
     public const int CommandCount = 1;
     public const int AppendCount = 1000;

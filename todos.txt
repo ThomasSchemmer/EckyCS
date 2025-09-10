@@ -12,6 +12,8 @@ todos
 - Seed System
 	- add Grapes, ore, flax, wood, lifebloom/fruits/honey?
 
+- CullingCompute: Add bounds check
+
 - SparseSet: Try void* instead of byte
 
 - GAS: make components removeable on the fly
@@ -27,6 +29,7 @@ todos
 - Terrain
 	- actually usable rasing
 	- normals
+	- slopes
 	- efficient height storing, not float but prolly byte?
 	- efficient height querying, prolly array
 	- chunking
@@ -51,6 +54,12 @@ todos
 - Smithing System
 
 
+Resources:
+	- Flax: Flax, Cotton, Silk, 
+	- Fruits: Apple, Grapes, Strawberry
+	- Ores: Copper, Tin, Iron
+	- Wood: Balsa, Oak, Walnut, Ebony
 
+Bugs:
 - fix BVH Tree failing
 - fix rendering crumbling
