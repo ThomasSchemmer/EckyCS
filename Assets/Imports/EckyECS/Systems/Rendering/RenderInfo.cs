@@ -16,6 +16,7 @@ public abstract class RenderInfo
 
     [HideInInspector] public ComponentGroupIdentifier GroupID;
     [HideInInspector] public int Count;
+    [HideInInspector] public int ShaderPass;
 
     // the batcher apparently likes instanced mats, not MPBs
     [HideInInspector] public Material Mat;
@@ -42,6 +43,7 @@ public abstract class RenderInfo
             ComputeBufferType.Append
         );
         Mat = Material.Instantiate(BaseMat);
+        ShaderPass = 0;
 
         // rest is either 0 or will be filled by compute
         CommandData[0].indexCountPerInstance = GetMesh().GetIndexCount(0);

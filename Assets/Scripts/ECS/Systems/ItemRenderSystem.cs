@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VectorGraphics;
 using UnityEngine;
 
 /** 
@@ -22,13 +23,14 @@ public class ItemRenderSystem : RenderSystem<ItemRenderData, ItemInfo>
 
     private void MergeInfos()
     {
-        var Names = Enum.GetNames(typeof(ItemComponent.ItemType));
+        var Names = Enum.GetNames(typeof(ItemType));
         int CountSide = Mathf.CeilToInt(Mathf.Sqrt(Names.Length));
         CombinedTex = new(CountSide * Width, CountSide * Width);
         CombinedTex.Apply();
+        var Test = Resources.LoadAll(ItemLocation);
         for (int i = 0; i < Names.Length; i++) 
         {
-            var Tex = Resources.Load(ItemLocation + Names[i]) as Texture2D;
+            var Tex = Resources.Load(ItemLocation + Names[i] + "tex") as Texture2D;
             if (Tex == null)
                 continue;
 
@@ -49,6 +51,8 @@ public class ItemRenderSystem : RenderSystem<ItemRenderData, ItemInfo>
         Infos[0].CombinedTex = CombinedTex;
         Infos[0].Scale = Vector3.one;
         Infos[0].Size = new(Width, Width, CountSide, CountSide);
+        // use the instanciated one, base is for UI
+        Infos[0].ShaderPass = 1;
     }
 
     public unsafe void Update()

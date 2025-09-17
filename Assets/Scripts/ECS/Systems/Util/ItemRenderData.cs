@@ -11,13 +11,13 @@ using UnityEngine.Rendering;
  */
 public class ItemRenderData : RenderData
 {
-    private ComputeBuffer TypeBuffer;
+    private ComputeBuffer ItemBuffer;
 
     public override void Create(int Count, int DataStride)
     {
         base.Create(Count, DataStride);
 
-        TypeBuffer = new ComputeBuffer(
+        ItemBuffer = new ComputeBuffer(
             Count,
             ComponentAllocator.GetSize(typeof(ItemComponent)),
             ComputeBufferType.Structured
@@ -34,7 +34,7 @@ public class ItemRenderData : RenderData
         AtomicSafetyHandle ItemSH = AtomicSafetyHandle.Create();
         NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref Items, ItemSH);
 
-        TypeBuffer.SetData(Items);
+        ItemBuffer.SetData(Items);
 
         AtomicSafetyHandle.CheckDeallocateAndThrow(ItemSH);
         AtomicSafetyHandle.Release(ItemSH);
@@ -46,7 +46,7 @@ public class ItemRenderData : RenderData
         if (Info is not ItemInfo CombinedInfo)
             return;
 
-        Info.Mat.SetBuffer("TypeBuffer", TypeBuffer);
+        Info.Mat.SetBuffer("ItemBuffer", ItemBuffer);
         Info.Mat.SetTexture("_MainTex", CombinedInfo.CombinedTex);
         Info.Mat.SetVector("_Size", CombinedInfo.Size);
     }
@@ -54,8 +54,8 @@ public class ItemRenderData : RenderData
     public override void Dispose()
     {
         base.Dispose();
-        TypeBuffer?.Dispose();
-        TypeBuffer = null;
+        ItemBuffer?.Dispose();
+        ItemBuffer = null;
     }
 
     public override bool ShouldCheckData()

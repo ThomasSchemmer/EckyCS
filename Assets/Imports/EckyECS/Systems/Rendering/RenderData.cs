@@ -92,7 +92,7 @@ public unsafe class RenderData
                 Info.GetMesh(),
                 0,
                 Info.Mat,
-                0,
+                Info.ShaderPass,
                 Info.ArgsBuffer
             );
         }

@@ -14,6 +14,18 @@ public class NumberedIconScreen : SimpleIconScreen
     {
     }
 
+    public void SetEnabled(bool bEnabled)
+    {
+        SetSelectionEnabled(bEnabled);
+        IconRenderer.color = bEnabled ? ALLOWED_COLOR : FORBIDDEN_COLOR;
+    }
+
+    public void ClearInfo()
+    {
+        IconRenderer.sprite = null;
+        CountText.text = string.Empty;
+    }
+
     public override void Initialize(Sprite Sprite, string HoverTooltip, ISelectable Parent)
     {
         base.Initialize(Sprite, HoverTooltip, Parent);
@@ -51,7 +63,7 @@ public class NumberedIconScreen : SimpleIconScreen
         CountText.gameObject.layer = bEnabled ? LayerMask.NameToLayer(Selectors.UILayerName) : 0;
     }
 
-    private static Color ALLOWED_COLOR = new Color(0.2f, 0.4f, 0.2f);
-    private static Color FORBIDDEN_COLOR = new Color(0.9f, 0.25f, 0.25f);
+    private static Color ALLOWED_COLOR = new Color(1, 1, 1, 1);
+    private static Color FORBIDDEN_COLOR = new Color(0.6f, 0.6f, 0.6f, 1);
 
 }

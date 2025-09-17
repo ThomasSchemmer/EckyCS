@@ -11,6 +11,7 @@ public class Harvest : GameplayAbility
 
     private GameObject Preview;
     private float Scale = 1;
+    private float Offset = 3;
 
     private bool ArePlantsInRange()
     {
@@ -27,7 +28,7 @@ public class Harvest : GameplayAbility
 
     public Vector3 GetTargetPosition()
     {
-        Vector3 Target = AssignedToBehaviour.transform.position + AssignedToBehaviour.transform.forward;
+        Vector3 Target = AssignedToBehaviour.transform.position + AssignedToBehaviour.transform.forward * Offset;
         Target.y = 0.5f;
         return Target; 
     }
@@ -53,28 +54,33 @@ public class Harvest : GameplayAbility
     private unsafe void Execute()
     {
         List<EntityID> ItemIDs = new();
-        Dictionary<EntityID, ItemComponent.ItemType> ItemTypes = new();
+        Dictionary<EntityID, (ItemType, Vector3)> ItemInfos = new();
         // check which plants are harvested and generate drops
         foreach (var Pair in FoundPlantIDs)
         {
 
             var PlantSet = ECS.GetSet(Pair.Key);
             int GrowthIndex = Pair.Key.GetSelfIndexOf(typeof(GrowthComponent));
-            if (GrowthIndex < 0)
+            int TransformIndex = Pair.Key.GetSelfIndexOf(typeof(TransformComponent));
+            if (GrowthIndex < 0 || TransformIndex < 0)
                 continue;
 
             PlantSet.ForEachEntityFrom(Pair.Value, (Group, Ptrs, Index) =>
             {
-                var Ptr = ((GrowthComponent*)Ptrs[GrowthIndex]) + Index;
-                if (Ptr->Growth != 2)
+                var GrowthPtr = ((GrowthComponent*)Ptrs[GrowthIndex]) + Index;
+                var TransformPtr = ((TransformComponent*)Ptrs[TransformIndex]) + Index;
+                if (GrowthPtr->Growth != 2)
                     return false;
 
-                GrowthComponent.PlantType Type = Ptr->Plant;
+                GrowthComponent.PlantType Type = GrowthPtr->Plant;
                 if (!EntityGenerator.TryCreate(out Item Item))
                     return false;
 
                 ItemIDs.Add(Item.ID);
-                ItemTypes.Add(Item.ID, PlantItemMap.GetFor(Type));
+                ItemInfos.Add(Item.ID, new(
+                    PlantItemMap.GetFor(Type),
+                    TransformPtr->GetPosition()
+                ));
                 return true;
             });
             PlantSet.RemoveRange(Pair.Value);
@@ -94,11 +100,13 @@ public class Harvest : GameplayAbility
                 var TransformPtr = ((TransformComponent*)Ptrs[TransformIndex]) + Index;
                 var ItemPtr = ((ItemComponent*)Ptrs[ItemIndex]) + Index;
                 var IDPtr = ((EntityID*)Ptrs[Ptrs.Length - 1]) + Index;
-                Vector3 RandomPos = AssignedToBehaviour.transform.position + new Vector3(Random.Range(-1.0f, 1.0f), 0, Random.Range(-1.0f, 1.0f));
+                var Info = ItemInfos[*IDPtr];
+                Vector3 RandomPos = Info.Item2 + new Vector3(Random.Range(-1.0f, 1.0f), 0, Random.Range(-1.0f, 1.0f));
                 TransformPtr->PosX = RandomPos.x;
                 TransformPtr->PosY = RandomPos.y;
                 TransformPtr->PosZ = RandomPos.z;
-                ItemPtr->Type = ItemTypes[*IDPtr];
+                ItemPtr->Type = Info.Item1;
+                ItemPtr->Amount = 1;
                 return true;
             });
         }

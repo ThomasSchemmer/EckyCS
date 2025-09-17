@@ -1,13 +1,10 @@
 todos
 
-- Harvesting System
-	- scalable radius GAS (make attribute list nice to work with UI)
-	- make ForEachEntityFrom remmbr comp ptr
-
 - Inventory System
 	- items
 	- collectables
 	- screen / overview
+
 
 - Seed System
 	- add Grapes, ore, flax, wood, lifebloom/fruits/honey?
@@ -20,6 +17,12 @@ todos
 
 - weapon system
 	- spellcaster, melee, bow?
+
+- Harvesting System
+	- scalable radius GAS (make attribute list nice to work with UI)
+
+- Locations: Integrate GetEntitiesAt into existing trees, not X,Y
+
 
 - Movement Controller
 	- jump
@@ -63,3 +66,5 @@ Resources:
 Bugs:
 - fix BVH Tree failing
 - fix rendering crumbling
+- make only one ability selectable
+- highlighting is buggy after delete entity

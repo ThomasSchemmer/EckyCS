@@ -1,3 +1,6 @@
+#ifndef UNITY_SHADER_GPUPRINTER
+#define UNITY_SHADER_GPUPRINTER
+
 ///////////////////////////////////////////////////////////////////////////////
 // ABOUT:        A unity Shader .cginc to draw numbers in the fragment shader
 // AUTHOR:       Freya Holmér
@@ -131,15 +134,19 @@ float DrawNumberAtPxPos(float2 pxCoord, float2 pxPos, float number, float fontSc
 // btw this might not work on all platforms, it might be Y-flipped or whatever!
 float2 ClipToPixel(float4 clip)
 {
-    float2 ndc = float2(clip.x, -clip.y) / clip.w;
+    float2 ndc = float2(clip.x, clip.y) / clip.w;
     ndc = (ndc + 1) / 2;
     return ndc * _ScreenParams.xy;
 }
 
 
 float2 LocalToPixel(float3 locPos) { 
+
+    VertexPositionInputs vertexInput = GetVertexPositionInputs(locPos);
     float4 CS = TransformObjectToHClip(locPos.xyz);
-    return ClipToPixel(CS); 
+    float2 PixelA = ClipToPixel(vertexInput.positionCS);
+    float2 PixelB = ClipToPixel(CS); 
+    return PixelA;
 }
 
 float2 WorldToPixel(float3 worldPos) { 
@@ -159,3 +166,5 @@ float DrawNumberAtWorldPos(float2 pxCoord, float3 worldPos, float number, float 
     const float2 pxPos = WorldToPixel(worldPos);
     return DrawNumberAtPxPos(pxCoord, pxPos, number, scale, decimalCount);
 }
+
+#endif

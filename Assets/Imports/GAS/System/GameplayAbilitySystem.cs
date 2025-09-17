@@ -15,7 +15,7 @@ public class GameplayAbilitySystem : GameService
 
     public SerializedDictionary<Type, GameplayAbilityBehaviour> Behaviours = new();
 
-    private readonly SerializedDictionary<Type, UnityAction<GameplayAbilityBehaviour>> OnInitializedCallbacks = new();
+    private readonly SerializedDictionary<Type, List<UnityAction<GameplayAbilityBehaviour>>> OnInitializedCallbacks = new();
     private readonly List<GameplayAbilityCue> LoadedCues = new();
 
 
@@ -32,7 +32,7 @@ public class GameplayAbilitySystem : GameService
         Behaviours.Add(Type, Behaviour);
         if (OnInitializedCallbacks.ContainsKey(Type))
         {
-            OnInitializedCallbacks[Type].Invoke(Behaviour);
+            OnInitializedCallbacks[Type].ForEach(C => C.Invoke(Behaviour));
             OnInitializedCallbacks.Remove(Type);
         }
         _OnBehaviourRegistered?.Invoke(Behaviour);
@@ -120,13 +120,18 @@ public class GameplayAbilitySystem : GameService
 
     public void RunAfterBehaviourRegistered(Type Type, UnityAction<GameplayAbilityBehaviour> Action)
     {
+        // already registered so just trigger
         if (Behaviours.ContainsKey(Type))
         {
             Action.Invoke(Behaviours[Type]);
         }
         else
         {
-            OnInitializedCallbacks.Add(Type, Action);
+            if (!OnInitializedCallbacks.ContainsKey(Type))
+            {
+                OnInitializedCallbacks.Add(Type, new());
+            }
+            OnInitializedCallbacks[Type].Add(Action);
         }
     }
 

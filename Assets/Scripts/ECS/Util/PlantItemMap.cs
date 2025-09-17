@@ -5,7 +5,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "PlantItem", menuName = "ScriptableObjects/Maps/PlantItem", order = 0)]
 public class PlantItemMap : ScriptableObject
 {
-    public SerializedDictionary<GrowthComponent.PlantType, ItemComponent.ItemType> Mapping = new();
+    public SerializedDictionary<GrowthComponent.PlantType, ItemType> Mapping = new();
 
     // todo: should be refactored into resource lookup service
     public static PlantItemMap Instance;
@@ -15,13 +15,17 @@ public class PlantItemMap : ScriptableObject
         Instance = this;
     }
 
-    public static ItemComponent.ItemType GetFor(GrowthComponent.PlantType Plant)
+    public static ItemType GetFor(GrowthComponent.PlantType Plant)
     {
         if (Instance == null)
-            return ItemComponent.ItemType.DEFAULT;
+        {
+            Instance = Resources.Load("Util/PlantItem") as PlantItemMap;
+        }
+        if (Instance == null)
+            return ItemType.DEFAULT;
 
         if (!Instance.Mapping.ContainsKey(Plant))
-            return ItemComponent.ItemType.DEFAULT;
+            return ItemType.DEFAULT;
 
         return Instance.Mapping[Plant];
     }

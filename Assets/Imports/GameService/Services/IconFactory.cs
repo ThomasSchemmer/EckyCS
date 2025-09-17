@@ -1,6 +1,7 @@
 using System;
 using System.Security.AccessControl;
 using TMPro;
+using Unity.VectorGraphics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,6 +9,7 @@ public class IconFactory : GameService
 {
     public SerializedDictionary<MiscellaneousType, Sprite> AvailableMiscellaneous = new();
     public SerializedDictionary<AbilityType, Sprite> AvailableAbilities = new();
+    public SerializedDictionary<ItemType, Sprite> AvailableItems = new();
 
     private Sprite PlaceholderSprite;
 
@@ -25,13 +27,14 @@ public class IconFactory : GameService
     {
         LoadMiscellaneous();
         LoadAbilities();
+        LoadItems();
         LoadPlaceholder();
         LoadPrefabs();
     }
 
     private void LoadPrefabs()
     {
-        //IntSettingPrefab = Resources.Load("UI/Settings/IntSetting") as GameObject;
+        NumberedIconPrefab = Resources.Load("UI/NumberedIcon") as GameObject;
         AbilitySlotPrefab = Resources.Load("UI/Slot") as GameObject;
     }
 
@@ -84,6 +87,20 @@ public class IconFactory : GameService
         }
     }
 
+    private void LoadItems()
+    {
+        AvailableItems.Clear();
+        var ItemTypes = Enum.GetValues(typeof(ItemType));
+        foreach (var ItemType in ItemTypes)
+        {
+            var GO = Resources.Load("Icons/Items/" + ItemType) as GameObject;
+            if (!GO.TryGetComponent<SpriteRenderer>(out var Rnd))
+                continue;
+
+            AvailableItems.Add((ItemType)ItemType, Rnd.sprite);
+        }
+    }
+
 
     public Sprite GetIconForMisc(MiscellaneousType Type)
     {
@@ -101,16 +118,12 @@ public class IconFactory : GameService
         return AvailableAbilities[Type];
     }
 
-    private void SetTypeTransform(int WidthPerElement, int ElementCount, out Vector2 Size, out Vector2 Position)
+    public Sprite GetIconForItem(ItemType Type)
     {
-        Size = new(WidthPerElement * ElementCount, 30);
-        Position = new Vector2(Size.x / 2f, 0);
-    }
+        if (!AvailableItems.ContainsKey(Type))
+            return PlaceholderSprite;
 
-    private void SetProductionTransform(int WidthPerElement, int ElementCount, out Vector2 Size, out Vector2 Position)
-    {
-        Size = new(WidthPerElement * ElementCount, 30);
-        Position = new Vector2(WidthPerElement / 2f, 0);
+        return AvailableItems[Type];
     }
 
     public NumberedIconScreen GetVisualsForNumberedIcon(RectTransform GroupTransform, int i)

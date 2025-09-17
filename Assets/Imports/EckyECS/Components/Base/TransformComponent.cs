@@ -18,4 +18,11 @@ public struct TransformComponent : IComponent
     {
         return new(PosX, PosZ);
     }
+    public void SetPosition(Vector3 Pos)
+    {
+        PosX = Pos.x;
+        PosY = Pos.y;
+        PosZ = Pos.z;
+    }
+
 }
