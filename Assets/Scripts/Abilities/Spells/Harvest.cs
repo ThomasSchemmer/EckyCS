@@ -11,7 +11,7 @@ public class Harvest : GameplayAbility
 
     private GameObject Preview;
     private float Scale = 1;
-    private float Offset = 3;
+    private float Offset = 8;
 
     private bool ArePlantsInRange()
     {

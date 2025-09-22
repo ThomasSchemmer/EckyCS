@@ -35,7 +35,6 @@ v2f GetV2F(float3 WorldPos, float3 MidPoint, float2 uv){
 }
 
 float4 GetColor(uint Type, uint Amount, v2f i){
-
     float2 pxCoord = WorldToPixel(i.worldPos);
     float c1 = DrawNumberAtWorldPos(pxCoord, i.midPoint, Amount, 4, 0); 
     uint x = Type % (uint)_Size.z;

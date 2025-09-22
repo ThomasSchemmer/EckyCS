@@ -15,14 +15,15 @@ public class Game : MonoBehaviour
         }
     }
 
-    private GameMode _Mode;
+    protected GameMode _Mode;
     public bool bIsPaused = false;
     public int TargetFramerate = 60;
+    public static int TargetPlayerCount = 2;
     public List<GameServiceWrapper> Services = new();
-    private List<GameServiceDelegate> Delegates = new();
-    private Dictionary<Type, GameServiceWrapper> ServicesInternal = new();
+    protected List<GameServiceDelegate> Delegates = new();
+    protected Dictionary<Type, GameServiceWrapper> ServicesInternal = new();
 
-    private Dictionary<GameService, HashSet<GameService>> CallbackMap = new();
+    protected Dictionary<GameService, HashSet<GameService>> CallbackMap = new();
 
     public delegate void OnStateChange(GameState NewState);
     public delegate void OnModeChange(GameMode NewMode);
@@ -97,15 +98,13 @@ public class Game : MonoBehaviour
         this._Mode = ModeToStart;
 
         Application.targetFrameRate = TargetFramerate;
-        if (IngameMenuScreen.Instance)
-        {
-            IngameMenuScreen.Instance._OnOpenBegin += OnOpenMenu;
-            IngameMenuScreen.Instance._OnClose += OnCloseMenu;
-        }
+        InitInternal();
 
         ConvertToDictionary();
         InitMode();
     }
+
+    protected virtual void InitInternal() { }
 
     public void Update()
     {
@@ -117,10 +116,9 @@ public class Game : MonoBehaviour
 #endif
     }
 
-    public void GameOver(string Message = null)
+    public virtual void GameOver(string Message = null)
     {
         OnOpenMenu();
-        GameOverScreen.GameOver(Message);
     }
 
     private void ConvertToDictionary()

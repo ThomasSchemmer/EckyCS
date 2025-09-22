@@ -10,10 +10,9 @@ using static UnityEngine.GraphicsBuffer;
 
 public class DownSamplingPass : ScriptableRenderPass
 {
-    private RTHandle PixColorHandle;
-    private RTHandle PixDepthHandle;
-
     private List<ShaderTagId> ShaderTags;
+
+    private TTTerrainPass TPass;
 
 
     public DownSamplingPass(TTTerrainPass TPass)
@@ -22,8 +21,7 @@ public class DownSamplingPass : ScriptableRenderPass
             return;
 
         renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
-        PixColorHandle = TPass.GetColorHandle();
-        PixDepthHandle = TPass.GetDepthHandle();
+        this.TPass = TPass;
 
         ShaderTags = new(){
             new ShaderTagId("UniversalForward"),
@@ -33,7 +31,6 @@ public class DownSamplingPass : ScriptableRenderPass
     public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
     {
         base.Configure(cmd, cameraTextureDescriptor);
-        ConfigureTarget(PixColorHandle, PixDepthHandle);
 
         ConfigureInput(ScriptableRenderPassInput.Normal | ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
         //ConfigureClear(ClearFlag.Color, new(1, 0, 0, 1));
@@ -42,14 +39,19 @@ public class DownSamplingPass : ScriptableRenderPass
 
     public override void Execute(ScriptableRenderContext Context, ref RenderingData renderingData)
     {
-        if (PixColorHandle == null)
+        if (TPass == null)
             return;
 
+        int i = TPass.GetPlayerIndex(ref renderingData);
         CommandBuffer Cmd = CommandBufferPool.Get();
         using (new ProfilingScope(Cmd, new ProfilingSampler("DownSamplingPass")))
         {
             Context.ExecuteCommandBuffer(Cmd);
             Cmd.Clear();
+            Cmd.SetRenderTarget(
+                TPass.GetColorHandle(i),
+                TPass.GetDepthHandle(i)
+            );
 
             DrawingSettings DrawSettings = CreateDrawingSettings(ShaderTags, ref renderingData, SortingCriteria.CommonOpaque);
         
@@ -67,11 +69,31 @@ public class DownSamplingPass : ScriptableRenderPass
                 }
             }
 
+            Cmd.SetRenderTarget(
+                TPass.GetColorHandle(i),
+                TPass.GetDepthHandle(i)
+            );
+            Context.ExecuteCommandBuffer(Cmd);
+            Cmd.Clear();
+
+            // TODO: custom shadow map to discard unity's standard renderer
+            if (!renderingData.cameraData.camera.TryGetCullingParameters(out var Params))
+                return;
+
+            Params.cullingMask |= 1u << LayerMask.NameToLayer("Default");
+            Params.cullingMask |= 1u << LayerMask.NameToLayer("World");
+            Params.cullingMask |= 1u << LayerMask.NameToLayer("Water");
+            Params.cullingMask |= 1u << LayerMask.NameToLayer("Ability");
+            var CullResults = Context.Cull(ref Params);
+
             FilteringSettings WorldFilter = new FilteringSettings(layerMask: 1 << LayerMask.NameToLayer("World"));
-            Context.DrawRenderers(renderingData.cullResults, ref DrawSettings, ref WorldFilter);
-            
+            Context.DrawRenderers(CullResults, ref DrawSettings, ref WorldFilter);
+
             FilteringSettings WaterFilter = new FilteringSettings(layerMask: 1 << LayerMask.NameToLayer("Water"));
-            Context.DrawRenderers(renderingData.cullResults, ref DrawSettings, ref WaterFilter);
+            Context.DrawRenderers(CullResults, ref DrawSettings, ref WaterFilter);
+
+            FilteringSettings AbilityFilter = new FilteringSettings(layerMask: 1 << LayerMask.NameToLayer("Ability"));
+            Context.DrawRenderers(CullResults, ref DrawSettings, ref AbilityFilter);
         }
         Context.ExecuteCommandBuffer(Cmd);
         Cmd.Clear();

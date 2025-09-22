@@ -7,25 +7,24 @@ using UnityEngine.Rendering.Universal;
 public class EdgeHighlightPass : ScriptableRenderPass
 {
     public Material Material;
-    public RTHandle Handle;
+    public TTTerrainPass TerrainPass;
 
 
-    public EdgeHighlightPass(Material Material, RTHandle Handle)
+    public EdgeHighlightPass(Material Material, TTTerrainPass TerrainPass)
     {
         this.Material = Material;
-        this.Handle = Handle;
+        this.TerrainPass = TerrainPass;
         renderPassEvent = RenderPassEvent.AfterRenderingPostProcessing;
 
-        if (Material != null && Handle != null)
-        {
-            Material.SetTexture("_MainTex", Handle);
-        }
     }
 
     public override void Execute(ScriptableRenderContext Context, ref RenderingData renderingData)
     {
-        if (Material == null)
+        if (Material == null || TerrainPass == null)
             return;
+
+        int i = TerrainPass.GetPlayerIndex(ref renderingData);
+        Material.SetTexture("_MainTex", TerrainPass.GetColorHandle(i));
 
         CommandBuffer Cmd = CommandBufferPool.Get();
         using (new ProfilingScope(Cmd, new ProfilingSampler("EdgeHighlight Pass")))

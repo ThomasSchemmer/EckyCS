@@ -1,14 +1,12 @@
 {
-    "name": "CustomImports.Editor.EckyCS",
+    "name": "CustomImports.Util",
     "rootNamespace": "",
     "references": [
         "GUID:7426106cdbab0c84abb17a210b097e80"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
-    "allowUnsafeCode": true,
+    "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,

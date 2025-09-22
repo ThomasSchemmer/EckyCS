@@ -23,44 +23,6 @@ Shader "Custom/EntitySpriteShader"
         Cull Off
 	    Blend SrcAlpha OneMinusSrcAlpha 
 
-        
-        Pass
-        {
-            Name "Base"
-            HLSLPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-
-            CBUFFER_START(UnityPerMaterial)
-                float _Highlighted;
-            CBUFFER_END
-
-            static float3 TextOffset = float3(.6, -.1, 0);
-             
-            struct appdata
-            {
-                float4 vertex : POSITION;
-                float2 uv : TEXCOORD0;
-            };
-            
-            v2f vert (appdata v)
-            {
-                VertexPositionInputs vertexInput = GetVertexPositionInputs(v.vertex.xyz);
-                VertexPositionInputs midPointInput = GetVertexPositionInputs(0);
-                return GetV2F(vertexInput.positionWS, midPointInput.positionWS, v.uv);
-            }
-
-            float4 frag (v2f i) : SV_Target
-            {
-                return float4(1, 0, 0, 1);
-                uint Amount = 3;
-                uint Type = 4;
-                return GetColor(Type, Amount, i);
-            }
-
-            ENDHLSL
-        }
-
         Pass
         {
             Name "Instanciated"

@@ -1,0 +1,20 @@
+{
+    "name": "CustomImports.Editor.EckyCS",
+    "rootNamespace": "",
+    "references": [
+        "GUID:802728f4f8822f640a8b4bf58d665b91",
+        "GUID:b2587f5d43611c742a52209a2270eec8",
+        "GUID:fff7214ef964f8a4ea1c46f10598fa14"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

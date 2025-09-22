@@ -2,7 +2,8 @@
     "name": "CustomImports.Editor.GameService",
     "rootNamespace": "",
     "references": [
-        "GUID:7426106cdbab0c84abb17a210b097e80"
+        "GUID:7426106cdbab0c84abb17a210b097e80",
+        "GUID:fff7214ef964f8a4ea1c46f10598fa14"
     ],
     "includePlatforms": [
         "Editor"

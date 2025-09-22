@@ -1,0 +1,19 @@
+{
+    "name": "CustomImports.UI",
+    "rootNamespace": "",
+    "references": [
+        "GUID:01e33b447eb6d134299583138d61813c",
+        "GUID:6055be8ebefd69e48b49212b09b47b2f",
+        "GUID:68550284b645f4b9894995579f34290a",
+        "GUID:fff7214ef964f8a4ea1c46f10598fa14"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

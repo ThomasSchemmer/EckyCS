@@ -9,11 +9,11 @@ public class InventoryScreen : MonoBehaviour
     private NumberedIconScreen[] Screens;
 
     private InventoryService Service;
-    private IconFactory Icons;
+    private RSIconFactory Icons;
 
     public void Start()
     {
-        Game.RunAfterServicesInit((IconFactory Icons, InventoryService Service) =>
+        Game.RunAfterServicesInit((RSIconFactory Icons, InventoryService Service) =>
         {
             this.Service = Service;
             this.Icons = Icons;
@@ -28,7 +28,7 @@ public class InventoryScreen : MonoBehaviour
         });
     }
 
-    private void InitScreen(IconFactory Icons, int i)
+    private void InitScreen(RSIconFactory Icons, int i)
     {
         var Screen = Icons.GetVisualsForNumberedIcon(Container, i);
         Screen.transform.SetParent(Container, false);

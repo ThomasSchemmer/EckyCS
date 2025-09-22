@@ -5,7 +5,9 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "CustomImports",
-        "Implementation"
+        "Implementation",
+        "CustomImports.EckyCS",
+        "CustomImports.GameService"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

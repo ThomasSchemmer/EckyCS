@@ -13,29 +13,51 @@ public class GameplayAbilitySystem : GameService
         Player,
     }
 
-    public SerializedDictionary<Type, GameplayAbilityBehaviour> Behaviours = new();
+    public SerializedDictionary<Type, List<GameplayAbilityBehaviour>> Behaviours = new();
 
-    private readonly SerializedDictionary<Type, List<UnityAction<GameplayAbilityBehaviour>>> OnInitializedCallbacks = new();
+    private readonly SerializedDictionary<
+        Type, 
+        List<(UnityAction<GameplayAbilityBehaviour>, bool)>
+    > OnInitializedCallbacks = new();
     private readonly List<GameplayAbilityCue> LoadedCues = new();
 
 
     public void Update()
     {
-        foreach (var Tuple in Behaviours)
+        foreach (var BehList in Behaviours)
         {
-            Tuple.Value.Tick(Time.deltaTime);
+            foreach (var Behaviour in BehList.Value)
+            {
+                Behaviour.Tick(Time.deltaTime);
+            }
         }
     }
 
     public void Register(GameplayAbilityBehaviour Behaviour, Type Type)
     {
-        Behaviours.Add(Type, Behaviour);
-        if (OnInitializedCallbacks.ContainsKey(Type))
+        if (!Behaviours.ContainsKey(Type))
         {
-            OnInitializedCallbacks[Type].ForEach(C => C.Invoke(Behaviour));
-            OnInitializedCallbacks.Remove(Type);
+            Behaviours.Add(Type, new());
         }
+        Behaviours[Type].Add(Behaviour);
+        TriggerBehaviourCallbacks(Behaviour, Type);
         _OnBehaviourRegistered?.Invoke(Behaviour);
+    }
+
+    private void TriggerBehaviourCallbacks(GameplayAbilityBehaviour Behaviour, Type Type)
+    {
+        if (!OnInitializedCallbacks.ContainsKey(Type))
+            return;
+
+        for (int i = OnInitializedCallbacks[Type].Count - 1; i >= 0; i--)
+        {
+            var Tuple = OnInitializedCallbacks[Type][i];
+            Tuple.Item1.Invoke(Behaviour);
+            if (!Tuple.Item2)
+                continue;
+
+            OnInitializedCallbacks[Type].RemoveAt(i);
+        }
     }
 
     public void DeRegister(GameplayAbilityBehaviour Behaviour, Type Type)
@@ -118,20 +140,20 @@ public class GameplayAbilitySystem : GameService
         return true;
     }
 
-    public void RunAfterBehaviourRegistered(Type Type, UnityAction<GameplayAbilityBehaviour> Action)
+    public void RunAfterBehaviourRegistered(Type Type, UnityAction<GameplayAbilityBehaviour> Action, bool bRemoveAfterRun)
     {
-        // already registered so just trigger
-        if (Behaviours.ContainsKey(Type))
+        if (!OnInitializedCallbacks.ContainsKey(Type))
         {
-            Action.Invoke(Behaviours[Type]);
+            OnInitializedCallbacks.Add(Type, new());
         }
-        else
+        OnInitializedCallbacks[Type].Add((Action, bRemoveAfterRun));
+        
+        if (!Behaviours.ContainsKey(Type))
+            return;
+        
+        foreach (var Behaviour in Behaviours[Type])
         {
-            if (!OnInitializedCallbacks.ContainsKey(Type))
-            {
-                OnInitializedCallbacks.Add(Type, new());
-            }
-            OnInitializedCallbacks[Type].Add(Action);
+            TriggerBehaviourCallbacks(Behaviour, Type);
         }
     }
 

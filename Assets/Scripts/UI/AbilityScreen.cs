@@ -31,7 +31,7 @@ public class AbilityScreen : MonoBehaviour
 
     private void CreateIcon()
     {
-        if (!Game.TryGetService(out IconFactory Icons))
+        if (!Game.TryGetService(out RSIconFactory Icons))
             return;
 
         Image.sprite = Icons.GetIconForAbility(Ability != null ? Ability.Type : AbilityType.DEFAULT);

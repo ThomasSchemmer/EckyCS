@@ -43,7 +43,7 @@ public class PixelizeRenderFeature : ScriptableRendererFeature
         if (bEnableEdge)
         {
             Renderer.EnqueuePass(EdgePass);
-        }
+        }   
     }
 
     public override void Create()
@@ -60,7 +60,7 @@ public class PixelizeRenderFeature : ScriptableRendererFeature
             QuadMesh,
             TPass
         );
-        EdgePass = new EdgeHighlightPass(EdgeMaterial, TPass.GetColorHandle());
+        EdgePass = new EdgeHighlightPass(EdgeMaterial, TPass);
     }
 
     protected override void Dispose(bool disposing)

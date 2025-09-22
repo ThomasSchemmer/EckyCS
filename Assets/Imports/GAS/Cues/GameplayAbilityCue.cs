@@ -31,7 +31,9 @@ public abstract class GameplayAbilityCue : GameplayAbilityInstancingPolicy
                 {
                     InitInternal(Ability);
                 });
-            });
+            },
+            true
+            );
         });
     }
 

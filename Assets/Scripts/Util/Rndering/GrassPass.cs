@@ -19,11 +19,7 @@ public class GrassPass : ScriptableRenderPass
     private ComputeBuffer PositionAppendBuffer;
     private int MainKernel;
     private TTManager TerrainManager;
-    private Camera Cam;
-
-    private readonly RTHandle PixColorHandle;
-    private readonly RTHandle PixDepthHandle;
-    private readonly RTHandle PixTerrainHandle;
+    private TTTerrainPass TerrainPass;
 
     public GrassPass(ComputeShader HeightCompute, Material GrassMat, Mesh QuadMesh, TTTerrainPass TerrainPass)
     {
@@ -32,13 +28,10 @@ public class GrassPass : ScriptableRenderPass
 
         this.HeightCompute = HeightCompute;
         this.GrassMat = GrassMat;
-        this.PixColorHandle = TerrainPass.GetColorHandle();
-        this.PixDepthHandle = TerrainPass.GetDepthHandle();
-        this.PixTerrainHandle = TerrainPass.GetTerrainHandle();
         this.TerrainManager = TerrainPass.Manager;
         this.QuadMesh = QuadMesh;
         this.TerrainManager = TerrainPass.Manager;
-        this.Cam = Camera.main;
+        this.TerrainPass = TerrainPass;
 
         renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
 
@@ -83,14 +76,11 @@ public class GrassPass : ScriptableRenderPass
         ComputeBuffer.CopyCount(PositionAppendBuffer, ArgsBuffer, sizeof(uint));
 
         GrassMat.SetBuffer("PositionBuffer", PositionAppendBuffer);
-        GrassMat.SetTexture("_CopyTex", PixTerrainHandle.rt);
-        GrassMat.SetTexture("_TargetTex", PixColorHandle.rt);
     }
 
     public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
     {
         base.Configure(cmd, cameraTextureDescriptor);
-        ConfigureTarget(PixColorHandle, PixDepthHandle);
 
         ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
         //ConfigureClear(ClearFlag.Color, new(1, 0, 0, 1));
@@ -100,15 +90,26 @@ public class GrassPass : ScriptableRenderPass
 
     public override void Execute(ScriptableRenderContext Context, ref RenderingData renderingData)
     {
-        if (PixColorHandle == null)
+        if (TerrainPass == null)
             return;
 
-        GrassMat.SetVector("_CamOffset", Cam.transform.position);
+        int i = TerrainPass.GetPlayerIndex(ref renderingData);
+        GrassMat.SetVector(
+            "_CamOffset",
+            renderingData.cameraData.camera.transform.position
+        );
+        GrassMat.SetTexture("_CopyTex", TerrainPass.GetTerrainHandle(i).rt);
+        GrassMat.SetTexture("_TargetTex", TerrainPass.GetColorHandle(i).rt);
+
         CommandBuffer GrassCmd = CommandBufferPool.Get();
         using (new ProfilingScope(GrassCmd, new ProfilingSampler("GrassPass")))
         {
             Context.ExecuteCommandBuffer(GrassCmd);
             GrassCmd.Clear();
+            GrassCmd.SetRenderTarget(
+                TerrainPass.GetColorHandle(i),
+                TerrainPass.GetDepthHandle(i)
+            );
 
             if (QuadMesh != null && GrassMat != null && ArgsBuffer != null)
             {

@@ -7,7 +7,7 @@ public abstract class GameplayAbilityLibrary
     public static bool TrySpawnProjectile(GameplayAbility Parent, Projectile.Parameters Params, out Projectile Projectile)
     {
         Projectile = null;
-        if (!Game.TryGetService(out MeshFactory MeshFactory))
+        if (!Game.TryGetService(out RSMeshFactory MeshFactory))
             return false;
 
         Mesh Mesh = MeshFactory.GetAbilityMesh(Params.Type);

@@ -8,25 +8,31 @@ using UnityEngine.Rendering.Universal;
 public class TTTerrainPass : ScriptableRenderPass
 {
 
-    private readonly RTHandle PixColorHandle;
-    private readonly RTHandle PixDepthHandle;
-    private readonly RTHandle PixTerrainColorHandle;
+    private readonly RTHandle[] PixColorHandles;
+    private readonly RTHandle[] PixDepthHandles;
+    private readonly RTHandle[] PixTerrainColorHandles;
     private const int Width = 1920, Height = 1080;
 
     public readonly TTManager Manager;
 
-    readonly static FieldInfo depthTextureFieldInfo = typeof(UniversalRenderer).GetField("m_DepthTexture", BindingFlags.NonPublic | BindingFlags.Instance);
-    RTHandle CamDepthHandle;
+    private readonly static FieldInfo depthTextureFieldInfo = typeof(UniversalRenderer).GetField("m_DepthTexture", BindingFlags.NonPublic | BindingFlags.Instance);
+    private RTHandle CamDepthHandle;
 
     public TTTerrainPass()
     {
         renderPassEvent = RenderPassEvent.BeforeRenderingOpaques;
 
         // todo: stop flickering of color info
-        PixColorHandle = RTHandles.Alloc(width: Width, height: Height, filterMode: FilterMode.Trilinear);
-        PixDepthHandle = RTHandles.Alloc(width: Width, height: Height, depthBufferBits: DepthBits.Depth16, filterMode: FilterMode.Point);
-        PixTerrainColorHandle = RTHandles.Alloc(width: PixColorHandle.rt.width / 2, height: PixColorHandle.rt.height / 2, filterMode: FilterMode.Point);
+        int Count = Game.TargetPlayerCount;
+        PixColorHandles = new RTHandle[Count];
+        PixDepthHandles = new RTHandle[Count];
+        PixTerrainColorHandles = new RTHandle[Count];
+        for (int i = 0; i < Count; i++) {
+            PixColorHandles[i] = RTHandles.Alloc(width: Width, height: Height, filterMode: FilterMode.Trilinear);
+            PixDepthHandles[i] = RTHandles.Alloc(width: Width, height: Height, depthBufferBits: DepthBits.Depth16, filterMode: FilterMode.Point);
+            PixTerrainColorHandles[i] = RTHandles.Alloc(width: PixColorHandles[i].rt.width / 2, height: PixColorHandles[i].rt.height / 2, filterMode: FilterMode.Point);
 
+        }
 
         GameObject Terrain = GameObject.Find("Terrain");
         if (!Terrain)
@@ -44,7 +50,6 @@ public class TTTerrainPass : ScriptableRenderPass
     public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
     {
         base.Configure(cmd, cameraTextureDescriptor);
-        ConfigureTarget(PixColorHandle, PixDepthHandle);
 
         ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
         ConfigureClear(ClearFlag.Color, new(1, 0, 0, 1));
@@ -56,18 +61,30 @@ public class TTTerrainPass : ScriptableRenderPass
         CamDepthHandle = depthTextureFieldInfo.GetValue(UR) as RTHandle;
     }
 
+    public int GetPlayerIndex(ref RenderingData renderingData)
+    {
+        if (renderingData.cameraData.isPreviewCamera || renderingData.cameraData.isSceneViewCamera)
+            return 0;
+
+        return renderingData.cameraData.camera.CompareTag("MainCamera") ? 0 : 1;
+    }
 
     public override void Execute(ScriptableRenderContext Context, ref RenderingData renderingData)
     {
-        if (PixColorHandle == null || Manager == null)
+        if (PixColorHandles == null || Manager == null)
             return;
 
+        int i = GetPlayerIndex(ref renderingData);
         CommandBuffer Cmd = CommandBufferPool.Get();
         using (new ProfilingScope(Cmd, new ProfilingSampler("TerrainPass")))
         {
             Context.ExecuteCommandBuffer(Cmd);
             Cmd.Clear();
 
+            Cmd.SetRenderTarget(
+                PixColorHandles[i],
+                PixDepthHandles[i]
+            );
             Cmd.ClearRenderTarget(true, false, new(0, 0, 0, 0));
             Context.ExecuteCommandBuffer(Cmd);
             Cmd.Clear();
@@ -98,9 +115,15 @@ public class TTTerrainPass : ScriptableRenderPass
 
             // use a low res texture for sampling grass color
             // which is only influenced by the underlying terrain, so we can copy the current color tex 
-            Cmd.Blit(PixColorHandle, PixTerrainColorHandle);
+            Cmd.Blit(
+                PixColorHandles[i],
+                PixTerrainColorHandles[i]
+            );
             // fun fact: blit changes the render target -.-
-            Cmd.SetRenderTarget(PixColorHandle, PixDepthHandle);
+            Cmd.SetRenderTarget(
+                PixColorHandles[i], 
+                PixDepthHandles[i]
+            );
             Context.ExecuteCommandBuffer(Cmd);
             Cmd.Clear();
         }
@@ -111,24 +134,27 @@ public class TTTerrainPass : ScriptableRenderPass
 
     public void Dispose()
     {
-        PixColorHandle?.Release();
-        PixDepthHandle?.Release();
-        PixTerrainColorHandle?.Release();
+        for (int i = 0; i < Game.TargetPlayerCount; i++)
+        {
+            PixColorHandles[i]?.Release();
+            PixDepthHandles[i]?.Release();
+            PixTerrainColorHandles[i]?.Release();
+        }
     }
 
 
-    public RTHandle GetTerrainHandle()
+    public RTHandle GetTerrainHandle(int i)
     {
-        return PixTerrainColorHandle;
+        return PixTerrainColorHandles[i];
     }
 
-    public RTHandle GetColorHandle()
+    public RTHandle GetColorHandle(int i)
     {
-        return PixColorHandle;
+        return PixColorHandles[i];
     }
 
-    public RTHandle GetDepthHandle()
+    public RTHandle GetDepthHandle(int i)
     {
-        return PixDepthHandle;
+        return PixDepthHandles[i];
     }
 }

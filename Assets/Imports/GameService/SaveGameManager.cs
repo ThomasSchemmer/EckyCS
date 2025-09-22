@@ -25,16 +25,16 @@ public class SaveGameManager : GameService
     public SerializedDictionary<SaveGameType, GameService> Saveables;
 
     // stores location in current file
-    private Dictionary<SaveGameType, int> FoundSaveableServices;
+    protected Dictionary<SaveGameType, int> FoundSaveableServices;
 
     public bool bLoadLastFile = false;
     // static so that it can be shared between scenes and a delayed load can be executed
-    private static string FileToLoad = null;
+    protected static string FileToLoad = null;
     // implicitly cancels loading savegame data
-    private static bool bCreateNewFile = false;
+    protected static bool bCreateNewFile = false;
 
-    private const string DefaultSaveGameName = "Save"+FileExtension;
-    private const string FileExtension = ".map";
+    protected const string DefaultSaveGameName = "Save"+FileExtension;
+    protected const string FileExtension = ".map";
 
     protected enum ServiceState
     {
@@ -48,7 +48,7 @@ public class SaveGameManager : GameService
         WaitForRequiredServices();
     }
 
-    private void LoadOtherServices()
+    protected void LoadOtherServices()
     {
         ServiceState State = HandleDelayedLoading();
 
@@ -167,17 +167,9 @@ public class SaveGameManager : GameService
         }
     }
 
-    private void WaitForRequiredServices()
+    protected virtual void WaitForRequiredServices()
     {
-        // wait for Factories and GAS
-        Game.RunAfterServicesInit((IconFactory IconFactory, MeshFactory MeshFactory) =>
-        {
-            Game.RunAfterServiceInit((GameplayAbilitySystem GAS) =>
-            {
-                // will invoke every other "regular" game service to run
-                LoadOtherServices();
-            });
-        });
+        // override in subclasses
     }
 
     /** Loads the save and returns true if successful*/

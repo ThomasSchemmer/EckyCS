@@ -2,7 +2,8 @@
     "name": "CustomImports.Editor.Tags",
     "rootNamespace": "",
     "references": [
-        "GUID:7426106cdbab0c84abb17a210b097e80"
+        "GUID:7426106cdbab0c84abb17a210b097e80",
+        "GUID:de45cc3c42525c044a33ff123b6d1e32"
     ],
     "includePlatforms": [
         "Editor"

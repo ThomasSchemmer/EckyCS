@@ -25,7 +25,7 @@ public class ItemRenderSystem : RenderSystem<ItemRenderData, ItemInfo>
     {
         var Names = Enum.GetNames(typeof(ItemType));
         int CountSide = Mathf.CeilToInt(Mathf.Sqrt(Names.Length));
-        CombinedTex = new(CountSide * Width, CountSide * Width);
+        CombinedTex = new(CountSide * Width, CountSide * Width, TextureFormat.RGBA32, false);
         CombinedTex.Apply();
         var Test = Resources.LoadAll(ItemLocation);
         for (int i = 0; i < Names.Length; i++) 
@@ -51,8 +51,7 @@ public class ItemRenderSystem : RenderSystem<ItemRenderData, ItemInfo>
         Infos[0].CombinedTex = CombinedTex;
         Infos[0].Scale = Vector3.one;
         Infos[0].Size = new(Width, Width, CountSide, CountSide);
-        // use the instanciated one, base is for UI
-        Infos[0].ShaderPass = 1;
+        Infos[0].ShaderPass = 0;
     }
 
     public unsafe void Update()
@@ -66,5 +65,5 @@ public class ItemRenderSystem : RenderSystem<ItemRenderData, ItemInfo>
     }
 
     private const string ItemLocation = "Icons/Items/";
-    private const int Width = 64;
+    private const int Width = 256;
 }

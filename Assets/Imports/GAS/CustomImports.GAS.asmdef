@@ -1,0 +1,17 @@
+{
+    "name": "CustomImports.GAS",
+    "rootNamespace": "",
+    "references": [
+        "GUID:01e33b447eb6d134299583138d61813c",
+        "GUID:fff7214ef964f8a4ea1c46f10598fa14"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -69,6 +70,9 @@ public class PlayerController : MonoBehaviour
             IMovements.Add(WallRunning);
 
         IMovements.ForEach(_ => _.Init());
+
+        DebugText = GameObject.Find("UI/UpdateDebug").GetComponent<TextMeshProUGUI>();
+        FixedDebugText = GameObject.Find("UI/FixedDebug").GetComponent<TextMeshProUGUI>();
     }
 
     void Update()

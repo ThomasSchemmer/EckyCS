@@ -12,7 +12,7 @@ public class AbilityBar : MonoBehaviour
     {
         Game.RunAfterServiceInit((GameplayAbilitySystem GAS) =>
         {
-            GAS.RunAfterBehaviourRegistered(GameplayAbilitySystem.Type.Player, CheckForPlayer);
+            GAS.RunAfterBehaviourRegistered(GameplayAbilitySystem.Type.Player, CheckForPlayer, false);
         });
     }
 
@@ -27,7 +27,7 @@ public class AbilityBar : MonoBehaviour
 
     private void CreateAbilities(GameplayAbilityBehaviour PlayerBehaviour)
     {
-        if (!Game.TryGetService(out IconFactory Icons) || PlayerBehaviour == null)
+        if (!Game.TryGetService(out RSIconFactory Icons) || PlayerBehaviour == null)
             return;
 
         var Abilities = new List<GameplayAbility>();
