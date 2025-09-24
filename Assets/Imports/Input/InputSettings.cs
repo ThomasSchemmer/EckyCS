@@ -33,8 +33,36 @@ public class InputSettings : ScriptableObject
         Mouse
     }
 
+    // maps to unity's implicit MouseInput scheme 
+    public enum MouseInput  {
+        LeftButton = 0,
+        RightButton = 1,
+        MiddleButton = 2,
+    }
+
+    // uses AxisNames to map int -> string
+    public enum AxisInput
+    {
+        Horizontal = 0,
+        Vertical = 1
+    }
+
+    public enum KeyInput
+    {
+        Key1 = KeyCode.Alpha1,
+        Key2 = KeyCode.Alpha2,
+        Key3 = KeyCode.Alpha3,
+        Key4 = KeyCode.Alpha4,
+    }
+
+
     public SerializedDictionary<Inputs, InputType> InputMap = new();
 
-    public int[] Keybinds = new int[Enum.GetValues(typeof(Inputs)).Length];
-    public string[] AxisNames = new string[Enum.GetValues(typeof(Inputs)).Length];
+    public int[] KeyBindings = new int[Enum.GetValues(typeof(Inputs)).Length];
+
+    public static string[] AxisNames =
+    {
+        "Horizontal",
+        "Vertical"
+    };
 }

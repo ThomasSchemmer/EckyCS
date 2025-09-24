@@ -15,8 +15,8 @@ public class InputManager : GameService
         switch (Setting.InputMap[Type])
         {
             case InputType.Axis: return false;
-            case InputType.Mouse: return Input.GetMouseButtonDown(Setting.Keybinds[(int)Type]);
-            case InputType.Key: return Input.GetKeyDown((KeyCode)Setting.Keybinds[(int)Type]);
+            case InputType.Mouse: return Input.GetMouseButtonDown(Setting.KeyBindings[(int)Type]);
+            case InputType.Key: return Input.GetKeyDown((KeyCode)Setting.KeyBindings[(int)Type]);
             default: return false;
         }
     }
@@ -28,9 +28,11 @@ public class InputManager : GameService
         var Setting = Settings[PlayerID];
         switch (Setting.InputMap[Type])
         {
-            case InputType.Axis: return Input.GetAxis(Setting.AxisNames[(int)Type]);
-            case InputType.Mouse: return Input.GetMouseButton(Setting.Keybinds[(int)Type]) ? 1 : 0;
-            case InputType.Key: return Input.GetKey((KeyCode)Setting.Keybinds[(int)Type]) ? 1 : 0;
+            case InputType.Axis: return Input.GetAxis(
+                AxisNames[Setting.KeyBindings[(int)Type]]
+            );
+            case InputType.Mouse: return Input.GetMouseButton(Setting.KeyBindings[(int)Type]) ? 1 : 0;
+            case InputType.Key: return Input.GetKey((KeyCode)Setting.KeyBindings[(int)Type]) ? 1 : 0;
             default: return 0;
         }
     }
@@ -43,8 +45,8 @@ public class InputManager : GameService
         switch (Setting.InputMap[Type])
         {
             case InputType.Axis: return false;
-            case InputType.Mouse: return Input.GetMouseButtonUp(Setting.Keybinds[(int)Type]);
-            case InputType.Key: return Input.GetKeyUp((KeyCode)Setting.Keybinds[(int)Type]);
+            case InputType.Mouse: return Input.GetMouseButtonUp(Setting.KeyBindings[(int)Type]);
+            case InputType.Key: return Input.GetKeyUp((KeyCode)Setting.KeyBindings[(int)Type]);
             default: return false;
         }
     }

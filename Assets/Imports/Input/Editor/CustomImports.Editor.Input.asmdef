@@ -1,0 +1,20 @@
+{
+    "name": "CustomImports.Editor.Input",
+    "rootNamespace": "",
+    "references": [
+        "GUID:43c5cd20b0ce0e74fb2dcb17b3dbcb8d",
+        "GUID:49dfe126f85fe48ccb02a7bc14f7419f",
+        "GUID:01e33b447eb6d134299583138d61813c"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
