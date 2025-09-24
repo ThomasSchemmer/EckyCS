@@ -6,14 +6,24 @@ public class PlayerInstantiatorService : GameService
 {
     public GameObject PlayerPrefab;
     public GameObject CameraPrefab;
+    public GameObject AbilityBarPrefab;
     public Camera BaseCam;
 
 
     private List<PlayerGameplayAbilityBehaviour> PlayerBehaviours = new();
     private List<PlayerController> PlayerControllers = new();
+    private List<AbilityBar> AbilityBars = new();
     private List<Camera> PlayerCameras = new();
 
+    public PlayerController GetPlayerController(int i)
+    {
+        return PlayerControllers[i];
+    }
 
+    public int GetPlayerCount()
+    {
+        return PlayerControllers.Count;
+    }
 
     private void Instantiate(int i)
     {
@@ -22,12 +32,18 @@ public class PlayerInstantiatorService : GameService
         HandleGAS(Player, i);
         HandleController(Player, i);
         HandleCam(Player, i);
+        HandleAbilityBar(Player, i);
         //      -Abilities
-        //UI
-        //      - create Bar
         //services  
         //  inventory
         // Splitscreeen
+    }
+
+    private void HandleAbilityBar(GameObject Player, int i)
+    {
+        AbilityBar Bar = Instantiate(AbilityBarPrefab).GetComponent<AbilityBar>();
+        Bar.Init(i);
+        AbilityBars.Add(Bar);
     }
 
     private void HandleController(GameObject Player, int i)

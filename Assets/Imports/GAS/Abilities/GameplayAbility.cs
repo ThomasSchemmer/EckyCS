@@ -19,7 +19,7 @@ public class GameplayAbility : ScriptableObject
     public AbilityType Type;
     public State Status = State.Invalid;
     public bool bIsHidden = false;
-    public KeyCode ActivationKey = KeyCode.F12;
+    public InputSettings.Inputs Input;
     public float Cooldown = -1;
     public GameplayAbilityBehaviour AssignedToBehaviour = null;
     public GameplayTagRegularContainer AbilityTags = new("Ability Tags");
@@ -94,7 +94,7 @@ public class GameplayAbility : ScriptableObject
     {
         bool bIsOffCooldown = CurrentCooldown == -1 || CurrentCooldown == 0;
         bool bIsGranted = Status == State.Granted;
-        bool bIsKeyDown = Input.GetKeyDown(ActivationKey);
+        bool bIsKeyDown = AssignedToBehaviour.IsInputDown(Input);
         bool bHasTags = AssignedToBehaviour.HasAllTags(ActivationRequiredTags.IDs);
         return bIsOffCooldown && bIsGranted && bIsKeyDown && bHasTags;
     }
@@ -102,7 +102,7 @@ public class GameplayAbility : ScriptableObject
     public virtual bool ShouldDeactivate()
     {
         bool bIsActive = Status >= State.Activated;
-        bool bIsKeyDown = Input.GetKeyDown(ActivationKey);
+        bool bIsKeyDown = AssignedToBehaviour.IsInputDown(Input);
         bool bHasTags = AssignedToBehaviour.HasAnyTags(DeActivationTriggerTags.IDs);
 
         return bIsActive && (bIsKeyDown || bHasTags);

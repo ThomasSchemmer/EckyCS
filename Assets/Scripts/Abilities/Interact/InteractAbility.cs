@@ -16,7 +16,7 @@ public class InteractAbility : GameplayAbility
             return;
 
         Debug.Log("Harvest is ready");
-        if (!Input.GetKeyDown(ActivationKey))
+        if (!AssignedToBehaviour.IsInputDown(Input))
             return;
 
         LastAbility.Activate();

@@ -1,10 +1,9 @@
 {
-    "name": "CustomImports.GAS",
+    "name": "CustomImports.Input",
     "rootNamespace": "",
     "references": [
         "GUID:01e33b447eb6d134299583138d61813c",
-        "GUID:fff7214ef964f8a4ea1c46f10598fa14",
-        "GUID:43c5cd20b0ce0e74fb2dcb17b3dbcb8d"
+        "GUID:fff7214ef964f8a4ea1c46f10598fa14"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

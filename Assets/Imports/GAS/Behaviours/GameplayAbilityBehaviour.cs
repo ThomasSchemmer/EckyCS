@@ -312,6 +312,12 @@ public class GameplayAbilityBehaviour : MonoBehaviour
         }
     }
 
+    public virtual bool IsInputDown(InputSettings.Inputs InputType)
+    {
+        // override in subclasses
+        return false;
+    }
+
     public delegate void OnTagsChanged();
     public delegate void OnTagAdded(GameplayAbilityBehaviour Behaviour, Guid Tag);
     public delegate void OnTagRemoved(GameplayAbilityBehaviour Behaviour, Guid Tag);

@@ -30,10 +30,15 @@ public class MovementController : IMovementComponent
     private int JumpCounter = JumpInitialCounter;
     public Camera Cam;
 
+    private InputManager Inputs;
+    private int PlayerIndex = -1;
+
     public override void BaseInit()
     {
         Controller.GetRigidbody().freezeRotation = true;
         Cam = Camera.main;
+        Inputs = Game.GetService<InputManager>();
+        PlayerIndex = Controller.GetComponent<PlayerGameplayAbilityBehaviour>().Index;
     }
 
     public override void UpdateState()
@@ -79,8 +84,12 @@ public class MovementController : IMovementComponent
     public override Vector3 GetMovement()
     {
         Vector3 Movement = new();
-        float H = Input.GetAxis("Horizontal");
-        float V = Input.GetAxis("Vertical");
+        float H = 
+            Inputs.GetInput(PlayerIndex, InputSettings.Inputs.MoveLeft) +
+            Inputs.GetInput(PlayerIndex, InputSettings.Inputs.MoveRight);
+        float V =
+            Inputs.GetInput(PlayerIndex, InputSettings.Inputs.MoveUp) +
+            Inputs.GetInput(PlayerIndex, InputSettings.Inputs.MoveDown);
         Movement += V * new Vector3(1, 0, 1);
         Movement += H * new Vector3(1, 0, -1);
 

@@ -18,7 +18,7 @@ public class GameplayAbilitySystem : GameService
     private readonly SerializedDictionary<
         Type, 
         List<(UnityAction<GameplayAbilityBehaviour>, bool)>
-    > OnInitializedCallbacks = new();
+    > OnBehaviourRegisteredCallbacks = new();
     private readonly List<GameplayAbilityCue> LoadedCues = new();
 
 
@@ -46,17 +46,17 @@ public class GameplayAbilitySystem : GameService
 
     private void TriggerBehaviourCallbacks(GameplayAbilityBehaviour Behaviour, Type Type)
     {
-        if (!OnInitializedCallbacks.ContainsKey(Type))
+        if (!OnBehaviourRegisteredCallbacks.ContainsKey(Type))
             return;
 
-        for (int i = OnInitializedCallbacks[Type].Count - 1; i >= 0; i--)
+        for (int i = OnBehaviourRegisteredCallbacks[Type].Count - 1; i >= 0; i--)
         {
-            var Tuple = OnInitializedCallbacks[Type][i];
+            var Tuple = OnBehaviourRegisteredCallbacks[Type][i];
             Tuple.Item1.Invoke(Behaviour);
             if (!Tuple.Item2)
                 continue;
 
-            OnInitializedCallbacks[Type].RemoveAt(i);
+            RemoveBehaviourRegisteredCallback(Type, OnBehaviourRegisteredCallbacks[Type][i].Item1);
         }
     }
 
@@ -142,11 +142,11 @@ public class GameplayAbilitySystem : GameService
 
     public void RunAfterBehaviourRegistered(Type Type, UnityAction<GameplayAbilityBehaviour> Action, bool bRemoveAfterRun)
     {
-        if (!OnInitializedCallbacks.ContainsKey(Type))
+        if (!OnBehaviourRegisteredCallbacks.ContainsKey(Type))
         {
-            OnInitializedCallbacks.Add(Type, new());
+            OnBehaviourRegisteredCallbacks.Add(Type, new());
         }
-        OnInitializedCallbacks[Type].Add((Action, bRemoveAfterRun));
+        OnBehaviourRegisteredCallbacks[Type].Add((Action, bRemoveAfterRun));
         
         if (!Behaviours.ContainsKey(Type))
             return;
@@ -154,6 +154,21 @@ public class GameplayAbilitySystem : GameService
         foreach (var Behaviour in Behaviours[Type])
         {
             TriggerBehaviourCallbacks(Behaviour, Type);
+        }
+    }
+
+    public void RemoveBehaviourRegisteredCallback(Type Type, UnityAction<GameplayAbilityBehaviour> Action)
+    {
+        if (!OnBehaviourRegisteredCallbacks.ContainsKey(Type))
+            return;
+
+        var List = OnBehaviourRegisteredCallbacks[Type];
+        for (int i = List.Count - 1; i >= 0; i--)
+        {
+            if (!List[i].Item1.Equals(Action))
+                continue;
+
+            List.RemoveAt(i);
         }
     }
 

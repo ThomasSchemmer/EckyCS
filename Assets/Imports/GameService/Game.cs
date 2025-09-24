@@ -156,10 +156,26 @@ public class Game : MonoBehaviour
         if (!Instance)
             return null;
 
-        if (!Instance.ServicesInternal.ContainsKey(typeof(T)))
+        Type Type = typeof(T);
+        if (!Instance.ServicesInternal.ContainsKey(typeof(T)) &&
+            !TryGetReplacementService<T>(out Type))
             return null;
 
-        return Instance.ServicesInternal[typeof(T)].TargetScript as T;
+        return Instance.ServicesInternal[Type].TargetScript as T;
+    }
+
+    private static bool TryGetReplacementService<T>(out Type FoundType) where T : GameService
+    {
+        FoundType = default;
+        foreach (var Type in Instance.ServicesInternal.Keys)
+        {
+            if (!typeof(T).IsAssignableFrom(Type))
+                continue;
+
+            FoundType = Type;
+            return true;
+        }
+        return false;
     }
 
     public static GameService GetService(Type Type)

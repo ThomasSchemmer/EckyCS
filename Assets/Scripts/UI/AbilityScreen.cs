@@ -12,12 +12,13 @@ public class AbilityScreen : MonoBehaviour
     private SVGImage Image;
     private SVGImage Background;
 
-    public void Initialize(GameplayAbility Ability, Material Mat)
+    public void Initialize(GameplayAbility Ability, Material Mat, int Size)
     {
         Background = transform.parent.GetComponent<SVGImage>();
         Image = GetComponent<SVGImage>();
         Image.material = Instantiate(Mat);
         RectTransform Rect = GetComponent<RectTransform>();
+        Rect.sizeDelta = new(Size, Size);
         Vector4 PosSize = new(
             Rect.position.x - Screen.width / 2f,
             Rect.position.y - Screen.height / 2f,
