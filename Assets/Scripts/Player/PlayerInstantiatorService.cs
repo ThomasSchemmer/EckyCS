@@ -4,16 +4,41 @@ using UnityEngine;
 
 public class PlayerInstantiatorService : GameService
 {
+    public bool bDynamicView = false;
     public GameObject PlayerPrefab;
     public GameObject CameraPrefab;
     public GameObject AbilityBarPrefab;
     public Camera BaseCam;
 
+    public enum ViewState
+    {
+        Single,
+        StaticSplit,
+        DynamicSplit
+    }
 
     private List<PlayerGameplayAbilityBehaviour> PlayerBehaviours = new();
     private List<PlayerController> PlayerControllers = new();
     private List<AbilityBar> AbilityBars = new();
     private List<Camera> PlayerCameras = new();
+
+    public (Vector3, Vector3) GetCamPos()
+    {
+        Vector3 Cam0Pos = PlayerCameras[0].transform.position;
+        Vector3 Cam1Pos = GetPlayerCount() == 2 ?
+            PlayerCameras[1].transform.position :
+            Vector3.zero;
+
+        return (Cam0Pos, Cam1Pos);
+    }
+
+    public ViewState GetViewState()
+    {
+        if (GetPlayerCount() < 2)
+            return ViewState.Single;
+
+        return bDynamicView ? ViewState.DynamicSplit : ViewState.StaticSplit;
+    }
 
     public PlayerController GetPlayerController(int i)
     {
@@ -61,16 +86,16 @@ public class PlayerInstantiatorService : GameService
 
     private void HandleCam(GameObject Player, int i)
     {
-        BaseCam.gameObject.SetActive(false);
+        BaseCam.enabled = false;
+
         var Cam = Instantiate(CameraPrefab).GetComponent<Camera>();
         PlayerCameras.Add(Cam);
         Cam.GetComponent<CameraController>().Player = Player.transform;
 
-        if (i == 0)
-        {
-            Cam.tag = "MainCamera";
-            Cam.GetComponent<AudioListener>().enabled = true;
-        }
+        Cam.tag = i == 0 ? "MainCamera" : "Untagged";
+        // force main cam to be rendered last, ensuring we always have an overlay
+        Cam.depth = i == 0 ? 1 : 0;
+        Cam.GetComponent<AudioListener>().enabled = i == 0;
     }
 
     protected override void ResetInternal()

@@ -28,6 +28,12 @@ public class PixelizeRenderFeature : ScriptableRendererFeature
 
     public override void AddRenderPasses(ScriptableRenderer Renderer, ref RenderingData renderingData)
     {
+        AddPlayerPass(Renderer, ref renderingData);
+        AddOverlayPass(Renderer, ref renderingData);
+    }
+
+    private void AddPlayerPass(ScriptableRenderer Renderer, ref RenderingData renderingData)
+    {
         if (renderingData.cameraData.isPreviewCamera)
             return;
 
@@ -37,13 +43,17 @@ public class PixelizeRenderFeature : ScriptableRendererFeature
             Renderer.EnqueuePass(GrassPass);
         }
 
-        if (renderingData.cameraData.isSceneViewCamera)
+    }
+
+    private void AddOverlayPass(ScriptableRenderer Renderer, ref RenderingData renderingData)
+    {
+        if (!renderingData.cameraData.camera.CompareTag("MainCamera"))
             return;
 
         if (bEnableEdge)
         {
             Renderer.EnqueuePass(EdgePass);
-        }   
+        }
     }
 
     public override void Create()

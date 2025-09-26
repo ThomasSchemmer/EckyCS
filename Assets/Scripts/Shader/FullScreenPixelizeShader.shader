@@ -17,9 +17,13 @@ Shader "Custom/FullscreenPixelize"
         _NormalStrength("Strength", Float) = 1
         _NormalThreshold("Threshold", Range(0, 1)) = 0.01
 
-        [Header(Debug)][Space]
-        _Debug("Debug", Float) = 0
-        _MainTex ("MainTex", 2D) = "white" {}
+        [Header(Multiplayer)][Space]
+        _Player0Tex ("View0 Tex", 2D) = "white" {}
+        _Player1Tex ("View1 Tex", 2D) = "white" {}
+        _Cam0Pos("Cam0 Pos", Vector) = (0, 0, 0, 0)
+        _Cam1Pos("Cam1 Pos", Vector) = (0, 0, 0, 0)
+        _ViewState("View State", int) = 0
+        _ViewAxis("View Axis", Vector) = (0, 0, 0, 0)
     }
 
     
@@ -29,6 +33,8 @@ Shader "Custom/FullscreenPixelize"
     #include "Util/WorldPos.cginc"
     #include "Util/GpuPrinter.cginc"
     
+    #pragma enable_d3d11_debug_symbols
+    
     struct Attributes {
         uint vertexID : SV_VertexID;
     };
@@ -37,8 +43,13 @@ Shader "Custom/FullscreenPixelize"
     CBUFFER_START(UnityPerMaterial)
         sampler2D _CameraNormalsTexture;
         sampler2D _CameraDepthTexture;
-        sampler2D _MainTex;
-        float4 _MainTex_TexelSize;
+        sampler2D _Player0Tex;
+        sampler2D _Player1Tex;
+        float4 _Player0Tex_TexelSize;
+        float4 _Player1Tex_TexelSize;
+        float4 _Cam0Pos;
+        float4 _Cam1Pos;
+        float4 _ViewAxis;
         float _DepthWidth;
         float _DepthStrength;
         float _DepthThreshold;
@@ -46,7 +57,9 @@ Shader "Custom/FullscreenPixelize"
         float _NormalStrength;
         float _NormalThreshold;
         float _Highlight;
-        float _Debug;
+        // 0 = Singleplayer, 1 = fixed split screen, 2 = dynamic split screen
+        int _ViewState;
+
     CBUFFER_END
 
     
@@ -65,6 +78,9 @@ Shader "Custom/FullscreenPixelize"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+
+            
+            static const float2 AxisCenter = float2(.5, .5);
 
             struct appdata
             {
@@ -90,10 +106,10 @@ Shader "Custom/FullscreenPixelize"
                 float halfScaleFloor = floor(Width * 0.5);
                 float halfScaleCeil = ceil(Width * 0.5);
 
-                BottomLeftUV = uv - float2(_MainTex_TexelSize.x, _MainTex_TexelSize.y) * halfScaleFloor;
-                TopRightUV = uv + float2(_MainTex_TexelSize.x, _MainTex_TexelSize.y) * halfScaleCeil;  
-                BottomRightUV = uv + float2(_MainTex_TexelSize.x * halfScaleCeil, -_MainTex_TexelSize.y * halfScaleFloor);
-                TopLeftUV = uv + float2(-_MainTex_TexelSize.x * halfScaleFloor, _MainTex_TexelSize.y * halfScaleCeil);   
+                BottomLeftUV = uv - float2(_Player0Tex_TexelSize.x, _Player0Tex_TexelSize.y) * halfScaleFloor;
+                TopRightUV = uv + float2(_Player0Tex_TexelSize.x, _Player0Tex_TexelSize.y) * halfScaleCeil;  
+                BottomRightUV = uv + float2(_Player0Tex_TexelSize.x * halfScaleCeil, -_Player0Tex_TexelSize.y * halfScaleFloor);
+                TopLeftUV = uv + float2(-_Player0Tex_TexelSize.x * halfScaleFloor, _Player0Tex_TexelSize.y * halfScaleCeil);   
             }
 
             float2 Quantize(float2 uv){
@@ -134,15 +150,57 @@ Shader "Custom/FullscreenPixelize"
                 return (edge * _DepthStrength) > _DepthThreshold ? 1 : 0;
             }
 
+
+            float2 GetPlayer0UV(float2 uv){
+                if (_ViewState == 0)
+                    return uv;
+
+                if (_ViewState == 1)
+                    return uv + float2(.25, 0);
+
+                // get point orthogonal of view axis that is "in the centre" of the screen
+                float2 PlayerPos = AxisCenter + _ViewAxis / 4;
+                return uv - PlayerPos + .5;
+            }
+
+            float2 GetPlayer1UV(float2 uv){
+                if (_ViewState == 0)
+                    return -1;
+
+                if (_ViewState == 1)
+                    return uv - float2(.25, 0);
+                    
+                float2 PlayerPos = AxisCenter - _ViewAxis / 4;
+                return uv - PlayerPos + .5;
+            }
+
+            float4 GetTargetColor(float2 uv, float4 Color0, float4 Color1){
+                if (_ViewState == 0)
+                    return Color0;
+
+                if (_ViewState == 1)
+                    return uv.x < 0.5 ? Color0 : Color1;
+                    
+                float2 PointDir = normalize(uv - AxisCenter);
+                return dot(PointDir, _ViewAxis) > 0 ? Color0 : Color1;
+            }
+
             half4 frag (v2f i) : SV_Target
             {   
+            // TODO: make 2 depth passes for other player!
                 float2 uv = Quantize(i.uv);
-                float4 Color = tex2D(_MainTex, uv);
-                return Color;
-                float Edge = max(SampleDepth(uv), SampleNormal(uv));
-                float Desaturated = dot(Color.xyz, float3(0.2126, 0.7152, 0.0722));
-                Color.xyz += (1 - Desaturated) * Edge * _Highlight;
-                return Color;
+                float2 uv0 = GetPlayer0UV(uv);
+                float2 uv1 = GetPlayer1UV(uv);
+
+                float4 Color0 = tex2D(_Player0Tex, uv0);
+                float4 Color1 = tex2D(_Player1Tex, uv1);
+                //Color0 = distance(uv0, uv);
+                //Color1 = distance(uv1, uv);
+                return GetTargetColor(uv, Color0, Color1);
+                //float Edge = max(SampleDepth(uv), SampleNormal(uv));
+                //float Desaturated = dot(Color.xyz, float3(0.2126, 0.7152, 0.0722));
+                //Color.xyz += (1 - Desaturated) * Edge * _Highlight;
+                //return Color;
                 //float NeighbourDepth = tex2D(_CameraDepthTexture, NeighbourUV).x;
                 
             }

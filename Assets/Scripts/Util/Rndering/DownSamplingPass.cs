@@ -44,7 +44,7 @@ public class DownSamplingPass : ScriptableRenderPass
 
         int i = TPass.GetPlayerIndex(ref renderingData);
         CommandBuffer Cmd = CommandBufferPool.Get();
-        using (new ProfilingScope(Cmd, new ProfilingSampler("DownSamplingPass")))
+        using (new ProfilingScope(Cmd, new ProfilingSampler("DownSamplingPass "+i)))
         {
             Context.ExecuteCommandBuffer(Cmd);
             Cmd.Clear();

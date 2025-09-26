@@ -1,7 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using static InputSettings;
 
 [CustomEditor(typeof(InputSettings))]
 public class InputSettingsInspector : Editor
@@ -10,8 +12,11 @@ public class InputSettingsInspector : Editor
     public override void OnInspectorGUI()
     {
         InputSettings Settings = target as InputSettings;
+        InitMap(Settings);
+
         EditorGUILayout.BeginVertical();
         EditorGUILayout.LabelField("Input types: ");
+
         InputSettings.Inputs[] Keys = new InputSettings.Inputs[Settings.InputMap.Count];
         Settings.InputMap.Keys.CopyTo(Keys, 0);
         foreach (var Key in Keys)
@@ -21,7 +26,22 @@ public class InputSettingsInspector : Editor
             DisplayInputEntry(Settings, Key);
             EditorGUILayout.EndHorizontal();
         }
+        EditorUtility.SetDirty(Settings);
         EditorGUILayout.EndVertical();
+    }
+
+    private void InitMap(InputSettings Settings)
+    {
+        if (Settings.InputMap.Count != 0)
+            return;
+
+        foreach (Inputs Key in Enum.GetValues(typeof(Inputs)))
+        {
+            if (Key == Inputs.INVALID)
+                continue;
+
+            Settings.InputMap.Add(Key, InputType.Key);
+        }
     }
 
     private void DisplayInputEntry(InputSettings Settings, InputSettings.Inputs Key)
