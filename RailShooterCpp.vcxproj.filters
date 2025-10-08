@@ -1,0 +1,127 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\ImGUI">
+      <UniqueIdentifier>{6165073b-a514-4458-8840-1a718de62a0e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Imports">
+      <UniqueIdentifier>{6d3143e5-6c05-4e83-a41a-a4edb78c72fa}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ext\imgui\imgui.cpp">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="ext\imgui\imgui_demo.cpp">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="ext\imgui\imgui_draw.cpp">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="ext\imgui\imgui_tables.cpp">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="ext\imgui\imgui_widgets.cpp">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="ext\imgui\backends\imgui_impl_glfw.cpp">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="ext\imgui\backends\imgui_impl_opengl2.cpp">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="ext\imgui\backends\imgui_impl_opengl3.cpp">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="ext\imgui\misc\cpp\imgui_stdlib.cpp">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Imports\GameService\GameService.cpp">
+      <Filter>Source Files\Imports</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Imports\GameService\GameServiceDelegate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Imports\GameService\Game.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\main.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\imgui\imconfig.h">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\imgui\imgui.h">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\imgui\imgui_internal.h">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\imgui\imstb_rectpack.h">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\imgui\imstb_textedit.h">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\imgui\imstb_truetype.h">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\imgui\backends\imgui_impl_glfw.h">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\imgui\backends\imgui_impl_opengl2.h">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\imgui\backends\imgui_impl_opengl3.h">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\imgui\backends\imgui_impl_opengl3_loader.h">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\imgui\misc\cpp\imgui_stdlib.h">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Imports\GameService\GameService.h">
+      <Filter>Source Files\Imports</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Imports\GameService\Game.h">
+      <Filter>Source Files\Imports</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Imports\Util\ActionList.h">
+      <Filter>Source Files\Imports</Filter>
+    </ClInclude>
+    <ClInclude Include="src\PlayerService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Imports\GameService\GameServiceDelegate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ext\imgui\misc\debuggers\imgui.natstepfilter">
+      <Filter>Source Files\ImGUI</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="ext\imgui\misc\debuggers\imgui.natvis">
+      <Filter>Source Files\ImGUI</Filter>
+    </Natvis>
+  </ItemGroup>
+</Project>
