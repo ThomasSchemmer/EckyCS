@@ -10,4 +10,6 @@ C:\Programming\RailShooterCpp\ext\imgui\misc\cpp\imgui_stdlib.cpp;C:\Programming
 C:\Programming\RailShooterCpp\src\Imports\GameService\Game.cpp;C:\Programming\RailShooterCpp\RailShooterCpp\x64\Debug\Game.obj
 C:\Programming\RailShooterCpp\src\Imports\GameService\GameService.cpp;C:\Programming\RailShooterCpp\RailShooterCpp\x64\Debug\GameService.obj
 C:\Programming\RailShooterCpp\src\Imports\GameService\GameServiceDelegate.cpp;C:\Programming\RailShooterCpp\RailShooterCpp\x64\Debug\GameServiceDelegate.obj
+C:\Programming\RailShooterCpp\src\Imports\Renderer\Renderer.cpp;C:\Programming\RailShooterCpp\RailShooterCpp\x64\Debug\Renderer.obj
+C:\Programming\RailShooterCpp\src\Imports\Renderer\Shader.cpp;C:\Programming\RailShooterCpp\RailShooterCpp\x64\Debug\Shader.obj
 C:\Programming\RailShooterCpp\src\main.cpp;C:\Programming\RailShooterCpp\RailShooterCpp\x64\Debug\main.obj

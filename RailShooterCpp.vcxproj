@@ -31,6 +31,8 @@
     <ClCompile Include="src\Imports\GameService\Game.cpp" />
     <ClCompile Include="src\Imports\GameService\GameService.cpp" />
     <ClCompile Include="src\Imports\GameService\GameServiceDelegate.cpp" />
+    <ClCompile Include="src\Imports\Renderer\Renderer.cpp" />
+    <ClCompile Include="src\Imports\Renderer\Shader.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -45,9 +47,12 @@
     <ClInclude Include="ext\imgui\imstb_textedit.h" />
     <ClInclude Include="ext\imgui\imstb_truetype.h" />
     <ClInclude Include="ext\imgui\misc\cpp\imgui_stdlib.h" />
+    <ClInclude Include="ext\renderdoc\renderdoc_app.h" />
     <ClInclude Include="src\Imports\GameService\Game.h" />
     <ClInclude Include="src\Imports\GameService\GameService.h" />
     <ClInclude Include="src\Imports\GameService\GameServiceDelegate.h" />
+    <ClInclude Include="src\Imports\Renderer\Renderer.h" />
+    <ClInclude Include="src\Imports\Renderer\Shader.h" />
     <ClInclude Include="src\Imports\Util\ActionList.h" />
     <ClInclude Include="src\Imports\Util\Headers.h" />
     <ClInclude Include="src\PlayerService.h" />
@@ -58,6 +63,12 @@
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="ext\imgui\misc\debuggers\imgui.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="src\Shaders\BaseVertexShader.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="src\Shaders\BaseFragmentShader.frag" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

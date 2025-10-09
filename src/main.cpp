@@ -1,6 +1,7 @@
 #include "main.h"
 #include "../ext/imgui/backends/imgui_impl_glfw.h"
 #include "../ext/imgui/backends/imgui_impl_opengl3.h"
+#include "Imports/Renderer/Renderer.h"
 
 static GLFWwindow* window;
 
@@ -9,7 +10,18 @@ static void error_callback(int error, const char* description)
 	fprintf(stderr, "Error: %s\n", description);
 }
 
+static void InitRenderDoc()
+{
+	RendererPtr = new Renderer();
+	RendererPtr->InitRenderDoc();
+}
+
 static void InitWindow() {
+	
+	InitRenderDoc();
+	if (!glfwInit())
+		return;
+	
 	glfwSetErrorCallback(error_callback);
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -41,10 +53,20 @@ static void Update() {
 }
 
 static void Render() {
-	int display_w, display_h;
-	glfwGetFramebufferSize(window, &display_w, &display_h);
-	glViewport(0, 0, display_w, display_h);
+
+	RendererPtr->HandleCaptureStart();
+	
 	glfwSwapBuffers(window);
+	
+	glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	
+	RendererPtr->Render();
+	
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	
+	RendererPtr->HandleCaptureStop();
 }
 
 bool bIsToolActive = true;
@@ -78,20 +100,16 @@ static void RenderUI() {
 		ImGui::Text("%04d: Some text", n);
 	ImGui::EndChild();
 	ImGui::End();
-
-	// Render dear imgui into screen
-	ImGui::Render();
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
-
 
 static void InitWorld()
 {
-	Game* GamePtr = new Game();
-	PlayerService* PlayerPtr = new PlayerService();
+	GamePtr = new Game();
+	PlayerPtr = new PlayerService();
 	GamePtr->Services.push_back(PlayerPtr);
 
 	GamePtr->Init();
+	RendererPtr->Init();
 }
 
 static void DestroyWorld()
@@ -112,9 +130,6 @@ int main()
 {
 	cout << "Starting glfw";
 
-	if (!glfwInit())
-		return -1;
-	
 	InitWindow();
 	if (!window) {
 		glfwTerminate();
@@ -122,16 +137,16 @@ int main()
 	}
 
 	InitImGUI();
-
 	InitWorld();
+	
+	int display_w, display_h;
+	glfwGetFramebufferSize(window, &display_w, &display_h);
+	glViewport(0, 0, display_w, display_h);
 
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
 		Update();
-
-		glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
-		glClear(GL_COLOR_BUFFER_BIT);
 
 		RenderUI();
 		Render();
