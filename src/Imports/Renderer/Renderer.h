@@ -6,6 +6,10 @@
 
 class Shader;
 
+/**
+ * Class enabling displaying objects on the screen
+ * Contains shaders to change visuals and helpful debug tools 
+ */
 class Renderer
 {
 public:

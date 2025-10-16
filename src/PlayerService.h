@@ -5,15 +5,20 @@ using namespace GameImports;
 
 class PlayerService : public GameService {
 public:
-	//using GameService::GameService;
+
 	PlayerService() 
 	{
-		Type = GameServiceType::PlayerService;
+		Type = GameServiceType::Player;
 	}
 	
 	void StartServiceInternal () override
 	{
 		OnInit.ForEach(Type);
+	}
+
+	void PrintTest()
+	{
+		cout << "Hi there" << "\n";
 	}
 	void StopServiceInternal() override {}
 	void ResetServiceInternal() override {}

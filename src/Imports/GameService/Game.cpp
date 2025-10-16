@@ -1,4 +1,6 @@
 #include "Game.h"
+
+#include <iostream>
 #include <stdexcept>
 #include <string>
 
@@ -6,37 +8,20 @@
 
 namespace GameImports {
 
-	Game* Game::Instance = nullptr;
-
-	template<class T,  std::enable_if<std::is_base_of_v<GameService, T>>>
-	T* Game::GetService(GameServiceType Type) {
-		if (Game::Instance == nullptr)
-			return nullptr;
-
-		if (Game::Instance->ServicesInternal.contains(Type) &&
-			!TryGetReplacementService<T>(Type))
-			return nullptr;
-
-		return Game::Instance->ServicesInternal[Type];
-	}
-
-	Game::Game()
-	{
-		Instance = this;
-	}
+	unique_ptr<Game> Game::Instance = nullptr;
 
 	Game::~Game()
 	{
 		for (auto& Service: Services)
 		{
 			Service->StopService();
-			delete Service;
+			Service.reset();
 		}
 		Services.clear();
 		
-		for (auto& Delegate: Delegates)
+		for (auto& Pair: Delegates)
 		{
-			delete Delegate;
+			Pair.second.reset();
 		}
 		Services.clear();
 	}
@@ -44,74 +29,73 @@ namespace GameImports {
 	void Game::Init()
 	{
 		State = GameState::InGame;
-		for (auto Service: Services)
+		for (auto& Service: Services)
 		{
 			ServicesInternal.emplace(Service->Type, Service);
+		}
+		
+		for (auto& Service: Services)
+		{
 			Service->StartService();
 		}
 	}
 
-	GameService* Game::GetService(GameServiceType Type) {
-		if (Game::Instance == nullptr)
+	shared_ptr<GameService> Game::GetService(GameServiceType Type) {
+		if (Instance == nullptr)
 			return nullptr;
 
-		if (Game::Instance->ServicesInternal.contains(Type))
+		if (!Instance->ServicesInternal.contains(Type))
 			return nullptr;
 
-		return Game::Instance->ServicesInternal[Type];
+		return Instance->ServicesInternal[Type];
 	}
 
-	template<class T, std::enable_if<std::is_base_of_v<GameService, T>>>
-	bool Game::TryGetReplacementService(GameServiceType& FoundType)
-	{
-		FoundType = GameServiceType::INVALID;
-		if (Game::Instance == nullptr)
-			return false;
-
-		for (const auto& pair : Game::Instance->ServicesInternal) {
-			T* Ptr = dynamic_cast<T*>(pair.second);
-			if (Ptr == nullptr)
-				continue;
-
-			FoundType = pair.first;
-			return true;
-		}
-		return false;
-	}
-
-	void Game::DestroyServiceDelegate(GameServiceDelegate* Delegate) {
-		auto it = ranges::find(Instance->Delegates, Delegate);
-		if (it != Instance->Delegates.end()) {
-			Instance->Delegates.erase(it);
-		}
+	void Game::RemoveServiceDelegate(int DelegateID) {
+		auto& Delegate = Instance->Delegates[DelegateID];
 
 		auto Set = Delegate->GetRequiredServices();
-		for (auto SetIt = Set.begin(); SetIt < Set.end(); ++SetIt)
+		for (auto& Other : Set)
 		{
-			// todo: make
-			
+			Instance->RemoveCallback(Delegate->SourceType, Other);
 		}
 
-		delete Delegate;
+		Instance->Delegates.erase(DelegateID);
+	}
+
+	void Game::MarkAsReadyFor(int DelegateID, GameServiceType ServiceType)
+	{
+		auto& Delegate = Instance->Delegates[DelegateID];
+		Delegate->MarkAsReady(ServiceType);
 	}
 
 
-	void Game::RegisterCallback(const GameService* A, const GameService* B)
+	void Game::RegisterCallback(const shared_ptr<GameService>& A, const shared_ptr<GameService>& B)
 	{
+		if (Instance == nullptr)
+			return;
+		
 		vector<GameServiceType> Chain;
-		if (CheckForAnyLoopBetween(A, B, Chain))
+		if (Instance->CheckForAnyLoopBetween(A, B, Chain))
 		{
-			const char* AN = typeid(*A).name();
-			const char* BN = typeid(*B).name();
+			const char* AN = typeid(A.get()).name();
+			const char* BN = typeid(B.get()).name();
 			std::string Message = "Infinite loop detected between: " + string(AN) + " and " + string(BN);
 			throw std::runtime_error(Message);
 		}
 
 		// A->Type is implicitly always existing
-		CallbackMap[A->Type].emplace(B->Type);
+		Instance->CallbackMap[A->Type].emplace(B->Type);
 	}
 
-	bool Game::CheckForAnyLoopBetween(const GameService* A, const GameService* B, vector<GameServiceType>& Chain)
+	void Game::RemoveCallback(GameServiceType A, GameServiceType B)
+	{
+		if (!CallbackMap.contains(A) || !CallbackMap[A].contains(B))
+			return;
+
+		CallbackMap[A].erase(B);
+	}
+
+	bool Game::CheckForAnyLoopBetween(const shared_ptr<GameService>& A, const shared_ptr<GameService>& B, vector<GameServiceType>& Chain)
 	{
 		if (A == nullptr || B == nullptr)
 			return false;
@@ -139,18 +123,4 @@ namespace GameImports {
 		return false;
 	}
 
-	template<class T, std::enable_if<std::is_base_of_v<GameService, T>>>
-	void Game::RunAfterServiceInit(Action<T> Callback){
-		T Service = GetService<T>();
-		if (Service == nullptr)
-			return;
-
-		// ignore the error for "not enough template args"!
-		TemplatedDelegate<T> Delegate(Service, Callback, GameServiceDelegateType::OnInit);
-		if (Delegate.HasRun())
-			return;
-
-		Instance->Delegates.emplace_back(Delegate);
-		Instance->RegisterCallback(Callback.Target, Service);
-	}
 }

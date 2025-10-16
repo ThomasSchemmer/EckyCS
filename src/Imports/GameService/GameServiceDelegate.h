@@ -11,34 +11,47 @@ namespace GameImports {
 		OnInit
 	};
 
-	class GameServiceDelegate {
+	/**
+	 * Container for any action delegation in regards to GameServices
+	 * aka "do something after a service has started/initialized"
+	 */
+	class GameServiceDelegate : enable_shared_from_this<GameServiceDelegate>
+	{
 	public:
 		virtual ~GameServiceDelegate() = default;
 		virtual void ExecuteAction() = 0;
 		virtual void ResetAction() = 0;
 
 		vector<GameServiceType> GetRequiredServices();
-		bool HasRun();
-
+		void MarkAsReady(GameServiceType ServiceType);
+		bool HasRun() const;
+		
+		GameServiceType SourceType;
+		
 	protected:
 		map<GameServiceType, bool> RequiredServices;
-		GameServiceDelegateType Type = GameServiceDelegateType::OnInit;
+		GameServiceDelegateType DelegateType = GameServiceDelegateType::OnInit;
+		
 		bool bHasRun = false;
+		int DelegateID = -1;
 	
-		void MarkAsReady(GameServiceType ServiceType);
 		void RunIfReady();
 		virtual void ResetDelegates();
 
+		static int CURRENT_DELEGATE_ID;
+
 	private:
-		bool AllServicesReady();
+		
+		bool AllServicesReady() const;
 
 	};
-
-    template<class T, std::enable_if<std::is_same_v<GameServiceType, T>>>
-    class TemplatedDelegate : public GameServiceDelegate
+	
+	template<class T>
+	requires std::is_base_of_v<GameService, T>
+    class TemplatedDelegate : public GameServiceDelegate, enable_shared_from_this<TemplatedDelegate<T>>
     {
     public:
-        Action<T> A;
+        Action<shared_ptr<T>> A;
 
         void ExecuteAction() override
         {
@@ -47,9 +60,14 @@ namespace GameImports {
 
             vector<GameServiceType> StartedServices = GetRequiredServices();
             bHasRun = true;
-            ResetDelegates();
-            A(Game::GetService(StartedServices[0]));
+
+        	const auto Ptr = Game::GetService<T>(StartedServices[0]);
+        	if (Ptr == nullptr)
+        		return;
+        	
+            A(Ptr);
             ResetAction();
+            ResetDelegates();
         }
 
         void ResetAction() override
@@ -57,22 +75,56 @@ namespace GameImports {
             A = nullptr;
         }
 
-        TemplatedDelegate(T RequiredService, Action<T> Callback, GameServiceDelegateType DelegateType = GameServiceDelegateType::OnStart)
+        TemplatedDelegate(GameServiceType NewSourceType, GameServiceType ServiceType, Action<shared_ptr<T>> Callback, GameServiceDelegateType NewDelegateType = GameServiceDelegateType::OnStart)
         {
-            bool bIsReady = DelegateType == GameServiceDelegateType::OnStart ? RequiredService.IsRunning : RequiredService.IsInit;
-            RequiredServices.emplace(RequiredService, bIsReady);
+        	const auto SourceService = Game::GetService(NewSourceType);
+        	const auto TargetService = Game::GetService<T>(ServiceType);
+        	if (SourceService == nullptr || TargetService == nullptr)
+				throw std::exception("ERROR::GAME:INVALID_DELEGATE_TYPE");
+        	
+			const bool bIsReady = TargetService->IsReadyFor(NewDelegateType);
+            RequiredServices.emplace(std::make_pair(TargetService->Type, bIsReady));
             A = Callback;
-            Type = DelegateType;
-            switch (DelegateType)
+            this->DelegateType = NewDelegateType;
+        	this->SourceType = SourceService->Type;
+        	
+        	DelegateID = ++CURRENT_DELEGATE_ID;
+        	const int Temp = DelegateID;
+        	auto Lambda = [Temp](GameServiceType ServiceType)
+        	{
+        		Game::MarkAsReadyFor(Temp, ServiceType);
+        	};
+            switch (NewDelegateType)
             {
             case GameServiceDelegateType::OnStart:
-                RequiredService.OnStartup += MarkAsReady;
+            	TargetService->OnStartup.Add(NewSourceType, Lambda);
                 break;
             case GameServiceDelegateType::OnInit:
-                RequiredService.OnInit += MarkAsReady;
+            	TargetService->OnInit.Add(NewSourceType, Lambda);
                 break;
             }
             RunIfReady();
         }
+
+    	
+    	/**
+    	 * Creates a delegate that will run once the specified service is initialized
+    	 * T: GameService that is required
+    	 */
+		static void RunAfterServiceInit(Action<shared_ptr<T>> Callback, GameServiceType NewSourceType, GameServiceType ServiceType){
+        	auto Delegate = make_shared<TemplatedDelegate>(NewSourceType, ServiceType, Callback, GameServiceDelegateType::OnInit);
+        	if (Delegate->HasRun())
+        		return;
+
+        	Game::Instance->Delegates.emplace(std::make_pair(Delegate->DelegateID, Delegate));
+        	
+        	const auto SourceService = Game::GetService(NewSourceType);
+        	const auto TargetService = Game::GetService<T>(ServiceType);
+        	if (SourceService == nullptr || TargetService == nullptr)
+        		return;
+
+        	Game::RegisterCallback(SourceService, TargetService);
+        }
+
     };
 }

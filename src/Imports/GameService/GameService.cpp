@@ -1,10 +1,12 @@
 #include "GameService.h"
 
+#include "GameServiceDelegate.h"
+
 namespace GameImports {
 
 	GameService::GameService() {
 		auto Temp = std::bind(&GameService::BaseInit, this, std::placeholders::_1);
-		OnInit.Add(Temp);
+		OnInit.Add(Type, Temp);
 	}
 
 	void GameService::StartService() {
@@ -25,8 +27,15 @@ namespace GameImports {
 		bIsRunning = false;
 	}
 
+	bool GameService::IsReadyFor(GameServiceDelegateType TargetDelegateType) const
+	{
+		return
+			TargetDelegateType == GameServiceDelegateType::OnStart ? bIsRunning : bIsInit;
+	}
+
 	void GameService::BaseInit(GameServiceType ServiceType)
 	{
 		bIsInit = true;
+		Type = ServiceType;
 	}
 }

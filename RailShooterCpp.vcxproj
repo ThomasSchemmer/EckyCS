@@ -31,6 +31,13 @@
     <ClCompile Include="src\Imports\GameService\Game.cpp" />
     <ClCompile Include="src\Imports\GameService\GameService.cpp" />
     <ClCompile Include="src\Imports\GameService\GameServiceDelegate.cpp" />
+    <ClCompile Include="src\Imports\GAS\Abilities\GameplayAbility.cpp" />
+    <ClCompile Include="src\Imports\GAS\Attributes\Attribute.cpp" />
+    <ClCompile Include="src\Imports\GAS\Attributes\AttributeSet.cpp" />
+    <ClCompile Include="src\Imports\GAS\Effects\GameplayEffect.cpp" />
+    <ClCompile Include="src\Imports\GAS\Effects\GameplayEffectModifier.cpp" />
+    <ClCompile Include="src\Imports\GAS\GameplayAbilityComponent.cpp" />
+    <ClCompile Include="src\Imports\GAS\GameplayAbilitySystem.cpp" />
     <ClCompile Include="src\Imports\Renderer\Renderer.cpp" />
     <ClCompile Include="src\Imports\Renderer\Shader.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -51,12 +58,26 @@
     <ClInclude Include="src\Imports\GameService\Game.h" />
     <ClInclude Include="src\Imports\GameService\GameService.h" />
     <ClInclude Include="src\Imports\GameService\GameServiceDelegate.h" />
+    <ClInclude Include="src\Imports\GAS\Abilities\AbilityType.h" />
+    <ClInclude Include="src\Imports\GAS\Abilities\GameplayAbility.h" />
+    <ClInclude Include="src\Imports\GAS\Abilities\GameplayAbilityInstanceable.h" />
+    <ClInclude Include="src\Imports\GAS\Attributes\Attribute.h" />
+    <ClInclude Include="src\Imports\GAS\Attributes\AttributeSet.h" />
+    <ClInclude Include="src\Imports\GAS\Attributes\AttributeType.h" />
+    <ClInclude Include="src\Imports\GAS\Effects\GameplayEffect.h" />
+    <ClInclude Include="src\Imports\GAS\Effects\GameplayEffectModifier.h" />
+    <ClInclude Include="src\Imports\GAS\GameplayAbilityComponent.h" />
+    <ClInclude Include="src\Imports\GAS\GameplayAbilitySystem.h" />
+    <ClInclude Include="src\Imports\GAS\Tags\GameplayTagContainer.h" />
+    <ClInclude Include="src\Imports\GAS\Tags\GameplayTagMask.h" />
+    <ClInclude Include="src\Imports\GAS\Tags\GameplayTagToken.h" />
     <ClInclude Include="src\Imports\Renderer\Renderer.h" />
     <ClInclude Include="src\Imports\Renderer\Shader.h" />
-    <ClInclude Include="src\Imports\Util\ActionList.h" />
+    <ClInclude Include="src\Imports\Util\ActionMap.h" />
     <ClInclude Include="src\Imports\Util\Headers.h" />
     <ClInclude Include="src\PlayerService.h" />
     <ClInclude Include="src\main.h" />
+    <ClInclude Include="src\TestService.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ext\imgui\misc\debuggers\imgui.natstepfilter" />
@@ -65,6 +86,8 @@
     <Natvis Include="ext\imgui\misc\debuggers\imgui.natvis" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="src\Imports\GAS\Tags\GameplayTags.h" />
+    <Content Include="src\Imports\GAS\Tags\GameplayTagSourceContainer.h" />
     <Content Include="src\Shaders\BaseVertexShader.vert" />
   </ItemGroup>
   <ItemGroup>

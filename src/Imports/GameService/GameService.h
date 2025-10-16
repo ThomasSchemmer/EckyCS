@@ -1,18 +1,20 @@
 #pragma once
-#include "../Util/ActionList.h"
+#include "../Util/ActionMap.h"
 #include <vector>
 
-#ifndef INCLUDE_GUARD_GAME_SERVICE
-#define INCLUDE_GUARD_GAME_SERVICE
-
 namespace GameImports {
+	enum class GameServiceDelegateType : uint8_t;
+
 	enum class GameServiceType {
 		INVALID,
-		PlayerService,
+		Player,
+		GameplayAbilitySystem,
+		Test
 	};
 
 	/**
-	 * Abstract class to allow the GameService to start / stop the attached script
+	 * Class that provides unified access to th different services the game interacts with
+	 * Eg: InventorySystem, PlayerInstancing, ObjectLoading..
 	 */
 	class GameService {
 	public:
@@ -21,13 +23,14 @@ namespace GameImports {
 		void StartService();
 		void StopService();
 		void ResetService();
+		bool IsReadyFor(GameServiceDelegateType TargetDelegateType) const;
 
-		ActionList<GameServiceType> OnStartup;
-		ActionList<GameServiceType> OnShutdown;
+		ActionMap<GameServiceType, GameServiceType> OnStartup;
+		ActionMap<GameServiceType, GameServiceType> OnShutdown;
 		/** Needs to be manually called whenever the service is fully initialized - not all services will call it*/
-		ActionList<GameServiceType> OnInit;
+		ActionMap<GameServiceType, GameServiceType> OnInit;
 		GameServiceType Type = GameServiceType::INVALID;
-
+		
 	protected:
 		virtual void StartServiceInternal() = 0;
 		virtual void StopServiceInternal() = 0;
@@ -41,4 +44,3 @@ namespace GameImports {
 	};
 
 }
-#endif

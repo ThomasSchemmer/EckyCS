@@ -1,4 +1,6 @@
 #include "main.h"
+
+#include "TestService.h"
 #include "../ext/imgui/backends/imgui_impl_glfw.h"
 #include "../ext/imgui/backends/imgui_impl_opengl3.h"
 #include "Imports/Renderer/Renderer.h"
@@ -12,7 +14,7 @@ static void error_callback(int error, const char* description)
 
 static void InitRenderDoc()
 {
-	RendererPtr = new Renderer();
+	RendererPtr = make_unique<Renderer>();
 	RendererPtr->InitRenderDoc();
 }
 
@@ -44,7 +46,6 @@ static void InitImGUI() {
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init();
 
-	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
 }
 
@@ -102,19 +103,24 @@ static void RenderUI() {
 	ImGui::End();
 }
 
+inline shared_ptr<PlayerService> PlayerPtr;
+inline shared_ptr<TestService> TestPtr;
 static void InitWorld()
 {
-	GamePtr = new Game();
-	PlayerPtr = new PlayerService();
-	GamePtr->Services.push_back(PlayerPtr);
+	Game::Instance = make_unique<Game>();
 
-	GamePtr->Init();
+	TestPtr = make_shared<TestService>();
+	PlayerPtr = make_shared<PlayerService>();
+	Game::Instance->Services.push_back(TestPtr);
+	Game::Instance->Services.push_back(PlayerPtr);
+
+	Game::Instance->Init();
 	RendererPtr->Init();
 }
 
 static void DestroyWorld()
 {
-	delete Game::Instance;
+	Game::Instance.reset();
 }
 
 static void CleanUp() {
@@ -125,9 +131,9 @@ static void CleanUp() {
 	glfwTerminate();
 }
 
-
 int main()
 {
+	
 	cout << "Starting glfw";
 
 	InitWindow();

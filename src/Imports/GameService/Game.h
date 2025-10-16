@@ -1,5 +1,6 @@
 #pragma once
 #include <map>
+#include <memory>
 #include <unordered_set>
 
 #include "GameService.h"
@@ -19,12 +20,13 @@ namespace GameImports {
 	};
 
 	/**
-	 * Centerpoint of the whole game, contains main()
+	 * Centerpoint of the whole game
 	 * Holds info about state, mode and available services
 	 */
-	class Game {
+	class Game 
+	{
 	private:
-		map<GameServiceType, GameService*> ServicesInternal;
+		map<GameServiceType, shared_ptr<GameService>> ServicesInternal;
 
 	public:
 		GameState State = GameState::InGame;
@@ -32,38 +34,65 @@ namespace GameImports {
 		bool bIsPaused = false;
 		int TargetPlayerCount = 1;
 
-		vector<GameService*> Services;
-		vector<GameServiceDelegate*> Delegates;
+		vector<shared_ptr<GameService>> Services;
+		map<int, shared_ptr<GameServiceDelegate>> Delegates;
 		map<GameServiceType, unordered_set<GameServiceType>> CallbackMap;
 		
-		static Game* Instance;
+		static unique_ptr<Game> Instance;
 
-		Game();
+		Game() = default;
 		~Game();
 
 		/** Starts the initialization of the whole game - should be run before any frames*/
 		void Init();
 		
 		/** Returns the best fitting service according to type */
-		template<class T, std::enable_if<std::is_base_of_v<GameService, T>>>
-		static T* GetService(GameServiceType Type);
+		template<class T>
+		requires std::is_base_of_v<GameService, T>
+		static shared_ptr<T> GetService(GameServiceType Type) {
+			if (Instance == nullptr)
+				return nullptr;
+
+			if (Instance->ServicesInternal.contains(Type) &&
+				!TryGetReplacementService<T>(Type))
+				return nullptr;
+
+			return dynamic_pointer_cast<T>(Instance->ServicesInternal[Type]);
+		}
 
 		/** Returns the service according to type */
-		static GameService* GetService(GameServiceType Type);
+		static shared_ptr<GameService> GetService(GameServiceType Type);
 
 		/** Returns the best fitting type of any registered services*/
-		template<class T, std::enable_if<std::is_base_of_v<GameService, T>>>
-		static bool TryGetReplacementService(GameServiceType& FoundType);
+		template<class T>
+		requires std::is_base_of_v<GameService, T>
+		static bool TryGetReplacementService(GameServiceType& FoundType)
+		{
+			FoundType = GameServiceType::INVALID;
+			if (Instance == nullptr)
+				return false;
 
-		/** Destroys and fully removes a delegate*/
-		static void DestroyServiceDelegate(GameServiceDelegate* Delegate);
+			for (const auto& pair : Game::Instance->ServicesInternal) {
+				auto Ptr = dynamic_pointer_cast<T>(pair.second);
+				if (Ptr == nullptr)
+					continue;
 
-		/** Creates a delegate that will run once the specified service is initialized */
-		template<class T, std::enable_if<std::is_base_of_v<GameService, T>>>
-		static void RunAfterServiceInit(Action<T> Callback);
+				FoundType = pair.first;
+				return true;
+			}
+			return false;
+		}
 
+		/**
+		 * Fully deregisters a delegate but doesn't destroy it
+		 * Cannot use shared_ptr as its bing called inside a function delegate, so cannot
+		 * use "shared_from_this"
+		 */
+		static void RemoveServiceDelegate(int DelegateID);
+		static void MarkAsReadyFor(int DelegateID, GameServiceType ServiceType);
+		static void RegisterCallback(const shared_ptr<GameService>& A, const shared_ptr<GameService>& B);
 	private:
-		void RegisterCallback(const GameService* A, const GameService* B);
-		bool CheckForAnyLoopBetween(const GameService* A, const GameService* B, vector<GameServiceType>& Chain);
+		void RemoveCallback(GameServiceType A, GameServiceType B);
+		bool CheckForAnyLoopBetween(const shared_ptr<GameService>& A, const shared_ptr<GameService>& B, vector<GameServiceType>& Chain);
 	};
 }
