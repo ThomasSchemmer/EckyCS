@@ -1,6 +1,6 @@
 #pragma once
+#include "GameService/GameService.h"
 
-#include "./Imports/GameService/GameService.h"
 using namespace GameImports;
 
 class PlayerService : public GameService {
@@ -18,7 +18,7 @@ public:
 
 	void PrintTest()
 	{
-		cout << "Hi there" << "\n";
+		std::cout << "Hi there" << "\n";
 	}
 	void StopServiceInternal() override {}
 	void ResetServiceInternal() override {}

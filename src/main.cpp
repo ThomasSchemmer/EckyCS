@@ -3,9 +3,11 @@
 #include "TestService.h"
 #include "../ext/imgui/backends/imgui_impl_glfw.h"
 #include "../ext/imgui/backends/imgui_impl_opengl3.h"
-#include "Imports/Renderer/Renderer.h"
+#include "GameService/Game.h"
+#include "Renderer/Renderer.h"
 
 static GLFWwindow* window;
+using namespace GameImports;
 
 static void error_callback(int error, const char* description)
 {

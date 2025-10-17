@@ -28,18 +28,6 @@
     <ClCompile Include="ext\imgui\imgui_tables.cpp" />
     <ClCompile Include="ext\imgui\imgui_widgets.cpp" />
     <ClCompile Include="ext\imgui\misc\cpp\imgui_stdlib.cpp" />
-    <ClCompile Include="src\Imports\GameService\Game.cpp" />
-    <ClCompile Include="src\Imports\GameService\GameService.cpp" />
-    <ClCompile Include="src\Imports\GameService\GameServiceDelegate.cpp" />
-    <ClCompile Include="src\Imports\GAS\Abilities\GameplayAbility.cpp" />
-    <ClCompile Include="src\Imports\GAS\Attributes\Attribute.cpp" />
-    <ClCompile Include="src\Imports\GAS\Attributes\AttributeSet.cpp" />
-    <ClCompile Include="src\Imports\GAS\Effects\GameplayEffect.cpp" />
-    <ClCompile Include="src\Imports\GAS\Effects\GameplayEffectModifier.cpp" />
-    <ClCompile Include="src\Imports\GAS\GameplayAbilityComponent.cpp" />
-    <ClCompile Include="src\Imports\GAS\GameplayAbilitySystem.cpp" />
-    <ClCompile Include="src\Imports\Renderer\Renderer.cpp" />
-    <ClCompile Include="src\Imports\Renderer\Shader.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -54,27 +42,6 @@
     <ClInclude Include="ext\imgui\imstb_textedit.h" />
     <ClInclude Include="ext\imgui\imstb_truetype.h" />
     <ClInclude Include="ext\imgui\misc\cpp\imgui_stdlib.h" />
-    <ClInclude Include="ext\renderdoc\renderdoc_app.h" />
-    <ClInclude Include="src\Imports\GameService\Game.h" />
-    <ClInclude Include="src\Imports\GameService\GameService.h" />
-    <ClInclude Include="src\Imports\GameService\GameServiceDelegate.h" />
-    <ClInclude Include="src\Imports\GAS\Abilities\AbilityType.h" />
-    <ClInclude Include="src\Imports\GAS\Abilities\GameplayAbility.h" />
-    <ClInclude Include="src\Imports\GAS\Abilities\GameplayAbilityInstanceable.h" />
-    <ClInclude Include="src\Imports\GAS\Attributes\Attribute.h" />
-    <ClInclude Include="src\Imports\GAS\Attributes\AttributeSet.h" />
-    <ClInclude Include="src\Imports\GAS\Attributes\AttributeType.h" />
-    <ClInclude Include="src\Imports\GAS\Effects\GameplayEffect.h" />
-    <ClInclude Include="src\Imports\GAS\Effects\GameplayEffectModifier.h" />
-    <ClInclude Include="src\Imports\GAS\GameplayAbilityComponent.h" />
-    <ClInclude Include="src\Imports\GAS\GameplayAbilitySystem.h" />
-    <ClInclude Include="src\Imports\GAS\Tags\GameplayTagContainer.h" />
-    <ClInclude Include="src\Imports\GAS\Tags\GameplayTagMask.h" />
-    <ClInclude Include="src\Imports\GAS\Tags\GameplayTagToken.h" />
-    <ClInclude Include="src\Imports\Renderer\Renderer.h" />
-    <ClInclude Include="src\Imports\Renderer\Shader.h" />
-    <ClInclude Include="src\Imports\Util\ActionMap.h" />
-    <ClInclude Include="src\Imports\Util\Headers.h" />
     <ClInclude Include="src\PlayerService.h" />
     <ClInclude Include="src\main.h" />
     <ClInclude Include="src\TestService.h" />
@@ -86,12 +53,16 @@
     <Natvis Include="ext\imgui\misc\debuggers\imgui.natvis" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="src\Imports\GAS\Tags\GameplayTags.h" />
-    <Content Include="src\Imports\GAS\Tags\GameplayTagSourceContainer.h" />
     <Content Include="src\Shaders\BaseVertexShader.vert" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="src\Shaders\BaseFragmentShader.frag" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="Imports.Lib\Imports.Lib.vcxproj">
+      <Project>{fb9efb06-0e29-4958-80cc-fdc062323295}</Project>
+      <Name>Imports.Lib</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -145,6 +116,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Programming\RailShooterCpp\Imports.Lib\ext;</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -177,7 +151,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Programming\RailShooterCpp\ext\glew\include;C:\Programming\RailShooterCpp\ext\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Programming\RailShooterCpp\ext\glew\include;C:\Programming\RailShooterCpp\ext\glfw\include;C:\Programming\RailShooterCpp\Imports.Lib\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>

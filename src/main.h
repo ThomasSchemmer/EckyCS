@@ -4,10 +4,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include "../ext/imgui/imgui.h"
-#include "Imports/GameService/Game.h"
-#include "Imports/GameService/GameService.h"
 #include "PlayerService.h"
-#include "Imports/Renderer/Renderer.h"
+#include "GameService/Game.h"
 
 /**
  * Main entry point of the system, contains main().
@@ -15,6 +13,7 @@
  * as well as render and debug instances
  */
 
+class Renderer;
 using namespace std;
 using namespace GameImports;
 

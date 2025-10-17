@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include "PlayerService.h"
-#include "Imports/GameService/GameService.h"
-#include "Imports/GameService/GameServiceDelegate.h"
+#include "GameService/GameServiceDelegate.h"
 
 class PlayerService;
 
@@ -24,11 +23,11 @@ public:
     {
         OnInit.ForEach(Type);
         TemplatedDelegate<PlayerService>::RunAfterServiceInit([this](const shared_ptr<PlayerService>& Players)
-            {
-                Players->PrintTest();
-            },
-            GameServiceType::Test,
-            GameServiceType::Player
+              {
+                  Players->PrintTest();
+              },
+              GameServiceType::Test,
+              GameServiceType::Player
         );
     }
     
