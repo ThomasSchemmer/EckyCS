@@ -36,7 +36,10 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
-    <ClCompile Include="src\EckyCS\EckyCS.cpp" />
+    <ClCompile Include="src\Imports\EckyCS\BitVectorTests.cpp" />
+    <ClCompile Include="src\Imports\EckyCS\ComponentGroupIdentifierTests.cpp" />
+    <ClCompile Include="src\Imports\EckyCS\ComponentGroupTests.cpp" />
+    <ClCompile Include="src\Imports\EckyCS\SparseSetTests.cpp" />
     <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -51,6 +54,9 @@
       <Project>{4979d7ef-8f04-475c-b791-bc1ed1e92cbd}</Project>
       <Name>RailShooterCpp</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Imports\EckyCS\Util.h" />
   </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
@@ -81,7 +87,7 @@
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
