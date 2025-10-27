@@ -114,7 +114,7 @@ namespace EckyCS
             EntityID Temp = NextAvailableComponent;
             NextAvailableComponent = EntityID(Index, EntityID::INVALID);
             Components.Reset(Index);
-            Components.IDs[Index] = Temp;
+            Components.Set(Index, Temp, false); //already reset
             Page.Indices[IndexInPage] = static_cast<int>(Temp.GetID());
             Available++;
         }
@@ -236,14 +236,14 @@ namespace EckyCS
             if (!bIsValid || !Components.Has(TargetIndex))
                 return false;
 
-            return Components.IDs[TargetIndex] == ID;
+            return Components.GetID(TargetIndex) == ID;
         }
         
         int GetFreeValueIndex()
         {
             //assert(!Has(NextAvailable));
             int TargetIndex = NextAvailableComponent.GetID();
-            NextAvailableComponent = Components.IDs[TargetIndex];
+            NextAvailableComponent = Components.GetID(TargetIndex);
             --Available;
             return TargetIndex;
         }

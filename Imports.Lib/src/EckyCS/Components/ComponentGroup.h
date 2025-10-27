@@ -16,23 +16,15 @@ namespace EckyCS
     {
     public:
         size_t Count;
-        EntityID* IDs;
         ComponentGroupIdentifier GroupID;
         
-        /**
-         * Raw data pointer to root of all components
-         * Since we want to store all data contiguous in memory, we cant use
-         * std::tuple, so use a byte[] instead
-         * Any access should only be used with the Get<T>() functions, or through Actions
-         */
-        byte* Data;
 
         ComponentGroup(size_t ExpectedCount) : Count(ExpectedCount)
         {
             GroupID.AddFlags<Types...>();
             IDs = new EntityID[ExpectedCount]();
             SetupEmptyRedirectors(0, Count);
-            int DataSize = TotalByteCount<Types...>() * Count;
+            size_t DataSize = TotalByteCount<Types...>() * Count;
             Data = new byte[DataSize];
         }
 
@@ -60,10 +52,10 @@ namespace EckyCS
         template <typename... TargetTypes>
         requires AllContainedIn<tuple<TargetTypes...>, tuple<Types...>>
         /** Returns a tuple of refs for all Types, allowing for easy access */
-        View<TargetTypes...> Get(int TargetIndex)
+        View<TargetTypes...> Get(size_t TargetIndex)
         {
             assert(TargetIndex >= 0 && TargetIndex < Count);
-            return make_tuple(GetSpan<TargetTypes>(TargetIndex)...);
+            return make_tuple(GetIDSpan(), GetSpan<TargetTypes>(TargetIndex)...);
         }
 
         template <typename... TargetTypes>
@@ -71,7 +63,7 @@ namespace EckyCS
         /** Returns a collection of span<T>, one for each specified TargetType */
         View<TargetTypes...> GetAll()
         {
-            return make_tuple(GetSpan<TargetTypes>()...);
+            return make_tuple(GetIDSpan(), GetSpan<TargetTypes>()...);
         }
         
 
@@ -96,13 +88,18 @@ namespace EckyCS
 
         size_t GetGreaterCount() const
         {
-            int Additional = static_cast<int>(Count * 0.5f);
+            size_t Additional = static_cast<size_t>(Count * 0.5);
             return Additional + Count;
         }
 
         bool Has(int TargetIndex) const
         {
             return !IDs[TargetIndex].IsInvalid(); 
+        }
+
+        EntityID& GetID(int TargetIndex) const
+        {
+            return IDs[TargetIndex];
         }
 
         void ChangeSize(size_t NewCount)
@@ -116,12 +113,14 @@ namespace EckyCS
             Count = NewCount;
         }
 
+        /* Resets the target ID at a specific index and can reset components */
         void Reset(size_t Index, bool bResetComponents = true)
         {
             // bring back "point to next entity in row"
             Set(Index, EntityID::Invalid(Index + 1), bResetComponents);
         }
 
+        /* Sets the target ID at a specific index and can reset components */
         void Set(size_t TargetIndex, const EntityID& ID, bool bResetComponents = true)
         {
             assert(TargetIndex >= 0 && TargetIndex < Count);
@@ -134,6 +133,7 @@ namespace EckyCS
 
         template<class T>
         requires IsOneOf<T, Types...>
+        /** Moves the component to a target pos in the data */
         void SetData(int TargetIndex, T& Value)
         {
             auto Ptr = GetPtrTo<T>();
@@ -142,6 +142,7 @@ namespace EckyCS
         
         template <typename... SubTypes>
         requires AllContainedIn<tuple<SubTypes...>, tuple<Types...>>
+        /** Moves the components to a target pos in the data */
         void SetData(int TargetIndex, SubTypes&... Values)
         {
             (SetData<SubTypes>(TargetIndex, Values), ...);
@@ -150,14 +151,14 @@ namespace EckyCS
         template <typename T>
         requires IsOneOf<T, Types...>
         /** Fills every byte at the targeted types and indices with the lowest byte of data*/
-        void FillDataAt(int TargetIndex, int InData)
+        void FillDataAt(size_t TargetIndex, int InData)
         {
             T* TargetOffset = GetPtrTo<T>(TargetIndex);
             memset(TargetOffset, InData, sizeof(T));
         }
 
         /** Overwrites all component data at TargetIndex with 0 */
-        void ResetComponents(int TargetIndex)
+        void ResetComponents(size_t TargetIndex)
         {
             (FillDataAt<Types>(TargetIndex, 0), ...);
         }
@@ -175,16 +176,27 @@ namespace EckyCS
             swap(IDs[IndexB], IDs[IndexA]);
             swap(Get<Types...>(IndexA), Get<Types...>(IndexA));
         }
+
+        
+#ifdef _TEST_BUILD //defined in projects "Test" C++->Preprocessor settings
+        byte* GetData() const {return Data;}
+        EntityID* GetIDs() const {return IDs;}
+#endif
         
     private:
-
+        /**
+         * Raw data pointer to root of all components
+         * Since we want to store all data contiguous in memory, we cant use
+         * std::tuple, so use a byte[] instead
+         * Any access should only be used with the Get<T>() functions, or through Actions
+         */
+        byte* Data;
+        EntityID* IDs;
 
         template <auto Method, typename System, typename... T>
         void ForEach_Helper(System& system, std::tuple<T...>)
         {
-            auto F = std::function<void(ComponentGroupIdentifier, EntityID, View<T...>&)>{
-                    Bind<Method, System, T...>(system)
-                };
+            EntityAction<T...> F = Bind<Method, System, T...>(system);
             this->template ForEach<T...>(F);
         }
 
@@ -192,23 +204,22 @@ namespace EckyCS
         requires AllContainedIn<tuple<TargetTypes...>, tuple<Types...>>
         /**
          * Helper function to create a Lambda around a specific System obj
-         * There were build errors otherwise, not entirely sure how to make it better :(
          */
         static auto Bind(System& system)
-        {
-            return [&system](ComponentGroupIdentifier id, EntityID eid, View<TargetTypes...>& view)
+        {            
+            return [&system](auto&&... args)
             {
-                (system.*Method)(id, eid, view);
+                (system.*Method)(std::forward<decltype(args)>(args)...);
             };
         }
         
-        template <typename... TargetTypes>
-        requires AllContainedIn<tuple<TargetTypes...>, tuple<Types...>>
+        template <typename... Targets>
+        requires AllContainedIn<tuple<Targets...>, tuple<Types...>>
         /**
          * Function wrapper that provides pointers to all the different components
          * Used to enforce a strict way of writing functions that work on Entities
          */
-        using EntityAction = function<void(ComponentGroupIdentifier, EntityID, View<TargetTypes...>&)>;
+        using EntityAction = function<void(ComponentGroupIdentifier, EntityID, View<Targets...>&)>;
 
         template <typename... TargetTypes>
         requires AllContainedIn<tuple<TargetTypes...>, tuple<Types...>>
@@ -244,6 +255,11 @@ namespace EckyCS
         span<T> GetSpan(size_t TargetIndex)
         {
             return span<T>(GetPtrTo<T>(TargetIndex), 1);
+        }
+        
+        span<EntityID> GetIDSpan()
+        {
+            return {IDs, Count};
         }
         
         template<class T>

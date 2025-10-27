@@ -2,6 +2,8 @@
 #include <span>
 #include <tuple>
 #include <type_traits>
+
+#include "EntityID.h"
 #include "../Components/Component.h"
 
 namespace EckyCS
@@ -86,21 +88,32 @@ namespace EckyCS
     
     template <typename... Types>
     requires AllComponents<Types...>
-    using View = tuple<span<Types>...>;
+    /**
+     * Collection of components and corresponding EntityIDs
+     * Note: EntityIDs are always at the FIRST index!
+     */
+    using View = tuple<span<EntityID>, span<Types>...>;
 
     template <typename T, typename... Types>
     requires AllComponents<T>
+    /** Wrapper to get a single span from a view by type */
     constexpr span<T> Get(View<Types...>& View)
     {
-        constexpr size_t Index = GetIndexOf<T, Types...>();
+        constexpr size_t Index = GetIndexOf<T, Types...>() + 1;
         return std::get<Index>(View);
+    }
+    
+    template <typename... Types>
+    /** Wrapper to get the EntityIDs span from a view*/
+    constexpr span<EntityID> GetID(View<Types...>& View)
+    {
+        return std::get<0>(View);
     }
 
     template <typename>
     struct ExtractViewArgs;
     
     template <typename System, typename... T>
-    //requires AllComponents<T...>
     struct ExtractViewArgs<void (System::*)(ComponentGroupIdentifier, EntityID, View<T...>&)>
     {
         using Types = std::tuple<T...>;

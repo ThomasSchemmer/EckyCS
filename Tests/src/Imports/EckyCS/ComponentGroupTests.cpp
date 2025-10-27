@@ -28,8 +28,8 @@ TEST(Constructor, ComponentGroup)
 {
     ComponentGroup<TestComponent, OtherTestComponent> CG(10);
 
-    EXPECT_TRUE(CG.IDs != nullptr);
-    EXPECT_TRUE(CG.Data != nullptr);
+    EXPECT_TRUE(CG.GetIDs() != nullptr);
+    EXPECT_TRUE(CG.GetData() != nullptr);
     
     auto NameA = typeid(TestComponent).name();
     auto NameB = typeid(OtherTestComponent).name();
@@ -54,12 +54,10 @@ TEST(Get, ComponentGroup)
     TestSpan[1].A = 10;
     OtherSpan[0].B = 22;
     OtherSpan[1].B = 33;
-    constexpr int Index = GetIndexOf<TestComponent, TestComponent, OtherTestComponent>();
-    constexpr int OtherIndex = GetIndexOf<OtherTestComponent, TestComponent, OtherTestComponent>();
-    EXPECT_EQ(TestSpan[0].A, get<Index>(Tuples)[0].A);
-    EXPECT_EQ(TestSpan[1].A, get<Index>(Tuples)[1].A);
-    EXPECT_EQ(OtherSpan[0].B, get<OtherIndex>(Tuples)[0].B);
-    EXPECT_EQ(OtherSpan[1].B, get<OtherIndex>(Tuples)[1].B);
+    EXPECT_EQ(TestSpan[0].A, Get<TestComponent>(Tuples)[0].A);
+    EXPECT_EQ(TestSpan[1].A, Get<TestComponent>(Tuples)[1].A);
+    EXPECT_EQ(OtherSpan[0].B, Get<OtherTestComponent>(Tuples)[0].B);
+    EXPECT_EQ(OtherSpan[1].B, Get<OtherTestComponent>(Tuples)[1].B);
 }
 
 TEST(Set, ComponentGroup)
@@ -80,7 +78,8 @@ TEST(ForEach, ComponentGroup)
 {
     ComponentGroup<TestComponent, OtherTestComponent> CG(10);
     TestSystem TS;
-
+    
+    CG.Set(0, EntityID(), true);
     EXPECT_NE(CG.Get<TestComponent>()[0].A, TS.TargetValue);
     EXPECT_NE(CG.Get<OtherTestComponent>()[0].B, TS.TargetValue);
     CG.ForEach<&TestSystem::Modify<TestComponent>, TestSystem>(TS);
