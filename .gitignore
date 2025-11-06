@@ -1,3 +1,6 @@
+#keep Imports.Lib
+!.Imports.Lib/
+
 # Build artifacts
 *.o
 *.obj
