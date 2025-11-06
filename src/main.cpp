@@ -1,12 +1,17 @@
 #include "main.h"
 
+#include <iostream>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include "../ext/imgui/imgui.h"
+#include "PlayerService.h"
 #include "TestService.h"
 #include "../ext/imgui/backends/imgui_impl_glfw.h"
 #include "../ext/imgui/backends/imgui_impl_opengl3.h"
 #include "GameService/Game.h"
 #include "Renderer/Renderer.h"
 
-static GLFWwindow* window;
+static std::shared_ptr<GLFWwindow> Window;
 using namespace GameImports;
 
 static void error_callback(int error, const char* description)
@@ -31,13 +36,20 @@ static void InitWindow() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	window = glfwCreateWindow(640, 480, "My Title", NULL, NULL);
-	if (!window)
+	GLFWwindow* Raw = glfwCreateWindow(640, 480, "My Title", NULL, NULL);
+	Window = std::shared_ptr<GLFWwindow>(Raw, [](GLFWwindow* w) {
+		glfwDestroyWindow(w);
+	});
+	if (!Window)
 		return;
 
-	glfwMakeContextCurrent(window);
+	glfwMakeContextCurrent(Window.get());
 
 	glewInit();
+	
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_BACK);
 }
 
 static void InitImGUI() {
@@ -45,24 +57,25 @@ static void InitImGUI() {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 
-	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplGlfw_InitForOpenGL(Window.get(), true);
 	ImGui_ImplOpenGL3_Init();
 
 	ImGui::StyleColorsDark();
 }
 
 static void Update() {
-
+	Game::Instance->Update();
+	RendererPtr->Update();
 }
 
 static void Render() {
 
 	RendererPtr->HandleCaptureStart();
 	
-	glfwSwapBuffers(window);
+	glfwSwapBuffers(Window.get());
 	
 	glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	RendererPtr->Render();
 	
@@ -105,19 +118,17 @@ static void RenderUI() {
 	ImGui::End();
 }
 
-inline shared_ptr<PlayerService> PlayerPtr;
-inline shared_ptr<TestService> TestPtr;
 static void InitWorld()
 {
-	Game::Instance = make_unique<Game>();
-
-	TestPtr = make_shared<TestService>();
-	PlayerPtr = make_shared<PlayerService>();
-	Game::Instance->Services.push_back(TestPtr);
-	Game::Instance->Services.push_back(PlayerPtr);
+	Game::Instance = make_unique<Game>([]() -> float{return static_cast<float>(glfwGetTime());});
+	Game::Instance->Services.push_back(make_shared<TestService>());
+	Game::Instance->Services.push_back(make_shared<PlayerService>());
 
 	Game::Instance->Init();
-	RendererPtr->Init();
+	RendererPtr->Init([](const int Key) -> int
+	{
+		return glfwGetKey(Window.get(), Key);
+	});
 }
 
 static void DestroyWorld()
@@ -139,7 +150,7 @@ int main()
 	cout << "Starting glfw";
 
 	InitWindow();
-	if (!window) {
+	if (!Window) {
 		glfwTerminate();
 		return -1;
 	}
@@ -148,10 +159,10 @@ int main()
 	InitWorld();
 	
 	int display_w, display_h;
-	glfwGetFramebufferSize(window, &display_w, &display_h);
+	glfwGetFramebufferSize(Window.get(), &display_w, &display_h);
 	glViewport(0, 0, display_w, display_h);
 
-    while (!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(Window.get()))
     {
         glfwPollEvents();
 		Update();

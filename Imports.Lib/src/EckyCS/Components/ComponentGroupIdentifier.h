@@ -33,7 +33,7 @@ namespace EckyCS
 
 
     /** Wrapper for BitVector to quickly identify @ComponentGroup by its components*/
-    class ComponentGroupIdentifier
+    class ComponentGroupIdentifier : enable_shared_from_this<ComponentGroupIdentifier>
     {
     public:
         ComponentGroupIdentifier() = default;
@@ -51,6 +51,7 @@ namespace EckyCS
         void RemoveFlag(const string& Name);
         void RemoveFlag(const shared_ptr<Component>& Ptr);
         int GetAmountOfFlags() const;
+        bool operator<(const ComponentGroupIdentifier& other) const noexcept;
 
         template<typename... Types>
         requires AllComponents<Types...>
@@ -72,6 +73,13 @@ namespace EckyCS
         bool HasFlag() const
         {
             return HasFlag(ComponentAllocator::GetNameFor<T>());
+        }
+
+        template<typename... Types>
+        requires AllComponents<Types...>
+        bool HasAllFlags() const
+        {
+            return (this->template HasFlag<Types>() && ...);
         }
 
         ComponentGroupIdentifier Clone() const;

@@ -39,7 +39,9 @@
     <ClCompile Include="src\Imports\EckyCS\BitVectorTests.cpp" />
     <ClCompile Include="src\Imports\EckyCS\ComponentGroupIdentifierTests.cpp" />
     <ClCompile Include="src\Imports\EckyCS\ComponentGroupTests.cpp" />
+    <ClCompile Include="src\Imports\EckyCS\EckyCSTests.cpp" />
     <ClCompile Include="src\Imports\EckyCS\SparseSetTests.cpp" />
+    <ClCompile Include="src\Imports\GAS\GAS.cpp" />
     <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>

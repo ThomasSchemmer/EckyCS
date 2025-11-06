@@ -82,10 +82,29 @@ TEST(ForEach, ComponentGroup)
     CG.Set(0, EntityID(), true);
     EXPECT_NE(CG.Get<TestComponent>()[0].A, TS.TargetValue);
     EXPECT_NE(CG.Get<OtherTestComponent>()[0].B, TS.TargetValue);
-    CG.ForEach<&TestSystem::Modify<TestComponent>, TestSystem>(TS);
-    CG.ForEach<&TestSystem::Test, TestSystem>(TS);
+    CG.ForEachEntity<&TestSystem::Modify<TestComponent>, TestSystem>(TS);
+    CG.ForEachEntity<&TestSystem::Test, TestSystem>(TS);
     EXPECT_EQ(CG.Get<TestComponent>()[0].A, TS.TargetValue);
     EXPECT_EQ(CG.Get<OtherTestComponent>()[0].B, TS.TargetValue);
+}
+
+TEST(ForEachWith, ComponentGroup)
+{
+    ComponentGroup<TestComponent, OtherTestComponent> CG(10);
+    TestSystem TS;
+    
+    CG.Set(0, EntityID(0));
+    CG.Set(1, EntityID(1));
+    CG.Set(2, EntityID(2));
+    EXPECT_NE(CG.Get<TestComponent>()[0].A, TS.TargetValue);
+    EXPECT_NE(CG.Get<TestComponent>()[1].A, TS.TargetValue);
+    EXPECT_NE(CG.Get<TestComponent>()[2].A, TS.TargetValue);
+
+    CG.ForEachEntityWith<&TestSystem::IsOdd, &TestSystem::Modify<TestComponent>, TestSystem>(TS);
+    // expect to have only touched index 1! 
+    EXPECT_NE(CG.Get<TestComponent>()[0].A, TS.TargetValue);
+    EXPECT_EQ(CG.Get<TestComponent>()[1].A, TS.TargetValue);
+    EXPECT_NE(CG.Get<TestComponent>()[2].A, TS.TargetValue);
 }
 
 /** Tests that sets IDs and their components and tests for valid indexing */

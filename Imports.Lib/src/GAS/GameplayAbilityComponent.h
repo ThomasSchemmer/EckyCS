@@ -45,6 +45,7 @@ namespace GAS
         
         GameplayAbilityComponent();
         virtual ~GameplayAbilityComponent();
+        void Init();
         void Tick(float Delta);
         void AddTag(const string& Tag);
         void RemoveTag(const string& Tag);

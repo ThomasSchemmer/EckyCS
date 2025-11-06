@@ -101,6 +101,11 @@ namespace EckyCS
         return Flags.GetAmountSetBits();
     }
 
+    bool ComponentGroupIdentifier::operator<(const ComponentGroupIdentifier& other) const noexcept
+    {
+        return Flags < other.Flags;
+    }
+
     ComponentGroupIdentifier ComponentGroupIdentifier::Clone() const
     {
         ComponentGroupIdentifier Clone(this->Flags);

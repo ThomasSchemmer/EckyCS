@@ -9,6 +9,8 @@
 namespace GameImports {
 
 	unique_ptr<Game> Game::Instance = nullptr;
+	float Game::DeltaTime = 0;
+	float Game::DeltaFixedTime = 0;
 
 	Game::~Game()
 	{
@@ -37,6 +39,31 @@ namespace GameImports {
 		for (auto& Service: Services)
 		{
 			Service->StartService();
+		}
+	}
+
+	void Game::Update()
+	{
+		float Now = TimeFunction();
+		DeltaTime = Now - LastTick;
+		for (auto& Service: Services)
+		{
+			Service->Update();
+		}
+		if (Now - LastFixedTick > FIXED_TICK_INTERVAL)
+		{
+			DeltaFixedTime = Now - LastFixedTick;
+			FixedUpdate();
+			LastFixedTick = Now;
+		}
+		LastTick = Now;
+	}
+
+	void Game::FixedUpdate() const
+	{
+		for (auto& Service: Services)
+		{
+			Service->FixedUpdate();
 		}
 	}
 

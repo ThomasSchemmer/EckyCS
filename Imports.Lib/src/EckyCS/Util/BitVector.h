@@ -33,6 +33,7 @@ namespace EckyCS
         
         bool operator==(const BitVector& Other) const;
         bool operator!=(const BitVector& Other) const;
+        bool operator<(const BitVector& other) const noexcept;
 
         /** Splits a global index into a byte index and an index inside the byte */
         static void ToBitPos(int Pos, int& OutPosByte, int& OutPosBit);

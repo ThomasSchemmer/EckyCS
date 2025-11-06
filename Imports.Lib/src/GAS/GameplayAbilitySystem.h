@@ -14,8 +14,19 @@ namespace GAS
     class GameplayAbility;
     
     /**
-     * Core component of the GAS, handles communication between different GAB's
+     * Core component of the GAS, handles communication between different GAC's
      * Only one should exist in the world
+     * 
+     * Ability: Fireball
+     * -> create Entity Projectile
+     * -> on hit effect: FireballExplode
+     *
+     * Effect: FireballExplode
+     * -> OnHitModifier: take 5 fire dmg
+     * -> DotModifier: take 1dps fire for 5 sec
+     *
+     * OnHitModifier: (0 period), value = 5 -> Attribute
+     * DotModifier: (1 period), value = 1 -> Attribute
      */
     class GameplayAbilitySystem : public GameService
     {

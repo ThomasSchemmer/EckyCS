@@ -9,6 +9,11 @@
 
 namespace EckyCS
 {
+    class TypeInfo;
+}
+
+namespace EckyCS
+{
     using namespace std;
 
     template<AllComponents ... Types>
@@ -54,8 +59,8 @@ namespace EckyCS
         /** Returns a tuple of refs for all Types, allowing for easy access */
         View<TargetTypes...> Get(size_t TargetIndex)
         {
-            assert(TargetIndex >= 0 && TargetIndex < Count);
-            return make_tuple(GetIDSpan(), GetSpan<TargetTypes>(TargetIndex)...);
+            assert(TargetIndex >= static_cast<size_t>(0) && TargetIndex < Count);
+            return make_tuple(GetIDSpan(TargetIndex), GetSpan<TargetTypes>(TargetIndex)...);
         }
 
         template <typename... TargetTypes>
@@ -69,18 +74,46 @@ namespace EckyCS
 
         template <auto Method, typename System>
         /**
-         * Wrapper function that executes the passed in Method on System
+         * Wrapper function that executes the passed in Method from System on all Entities
          * Automatically deduces necessary types via function template arguments
          */
-        void ForEach(System& system)
+        void ForEachEntity(System& system)
         {
             using MethodT = decltype((Method));
             using TargetTuple = typename ExtractViewArgs<MethodT>::Types;
 
             // Forward to a helper to unpack the tuple
-            ForEach_Helper<Method>(system, TargetTuple{});
+            ForEachEntity_Helper<Method>(system, TargetTuple{});
         }
 
+        template <auto CheckM, auto ActionM, typename System>
+        /**
+         * Wrapper function that executes the passed in Action from System on all Entities that satisfy Check
+         * Automatically deduces necessary types via function template arguments
+         */
+        void ForEachEntityWith(System& system)
+        {
+            using MethodT = decltype((CheckM));
+            using TargetTuple = typename ExtractViewArgs<MethodT>::Types;
+
+            // Forward to a helper to unpack the tuple
+            ForEachEntityWith_Helper<CheckM, ActionM>(system, TargetTuple{});
+        }
+        
+        template <auto Method, typename System>
+        /**
+         * Wrapper function that executes the passed in Method on System, but only for Entities from the list
+         * Automatically deduces necessary types via function template arguments
+         */
+        void ForEachEntityFrom(System& system, const vector<size_t>& Targets)
+        {
+            using MethodT = decltype((Method));
+            using TargetTuple = typename ExtractViewArgs<MethodT>::Types;
+
+            // Forward to a helper to unpack the tuple
+            ForEachEntityFrom_Helper<Method>(system, Targets, TargetTuple{});
+        }
+        
         bool IsValid() const
         {
             return Count > 0 && Data != nullptr && IDs != nullptr;
@@ -123,7 +156,7 @@ namespace EckyCS
         /* Sets the target ID at a specific index and can reset components */
         void Set(size_t TargetIndex, const EntityID& ID, bool bResetComponents = true)
         {
-            assert(TargetIndex >= 0 && TargetIndex < Count);
+            assert(TargetIndex >= static_cast<size_t>(0) && TargetIndex < Count);
             IDs[TargetIndex] = ID;
             if (bResetComponents)
             {
@@ -138,6 +171,20 @@ namespace EckyCS
         {
             auto Ptr = GetPtrTo<T>();
             *(Ptr + TargetIndex) = Value;
+        }
+        
+        void SetData(size_t OffsetInData, int Size, const void* Value)
+        {
+            memcpy(Data + OffsetInData, Value, Size);
+        }
+
+        span<Component> GetData(size_t TargetIndex, size_t Offset, size_t Size) const
+        {
+            const size_t PtrToComp = Offset * Count;
+            const size_t PtrInsideComp = TargetIndex * Size;
+            Component* Ptr = reinterpret_cast<Component*>(Data + PtrToComp + PtrInsideComp);
+            // we have to use Size as amount since Component is only a single byte!
+            return {Ptr, Size};
         }
         
         template <typename... SubTypes>
@@ -193,13 +240,6 @@ namespace EckyCS
         byte* Data;
         EntityID* IDs;
 
-        template <auto Method, typename System, typename... T>
-        void ForEach_Helper(System& system, std::tuple<T...>)
-        {
-            EntityAction<T...> F = Bind<Method, System, T...>(system);
-            this->template ForEach<T...>(F);
-        }
-
         template <auto Method, typename System, typename... TargetTypes>
         requires AllContainedIn<tuple<TargetTypes...>, tuple<Types...>>
         /**
@@ -207,29 +247,51 @@ namespace EckyCS
          */
         static auto Bind(System& system)
         {            
-            return [&system](auto&&... args)
+            return [&system](auto&&... args) -> bool
             {
-                (system.*Method)(std::forward<decltype(args)>(args)...);
+                return (system.*Method)(std::forward<decltype(args)>(args)...);
             };
         }
         
-        template <typename... Targets>
-        requires AllContainedIn<tuple<Targets...>, tuple<Types...>>
-        /**
-         * Function wrapper that provides pointers to all the different components
-         * Used to enforce a strict way of writing functions that work on Entities
-         */
-        using EntityAction = function<void(ComponentGroupIdentifier, EntityID, View<Targets...>&)>;
+        template <auto Method, typename System, typename... T>
+        void ForEachEntity_Helper(System& system, std::tuple<T...>)
+        {
+            EntityAction<T...> F = Bind<Method, System, T...>(system);
+            this->template ForEachEntity<T...>(F);
+        }
+
+        template <auto CheckM, auto ActionM, typename System, typename... T>
+        void ForEachEntityWith_Helper(System& system, std::tuple<T...>)
+        {
+            EntityAction<T...> Check = Bind<CheckM, System, T...>(system);
+            EntityAction<T...> Action = Bind<ActionM, System, T...>(system);
+            this->template ForEachEntityWith<T...>(Check, Action);
+        }
+        
+        template <auto Method, typename System, typename... T>
+        void ForEachEntityFrom_Helper(System& system, const vector<size_t>& Targets, std::tuple<T...>)
+        {
+            EntityAction<T...> F = Bind<Method, System, T...>(system);
+            return this->template ForEachEntityFrom<T...>(F, Targets);
+        }
+        
+        //template <typename... Targets>
+        //requires AllContainedIn<tuple<Targets...>, tuple<Types...>>
+        ///**
+        // * Function wrapper that provides pointers to all the different components
+        // * Used to enforce a strict way of writing functions that work on Entities
+        // */
+        //using EntityAction = function<bool(ComponentGroupIdentifier, size_t, View<Targets...>&)>;
 
         template <typename... TargetTypes>
         requires AllContainedIn<tuple<TargetTypes...>, tuple<Types...>>
         /**
-         * Actual implementation to iterate over all requested views
+         * Actual implementation to iterate over all requested entities in the view
          * Since this would require a tedious bind/cast of functions to
          * adhere to the calling standard, we use the other functions to automatically
          * morph in between
          */
-        void ForEach(EntityAction<TargetTypes...>& Action)
+        void ForEachEntity(EntityAction<TargetTypes...>& Action)
         {
             auto View = GetAll<TargetTypes...>();
             for (size_t i = 0; i < Count; i++)
@@ -237,7 +299,43 @@ namespace EckyCS
                 if (IDs[i].IsInvalid())
                     continue;
                 
-                Action(GroupID, IDs[i], View);
+                Action(GroupID, i, View);
+            }
+        }
+        
+        template <typename... TargetTypes>
+        requires AllContainedIn<tuple<TargetTypes...>, tuple<Types...>>
+        /**
+         * Actual implementation to iterate over all specifically requested entities
+         */
+        void ForEachEntityFrom(EntityAction<TargetTypes...>& Action, const vector<size_t>& Targets)
+        {
+            auto View = GetAll<TargetTypes...>();
+            
+            for (const auto& Target : Targets)
+            {
+                if (IDs[Target].IsInvalid())
+                    continue;
+                
+                Action(GroupID, Target, View);
+            }
+        }
+
+        template <typename... TargetTypes>
+        requires AllContainedIn<tuple<TargetTypes...>, tuple<Types...>>
+        /**
+         * Actual implementation, executes Action for each Entity/Components that satisfy Check
+         */
+        void ForEachEntityWith(EntityAction<TargetTypes...>& Check, EntityAction<TargetTypes...>& Action)
+        {
+            auto View = GetAll<TargetTypes...>();
+            
+            for (size_t i = 0; i < Count; i++)
+            {
+                if (IDs[i].IsInvalid() || !Check(GroupID, i, View))
+                    continue;
+                
+                Action(GroupID, i, View);
             }
         }
         
@@ -262,6 +360,11 @@ namespace EckyCS
             return {IDs, Count};
         }
         
+        span<EntityID> GetIDSpan(int Index)
+        {
+            return {&IDs[Index], 1};
+        }
+        
         template<class T>
         requires IsOneOf<T, Types...>
         /** Returns the pointer to the first element of a type (so offset from data origin)*/
@@ -270,6 +373,12 @@ namespace EckyCS
             constexpr size_t Index = GetIndexOf<T, Types...>();
             size_t Offset = SumSizesTo<Index, Types...>();
             return reinterpret_cast<T*>(Data + Offset);
+        }
+
+        void* GetPtrToType(int Target)
+        {
+            size_t Offset = SumSizesTo<Target, Types...>() * Count;
+            return Data + Offset;
         }
         
         template<class T>

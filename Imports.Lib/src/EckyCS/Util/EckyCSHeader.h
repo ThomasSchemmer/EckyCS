@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <functional>
 #include <span>
 #include <tuple>
 #include <type_traits>
@@ -16,6 +17,7 @@ namespace EckyCS
 
     using namespace std;
 
+#define OUT /* out param */
     
     /** Typedef that requires all to inherit from @Component */
     template<typename... Types>
@@ -85,15 +87,22 @@ namespace EckyCS
         return Index;
     }
 
-    
     template <typename... Types>
     requires AllComponents<Types...>
     /**
      * Collection of components and corresponding EntityIDs
      * Note: EntityIDs are always at the FIRST index!
      */
-    using View = tuple<span<EntityID>, span<Types>...>;
+    using View = tuple<span<const EntityID>, span<Types>...>;
 
+    template <typename... Targets>
+    requires AllComponents<Targets...>
+    /**
+     * Function wrapper that prosvides pointers to all the different components
+     * Used to enforce a strict way of writing functions that work on Entities
+     */
+    using EntityAction = function<bool(ComponentGroupIdentifier, size_t, View<Targets...>&)>;
+    
     template <typename T, typename... Types>
     requires AllComponents<T>
     /** Wrapper to get a single span from a view by type */
@@ -114,10 +123,13 @@ namespace EckyCS
     struct ExtractViewArgs;
     
     template <typename System, typename... T>
-    struct ExtractViewArgs<void (System::*)(ComponentGroupIdentifier, EntityID, View<T...>&)>
+    /** Helps the compiler auto-extract templated types */
+    struct ExtractViewArgs<bool (System::*)(ComponentGroupIdentifier, size_t, View<T...>&)>
     {
         using Types = std::tuple<T...>;
     };
+    
+    
     
 }
 

@@ -1,5 +1,7 @@
 ﻿#include "EntityID.h"
 
+#include <cmath>
+
 namespace EckyCS
 {
     

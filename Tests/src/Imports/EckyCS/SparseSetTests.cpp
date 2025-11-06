@@ -1,5 +1,5 @@
 ﻿#include "Util.h"
-#include "../../../../Imports.Lib/src/EckyCS/Util/SparseSet.h"
+#include "../../../../Imports.Lib/src/EckyCS/SparseSet/SparseSet.h"
 
 #include "gtest/gtest.h"
 using namespace std;
@@ -52,7 +52,8 @@ TEST(AddData, SparseSet)
     auto View = Set.GetData(ID);
     EXPECT_EQ(Get<TestComponent>(View).size(), 0);
 
-    Set.Add(ID, Test);
+    Set.Add(ID);
+    Set.SetData(ID, Test);
     // View is still empty, need to re-query but that's fine
     EXPECT_EQ(Get<TestComponent>(View).size(), 0);
     
@@ -76,11 +77,12 @@ TEST(ForEach, SparseSet)
 
     // TODO: make botch a ForEach with GroupID, EntityID, View and Index
     // as well as a ForEachGroup with GroupID, View and Count
-    Set.Add(ID, Test);
+    Set.Add(ID);
+    Set.SetData(ID, Test);
     //EXPECT_NE([0].A, TS.TargetValue);
     //EXPECT_NE(Set.Get<OtherTestComponent>()[0].B, TS.TargetValue);
-    Set.ForEach<&TestSystem::Modify<TestComponent>, TestSystem>(TS);
-    Set.ForEach<&TestSystem::Test, TestSystem>(TS);
+    Set.ForEachEntity<&TestSystem::Modify<TestComponent>, TestSystem>(TS);
+    Set.ForEachEntity<&TestSystem::Test, TestSystem>(TS);
     //EXPECT_EQ(Set.Get<TestComponent>()[0].A, TS.TargetValue);
     //EXPECT_EQ(Set.Get<OtherTestComponent>()[0].B, TS.TargetValue);
 }

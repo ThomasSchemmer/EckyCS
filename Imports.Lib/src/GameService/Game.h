@@ -27,7 +27,12 @@ namespace GameImports {
 	{
 	private:
 		map<GameServiceType, shared_ptr<GameService>> ServicesInternal;
-
+		float LastFixedTick = 0;
+		float LastTick = 0;
+		
+		// the whole project shouldn't include glfw just for the time 
+		function<float()> TimeFunction;
+		
 	public:
 		GameState State = GameState::InGame;
 		GameMode Mode = GameMode::InGameMode;
@@ -39,12 +44,16 @@ namespace GameImports {
 		map<GameServiceType, unordered_set<GameServiceType>> CallbackMap;
 		
 		static unique_ptr<Game> Instance;
+		static float DeltaTime, DeltaFixedTime;
 
-		Game() = default;
+		Game(const function<float()>& TF) : TimeFunction(TF) {}
 		~Game();
 
 		/** Starts the initialization of the whole game - should be run before any frames*/
 		void Init();
+
+		void Update();
+		void FixedUpdate() const;
 		
 		/** Returns the best fitting service according to type */
 		template<class T>
@@ -94,5 +103,7 @@ namespace GameImports {
 	private:
 		void RemoveCallback(GameServiceType A, GameServiceType B);
 		bool CheckForAnyLoopBetween(const shared_ptr<GameService>& A, const shared_ptr<GameService>& B, vector<GameServiceType>& Chain);
+
+		static constexpr double FIXED_TICK_INTERVAL = 1 / 24.0;
 	};
 }

@@ -4,10 +4,13 @@
 #include <fstream>
 #include <iostream>
 #include "Shader.h"
-#include <windows.h>
+#define WIN32_LEAN_AND_MEAN
+// mask windows byte def, otherwise it overrides std::byte
+#define byte win_byte_override
+#include <Windows.h>
+#undef byte
 
 #include "../../../ext/imgui/imgui.h"
-
 
 Renderer::~Renderer()
 {
@@ -17,10 +20,11 @@ Renderer::~Renderer()
 #endif
 }
 
-void Renderer::Init()
+void Renderer::Init(const std::function<int(int)>& InputCallback)
 {
     CreateVertexBuffer();
     ShaderPtr = new Shader();
+    Camera = make_shared<class Camera>(InputCallback);
 }
 
 
@@ -31,10 +35,18 @@ void Renderer::InitRenderDoc()
 #endif
 }
 
+void Renderer::Update()
+{
+    Camera->Update();
+}
+
 void Renderer::Render() const
 {
     ShaderPtr->Use();
+    ShaderPtr->UpdateVars(Camera);
+
     glBindVertexArray(VAO);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
@@ -67,9 +79,13 @@ void Renderer::CreateVertexBuffer()
     glBindVertexArray(VAO);
     glBindBufferARB(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
-    // specify layout, allow layout 0
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    // specify layout, 0: vertex pos (vec3), 1: color (vec3), 2: uv (vec2)
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 }
 
 #ifdef _WIN32
@@ -86,7 +102,7 @@ void Renderer::LoadRenderDocWindows()
     }
 }
 
-void Renderer::UnloadRenderDocWindows()
+void Renderer::UnloadRenderDocWindows() const
 {
     if (RDocAPI == nullptr)
         return;

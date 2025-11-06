@@ -94,6 +94,16 @@ namespace EckyCS
         return !(*this == Other);
     }
 
+    bool BitVector::operator<(const BitVector& other) const noexcept
+    {
+        for (int i = 0; i < ByteCount; i++)
+        {
+            if (Data[i] < other.Data[i])
+                return true;
+        }
+        return false;
+    }
+
     int BitVector::GetSelfIndexOf(int Target) const
     {
         if (!Get(Target))

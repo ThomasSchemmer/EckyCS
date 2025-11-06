@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <cmath>
 
 namespace EckyCS
 {
@@ -16,13 +15,27 @@ namespace EckyCS
             SetID(ID);
             SetVersion(Version);
         }
+        
+        EntityID(const size_t ID, const unsigned int Version = 0)
+        {
+            SetID(static_cast<int>(ID));
+            SetVersion(Version);
+        }
 
-        unsigned int GetID() const { return Data >> ID_OFFSET; }
+        unsigned int GetID() const
+        {
+            return Data >> ID_OFFSET;
+        }
+        
         void SetID(int ID) {
             Data = ((ID << ID_OFFSET) & ID_MASK) | (Data & VERSION_MASK);
         }
 
-        unsigned int GetVersion() const { return Data & VERSION_MASK; }
+        unsigned int GetVersion() const
+        {
+            return Data & VERSION_MASK;
+        }
+        
         void SetVersion(unsigned int Version)
         {
             Data = (Version & VERSION_MASK) | (Data & ID_MASK);
@@ -34,9 +47,13 @@ namespace EckyCS
                 GetVersion() == Other.GetVersion();
         }
 
-        int operator/(int Other) const
+        unsigned int operator/(int Other) const
         {
             return GetID() / Other;
+        }
+        
+        bool operator<(const EntityID& other) const noexcept {
+            return GetID() < other.GetID();
         }
 
         bool IsInvalid() const

@@ -1,7 +1,16 @@
 #version 330 core
 out vec4 FragColor;
 
+in vec4 Color;
+in vec2 UV;
+
+uniform sampler2D ContainerTex;
+uniform sampler2D CornTex;
+
 void main()
 {
-    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
+    vec4 ContainerColor = texture(ContainerTex, UV);
+    vec4 CornColor = texture(CornTex, UV);
+    vec4 TexColor = UV.x > .5 ? CornColor : ContainerColor;
+    FragColor = mix(TexColor, Color, .5);
 } 

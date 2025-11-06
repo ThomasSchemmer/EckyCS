@@ -1,10 +1,12 @@
 C:\Programming\RailShooterCpp\Imports.Lib\Imports.cpp;C:\Programming\RailShooterCpp\Imports.Lib\x64\Debug\Imports.obj
 C:\Programming\RailShooterCpp\Imports.Lib\src\EckyCS\Components\Component.cpp;C:\Programming\RailShooterCpp\Imports.Lib\x64\Debug\Component.obj
 C:\Programming\RailShooterCpp\Imports.Lib\src\EckyCS\Components\ComponentGroupIdentifier.cpp;C:\Programming\RailShooterCpp\Imports.Lib\x64\Debug\ComponentGroupIdentifier.obj
+C:\Programming\RailShooterCpp\Imports.Lib\src\EckyCS\ECS.cpp;C:\Programming\RailShooterCpp\Imports.Lib\x64\Debug\ECS.obj
+C:\Programming\RailShooterCpp\Imports.Lib\src\EckyCS\SparseSet\ISparseSet.cpp;C:\Programming\RailShooterCpp\Imports.Lib\x64\Debug\ISparseSet.obj
+C:\Programming\RailShooterCpp\Imports.Lib\src\EckyCS\SparseSet\SparseSet.cpp;C:\Programming\RailShooterCpp\Imports.Lib\x64\Debug\SparseSet.obj
 C:\Programming\RailShooterCpp\Imports.Lib\src\EckyCS\Util\BitVector.cpp;C:\Programming\RailShooterCpp\Imports.Lib\x64\Debug\BitVector.obj
 C:\Programming\RailShooterCpp\Imports.Lib\src\EckyCS\Util\ComponentAllocator.cpp;C:\Programming\RailShooterCpp\Imports.Lib\x64\Debug\ComponentAllocator.obj
 C:\Programming\RailShooterCpp\Imports.Lib\src\EckyCS\Util\EntityID.cpp;C:\Programming\RailShooterCpp\Imports.Lib\x64\Debug\EntityID.obj
-C:\Programming\RailShooterCpp\Imports.Lib\src\EckyCS\Util\SparseSet.cpp;C:\Programming\RailShooterCpp\Imports.Lib\x64\Debug\SparseSet.obj
 C:\Programming\RailShooterCpp\Imports.Lib\src\GameService\Game.cpp;C:\Programming\RailShooterCpp\Imports.Lib\x64\Debug\Game.obj
 C:\Programming\RailShooterCpp\Imports.Lib\src\GameService\GameService.cpp;C:\Programming\RailShooterCpp\Imports.Lib\x64\Debug\GameService.obj
 C:\Programming\RailShooterCpp\Imports.Lib\src\GameService\GameServiceDelegate.cpp;C:\Programming\RailShooterCpp\Imports.Lib\x64\Debug\GameServiceDelegate.obj
@@ -15,5 +17,6 @@ C:\Programming\RailShooterCpp\Imports.Lib\src\GAS\Effects\GameplayEffect.cpp;C:\
 C:\Programming\RailShooterCpp\Imports.Lib\src\GAS\Effects\GameplayEffectModifier.cpp;C:\Programming\RailShooterCpp\Imports.Lib\x64\Debug\GameplayEffectModifier.obj
 C:\Programming\RailShooterCpp\Imports.Lib\src\GAS\GameplayAbilityComponent.cpp;C:\Programming\RailShooterCpp\Imports.Lib\x64\Debug\GameplayAbilityComponent.obj
 C:\Programming\RailShooterCpp\Imports.Lib\src\GAS\GameplayAbilitySystem.cpp;C:\Programming\RailShooterCpp\Imports.Lib\x64\Debug\GameplayAbilitySystem.obj
+C:\Programming\RailShooterCpp\Imports.Lib\src\Renderer\Camera.cpp;C:\Programming\RailShooterCpp\Imports.Lib\x64\Debug\Camera.obj
 C:\Programming\RailShooterCpp\Imports.Lib\src\Renderer\Renderer.cpp;C:\Programming\RailShooterCpp\Imports.Lib\x64\Debug\Renderer.obj
 C:\Programming\RailShooterCpp\Imports.Lib\src\Renderer\Shader.cpp;C:\Programming\RailShooterCpp\Imports.Lib\x64\Debug\Shader.obj

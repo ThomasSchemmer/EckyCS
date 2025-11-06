@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include "../../../../Imports.Lib/src/EckyCS/Components/ComponentGroup.h"
+#include "../../../../Imports.Lib/src/EckyCS/Entities/Entity.h"
+#include "../../../../Imports.Lib/src/EckyCS/Systems/System.h"
 
 using namespace std;
 using namespace EckyCS;
@@ -17,19 +19,31 @@ public:
 };
 
 
-class TestSystem
+class TestSystem : public System
 {
 public:
     int TargetValue = 5;
     
     template <typename... TargetTypes>
-    void Modify(ComponentGroupIdentifier GroupID, EntityID ID, View<TargetTypes...>& View)
+    bool Modify(ComponentGroupIdentifier GroupID, size_t Index, View<TargetTypes...>& View)
     {
-        Get<TestComponent>(View)[0].A = TargetValue;
+        Get<TestComponent>(View)[Index].A = TargetValue;
+        return true;
     }
 
-    void Test(ComponentGroupIdentifier GroupID, EntityID ID, View<TestComponent, OtherTestComponent>& View)
+    bool Test(ComponentGroupIdentifier GroupID, size_t Index, View<TestComponent, OtherTestComponent>& View)
     {
-        Get<OtherTestComponent>(View)[0].B = TargetValue;
+        Get<OtherTestComponent>(View)[Index].B = TargetValue;
+        return true;
     }
+    
+    bool IsOdd(ComponentGroupIdentifier GroupID, size_t Index, View<TestComponent>& View)
+    {
+        return Index % 2 == 1; 
+    }
+};
+
+class TestEntity : public Entity<TestComponent, OtherTestComponent>
+{
+    
 };

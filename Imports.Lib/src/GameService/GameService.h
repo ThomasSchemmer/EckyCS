@@ -9,6 +9,7 @@ namespace GameImports {
 		INVALID,
 		Player,
 		GameplayAbilitySystem,
+		ECS,
 		Test
 	};
 
@@ -20,10 +21,12 @@ namespace GameImports {
 	public:
 		virtual ~GameService() = default;
 		GameService();
-		void StartService();
-		void StopService();
-		void ResetService();
-		bool IsReadyFor(GameServiceDelegateType TargetDelegateType) const;
+		virtual void Update() {}
+		virtual void FixedUpdate() {}
+		virtual void StartService();
+		virtual void StopService();
+		virtual void ResetService();
+		virtual bool IsReadyFor(GameServiceDelegateType TargetDelegateType) const;
 
 		ActionMap<GameServiceType, GameServiceType> OnStartup;
 		ActionMap<GameServiceType, GameServiceType> OnShutdown;
