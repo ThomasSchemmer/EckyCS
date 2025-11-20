@@ -28,9 +28,16 @@
     <ClCompile Include="ext\imgui\imgui_tables.cpp" />
     <ClCompile Include="ext\imgui\imgui_widgets.cpp" />
     <ClCompile Include="ext\imgui\misc\cpp\imgui_stdlib.cpp" />
+    <ClCompile Include="src\EckyCS\Systems\ItemRenderData.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ext\glew\include\GL\eglew.h" />
+    <ClInclude Include="ext\glew\include\GL\glew.h" />
+    <ClInclude Include="ext\glew\include\GL\glxew.h" />
+    <ClInclude Include="ext\glew\include\GL\wglew.h" />
+    <ClInclude Include="ext\glfw\include\GLFW\glfw3.h" />
+    <ClInclude Include="ext\glfw\include\GLFW\glfw3native.h" />
     <ClInclude Include="ext\imgui\backends\imgui_impl_glfw.h" />
     <ClInclude Include="ext\imgui\backends\imgui_impl_opengl2.h" />
     <ClInclude Include="ext\imgui\backends\imgui_impl_opengl3.h" />
@@ -42,9 +49,18 @@
     <ClInclude Include="ext\imgui\imstb_textedit.h" />
     <ClInclude Include="ext\imgui\imstb_truetype.h" />
     <ClInclude Include="ext\imgui\misc\cpp\imgui_stdlib.h" />
+    <ClInclude Include="src\EckyCS\Components\ItemComponent.h" />
+    <ClInclude Include="src\EckyCS\Entities\Plant.h" />
+    <ClInclude Include="src\EckyCS\Entities\PlantTest.h" />
+    <ClInclude Include="src\EckyCS\ItemEntity.h" />
+    <ClInclude Include="src\EckyCS\Systems\ItemMovementSystem.h" />
+    <ClInclude Include="src\EckyCS\Systems\ItemRenderData.h" />
+    <ClInclude Include="src\EckyCS\Systems\ItemRenderSystem.h" />
+    <ClInclude Include="src\HGame.h" />
     <ClInclude Include="src\PlayerService.h" />
     <ClInclude Include="src\main.h" />
     <ClInclude Include="src\TestService.h" />
+    <ClInclude Include="src\Util\VoxReader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ext\imgui\misc\debuggers\imgui.natstepfilter" />
@@ -53,15 +69,24 @@
     <Natvis Include="ext\imgui\misc\debuggers\imgui.natvis" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="ext\glew\lib\Release\Win32\glew32.lib" />
+    <Content Include="ext\glew\lib\Release\Win32\glew32s.lib" />
+    <Content Include="ext\glew\lib\Release\x64\glew32.dll" />
+    <Content Include="ext\glew\lib\Release\x64\glew32.lib" />
+    <Content Include="ext\glew\lib\Release\x64\glew32s.lib" />
+    <Content Include="ext\glfw\lib-vc2022\glfw3.dll" />
+    <Content Include="ext\glfw\lib-vc2022\glfw3.lib" />
+    <Content Include="ext\glfw\lib-vc2022\glfw3dll.lib" />
+    <Content Include="ext\glfw\lib-vc2022\glfw3_mt.lib" />
     <Content Include="src\Shaders\BaseVertexShader.vert" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="src\Shaders\BaseFragmentShader.frag" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Imports.Lib\Imports.Lib.vcxproj">
+    <ProjectReference Include="ImportsLib\ImportsLib.vcxproj">
       <Project>{fb9efb06-0e29-4958-80cc-fdc062323295}</Project>
-      <Name>Imports.Lib</Name>
+      <Name>ImportsLib</Name>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -90,6 +115,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -117,7 +143,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Programming\RailShooterCpp\Imports.Lib\ext;</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Programming\RailShooterCpp\ImportsLib\ext;</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -151,13 +177,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Programming\RailShooterCpp\ext\glew\include;C:\Programming\RailShooterCpp\ext\glfw\include;C:\Programming\RailShooterCpp\Imports.Lib\src;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Programming\RailShooterCpp\ext\glew\include;C:\Programming\RailShooterCpp\ext\glfw\include;C:\Programming\RailShooterCpp\ImportsLib\src;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>ext\glew\lib\Release\x64;ext\glfw\lib-vc2022;ext\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\ext\glew\lib\Release\x64;$(SolutionDir)\ext\glfw\lib-vc2022;$(SolutionDir)\ext\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>glfw3.lib;glew32.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

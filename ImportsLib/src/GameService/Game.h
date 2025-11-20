@@ -4,6 +4,10 @@
 #include <unordered_set>
 
 #include "GameService.h"
+#include "GL/glew.h"
+#include "GLFW/glfw3.h"
+
+class Renderer;
 
 namespace GameImports {
 	class GameServiceDelegate;
@@ -25,7 +29,7 @@ namespace GameImports {
 	 */
 	class Game 
 	{
-	private:
+	protected:
 		map<GameServiceType, shared_ptr<GameService>> ServicesInternal;
 		float LastFixedTick = 0;
 		float LastTick = 0;
@@ -45,15 +49,16 @@ namespace GameImports {
 		
 		static unique_ptr<Game> Instance;
 		static float DeltaTime, DeltaFixedTime;
+		shared_ptr<Renderer> RendererPtr;
 
 		Game(const function<float()>& TF) : TimeFunction(TF) {}
-		~Game();
+		virtual ~Game();
 
 		/** Starts the initialization of the whole game - should be run before any frames*/
-		void Init();
+		void Init(shared_ptr<GLFWwindow>& Window);
 
-		void Update();
-		void FixedUpdate() const;
+		virtual void Update();
+		virtual void FixedUpdate() const;
 		
 		/** Returns the best fitting service according to type */
 		template<class T>
@@ -92,6 +97,14 @@ namespace GameImports {
 			return false;
 		}
 
+		static shared_ptr<Renderer> GetRenderer()
+		{
+			if (Instance == nullptr)
+				return nullptr;
+			
+			return Instance->RendererPtr;
+		}
+
 		/**
 		 * Fully deregisters a delegate but doesn't destroy it
 		 * Cannot use shared_ptr as its bing called inside a function delegate, so cannot
@@ -100,7 +113,7 @@ namespace GameImports {
 		static void RemoveServiceDelegate(int DelegateID);
 		static void MarkAsReadyFor(int DelegateID, GameServiceType ServiceType);
 		static void RegisterCallback(const shared_ptr<GameService>& A, const shared_ptr<GameService>& B);
-	private:
+	protected:
 		void RemoveCallback(GameServiceType A, GameServiceType B);
 		bool CheckForAnyLoopBetween(const shared_ptr<GameService>& A, const shared_ptr<GameService>& B, vector<GameServiceType>& Chain);
 

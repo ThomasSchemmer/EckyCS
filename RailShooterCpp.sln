@@ -7,7 +7,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RailShooterCpp", "RailShoot
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tests", "Tests\Tests.vcxproj", "{DC9C1251-E665-4D12-84E6-F5090A423C95}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Imports.Lib", "Imports.Lib\Imports.Lib.vcxproj", "{FB9EFB06-0E29-4958-80CC-FDC062323295}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImportsLib", "ImportsLib\ImportsLib.vcxproj", "{FB9EFB06-0E29-4958-80CC-FDC062323295}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

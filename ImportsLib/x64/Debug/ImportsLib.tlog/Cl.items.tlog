@@ -4,6 +4,7 @@ C:\Programming\RailShooterCpp\ImportsLib\src\EckyCS\Components\ComponentGroupIde
 C:\Programming\RailShooterCpp\ImportsLib\src\EckyCS\ECS.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\ECS.obj
 C:\Programming\RailShooterCpp\ImportsLib\src\EckyCS\SparseSet\ISparseSet.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\ISparseSet.obj
 C:\Programming\RailShooterCpp\ImportsLib\src\EckyCS\SparseSet\SparseSet.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\SparseSet.obj
+C:\Programming\RailShooterCpp\ImportsLib\src\EckyCS\Systems\Rendering\RenderData.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\RenderData.obj
 C:\Programming\RailShooterCpp\ImportsLib\src\EckyCS\Util\BitVector.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\BitVector.obj
 C:\Programming\RailShooterCpp\ImportsLib\src\EckyCS\Util\ComponentAllocator.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\ComponentAllocator.obj
 C:\Programming\RailShooterCpp\ImportsLib\src\EckyCS\Util\EntityID.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\EntityID.obj

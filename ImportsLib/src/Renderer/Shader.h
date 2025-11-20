@@ -31,6 +31,7 @@ private:
 
     void SetUniform1f(const string& UniformName, float Value) const;
     void SetUniformM4(const string& UniformName, const glm::mat4& Value) const;
+    void SetUniform3fv(const string& UniformName, const glm::vec3& Value) const;
     void SetUniformTexture(const string& UniformName, unsigned int TextureID, GLint Slot) const;
 
     string VertexShaderPath = "./src/Shaders/BaseVertexShader.vert";

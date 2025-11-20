@@ -9,8 +9,8 @@ namespace GameImports {
 		INVALID,
 		Player,
 		GameplayAbilitySystem,
-		ECS,
-		Test
+		EntityComponentSystem,
+		Test,
 	};
 
 	/**

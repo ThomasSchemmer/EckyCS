@@ -6,7 +6,7 @@ namespace EckyCS
     class SparseSetPage
     {
     public:
-        static constexpr unsigned int PAGE_SIZE = 256;
+        static constexpr unsigned int PAGE_SIZE = 1024;
         static constexpr size_t INVALID_INDEX = -1;
         size_t Indices[PAGE_SIZE];
         bool bIsValid = false;

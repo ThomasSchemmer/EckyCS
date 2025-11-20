@@ -47,6 +47,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -112,7 +113,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Programming\RailShooterCpp\ImportsLib\ext;C:\Programming\RailShooterCpp\ext\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)ImportsLib\ext;$(SolutionDir)ext\;$(SolutionDir)ext\glew\include;$(SolutionDir)ext\glfw\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -316,6 +317,7 @@
       <AdditionalIncludeDirectories>C:\Programming\RailShooterCpp\ImportsLib\ext;C:\Programming\RailShooterCpp\ext\</AdditionalIncludeDirectories>
       <LibCompiled>true</LibCompiled>
     </ClCompile>
+    <ClCompile Include="src\EckyCS\Systems\Rendering\RenderData.cpp" />
     <ClCompile Include="src\EckyCS\Util\BitVector.cpp" />
     <ClCompile Include="src\EckyCS\Util\ComponentAllocator.cpp" />
     <ClCompile Include="src\EckyCS\Util\EntityID.cpp" />
@@ -336,6 +338,7 @@
   <ItemGroup>
     <ClInclude Include="ext\renderdoc\renderdoc_app.h" />
     <ClInclude Include="ext\stb\stb_image.h" />
+    <ClInclude Include="src\EckyCS\Components\Base\TransformComponent.h" />
     <ClInclude Include="src\EckyCS\Components\Component.h" />
     <ClInclude Include="src\EckyCS\Components\ComponentGroup.h" />
     <ClInclude Include="src\EckyCS\Components\ComponentGroupIdentifier.h" />
@@ -347,6 +350,8 @@
     <ClInclude Include="src\EckyCS\SparseSet\ISparseSet.h" />
     <ClInclude Include="src\EckyCS\SparseSet\SparseSet.h" />
     <ClInclude Include="src\EckyCS\SparseSet\SparseSetPage.h" />
+    <ClInclude Include="src\EckyCS\Systems\Rendering\RenderData.h" />
+    <ClInclude Include="src\EckyCS\Systems\Rendering\RenderSystem.h" />
     <ClInclude Include="src\EckyCS\Systems\System.h" />
     <ClInclude Include="src\EckyCS\Util\BitVector.h" />
     <ClInclude Include="src\EckyCS\Util\ComponentAllocator.h" />
@@ -374,6 +379,7 @@
     <ClInclude Include="src\Renderer\Camera.h" />
     <ClInclude Include="src\Renderer\Renderer.h" />
     <ClInclude Include="src\Renderer\Shader.h" />
+    <ClInclude Include="src\Renderer\Utils.h" />
     <ClInclude Include="src\Util\ActionMap.h" />
     <ClInclude Include="src\Util\Headers.h" />
   </ItemGroup>

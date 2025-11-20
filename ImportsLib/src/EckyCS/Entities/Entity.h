@@ -19,7 +19,7 @@ namespace EckyCS
         virtual ~Entity() = default;
 
     protected:
-        virtual void MakeAbstract() = 0;
+        //virtual void MakeAbstract() = 0;
     };
     
     template <typename T>

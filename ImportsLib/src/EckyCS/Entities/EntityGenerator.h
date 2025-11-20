@@ -5,11 +5,11 @@
 #include "../Util/EckyCSHeader.h"
 #include "../Components/ComponentGroupIdentifier.h"
 #include "../ECS.h"
+#include "../../GameService/Game.h"
 
 namespace EckyCS
 {
     class EntityID;
-    class ECS;
     using namespace GameImports;
 
     class EntityGenerator
@@ -26,35 +26,63 @@ namespace EckyCS
          */
         static bool TryCreate(ComponentGroupIdentifier& OutGroupID, EntityID& OutID, SuppliedComponents&... Components)
         {
-            
-#ifndef _TEST_BUILD
-            auto Ecs = Game::GetService<ECS>(GameServiceType::ECS);
-#endif
-            
-            if (!Ecs)
+            if (!Ecs && !((Ecs = Game::GetService<ECS>(GameServiceType::EntityComponentSystem))))
                 return false;
             
-            OutID = EntityID(CurrentID++); 
+            OutID = GetNextID();
 
-            //auto ProvidedTuple = forward_as_tuple(forward<SuppliedComponents>(Components)...);
             auto ProvidedTuple = make_tuple(Components...);
             using RequiredTuple = typename EntityType::RequiredComponents;
             auto AllComponents = CombineComponents<RequiredTuple>(ProvidedTuple);
 
             std::apply([&OutGroupID, &OutID]<typename... Args>(Args... Components){
                 OutGroupID.AddFlags<std::remove_cvref_t<Args>...>();
-                Ecs->RegisterEntity(OutGroupID, OutID, Components...);
+                EntityGenerator::Ecs->RegisterEntity(OutGroupID, OutID, Components...);
             }, AllComponents);
             
             return true;
         }
+
+        template <typename EntityType, typename... SuppliedComponents>
+        requires HasRequiredComponents<EntityType>
+        /**
+         * Creates many entities from given Components memory
+         * Warning: REQUIRES all components for the given type to be present
+         * and in the correct order!
+         */
+        static bool TryCreateMany(size_t Count, SuppliedComponents*... Components)
+        {
+            if (!Ecs && !((Ecs = Game::GetService<ECS>(GameServiceType::EntityComponentSystem))))
+                return false;
+            
+            auto ProvidedTuple = make_tuple(Components...);
+
+            std::apply([&]<typename... Args>(Args*... InComponents){
+                ComponentGroupIdentifier GroupID;
+                GroupID.AddFlags<std::remove_cvref_t<Args>...>();
+                EntityGenerator::Ecs->RegisterEntities(GroupID, GetNextIDs(Count), InComponents...);
+            }, ProvidedTuple);
+            
+            return true;
+        }
         
-
-#ifdef _TEST_BUILD
-        /** Helper so we don't have to define a whole @Game setup in tests*/
         inline static shared_ptr<ECS> Ecs = nullptr;
-#endif
 
+        static EntityID GetNextID()
+        {
+            return EntityID(CurrentID++); 
+        }
+
+        static vector<EntityID> GetNextIDs(size_t Count)
+        {
+            vector<EntityID> OutIDs;
+            OutIDs.reserve(Count);
+            for (size_t i = 0; i < Count; i++)
+            {
+                OutIDs.push_back(GetNextID());
+            }
+            return OutIDs;
+        }
 
     private:
         template <typename Required, typename Given, size_t... I>
@@ -116,6 +144,6 @@ namespace EckyCS
             return GetOrDefault_Impl<Target>(Values, make_index_sequence<N>{});
         }
         
-        inline static int CurrentID = 0;
+        inline static int CurrentID = 1;
     };
 }

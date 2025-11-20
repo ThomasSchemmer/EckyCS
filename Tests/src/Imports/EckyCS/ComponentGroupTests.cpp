@@ -1,5 +1,5 @@
 ﻿
-#include "../../../../Imports.Lib/src/EckyCS/Components/ComponentGroup.h"
+#include "../../../../ImportsLib/src/EckyCS/Components/ComponentGroup.h"
 #include "Util.h"
 #include "gtest/gtest.h"
 using namespace EckyCS;

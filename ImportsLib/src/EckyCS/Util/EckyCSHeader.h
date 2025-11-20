@@ -86,6 +86,16 @@ namespace EckyCS
         ((is_same_v<T, Types> ? true : (++Index, false)) || ...);
         return Index;
     }
+    
+    /** Overload for tuple types **/
+    template<class T, class Tuple>
+    constexpr size_t GetIndexOf()
+    {
+        return []<size_t... I>(std::index_sequence<I...>)
+        {
+            return GetIndexOf<T, std::tuple_element_t<I, Tuple>...>();
+        }(std::make_index_sequence<std::tuple_size_v<Tuple>>{});
+    }
 
     template <typename... Types>
     requires AllComponents<Types...>
@@ -93,7 +103,7 @@ namespace EckyCS
      * Collection of components and corresponding EntityIDs
      * Note: EntityIDs are always at the FIRST index!
      */
-    using View = tuple<span<const EntityID>, span<Types>...>;
+    using View = tuple<span<EntityID>, span<Types>...>;
 
     template <typename... Targets>
     requires AllComponents<Targets...>
@@ -118,6 +128,27 @@ namespace EckyCS
     {
         return std::get<0>(View);
     }
+    
+    template <typename Tuple, size_t... I>
+    /** Helper pattern that uses a compile-time index sequence via unfolding */
+    void* TupleAtImpl(Tuple& tuple, size_t index, std::index_sequence<I...>)
+    {
+        void* result = nullptr;
+        ((index == I ? (result = static_cast<void*>(std::get<I>(tuple).data()), true) : false) || ...);
+        return result;
+    }
+
+    template <typename Tuple>
+    /** Runtime visitor pattern to get the i-th element in a tuple */
+    void* TupleAt(Tuple&& tuple, size_t index)
+    {
+        constexpr size_t N = std::tuple_size_v<std::remove_reference_t<Tuple>>;
+        return TupleAtImpl(
+            std::forward<Tuple>(tuple),
+            index,
+            std::make_index_sequence<N>{}
+        );
+    }
 
     template <typename>
     struct ExtractViewArgs;
@@ -129,7 +160,15 @@ namespace EckyCS
         using Types = std::tuple<T...>;
     };
     
-    
-    
+    template <typename Tuple>
+    /** Helper struct to go from Tuple<A, B, C> to A, B, C*/
+    struct UnpackTuple;
+
+    template <typename... Ts>
+    struct UnpackTuple<std::tuple<Ts...>> {
+        template <template <typename...> typename T>
+        using apply = T<Ts...>;
+    };
+
 }
 

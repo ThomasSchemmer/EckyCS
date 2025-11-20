@@ -5,6 +5,7 @@
 #include <string>
 
 #include "GameServiceDelegate.h"
+#include "../Renderer/Renderer.h"
 
 namespace GameImports {
 
@@ -28,9 +29,10 @@ namespace GameImports {
 		Services.clear();
 	}
 
-	void Game::Init()
+	void Game::Init(std::shared_ptr<GLFWwindow>& Window)
 	{
 		State = GameState::InGame;
+		RendererPtr->Init(Window);
 		for (auto& Service: Services)
 		{
 			ServicesInternal.emplace(Service->Type, Service);
@@ -79,6 +81,7 @@ namespace GameImports {
 
 	void Game::RemoveServiceDelegate(int DelegateID) {
 		auto& Delegate = Instance->Delegates[DelegateID];
+		auto& Delegates = Instance->Delegates;
 
 		auto Set = Delegate->GetRequiredServices();
 		for (auto& Other : Set)
@@ -116,7 +119,7 @@ namespace GameImports {
 
 	void Game::RemoveCallback(GameServiceType A, GameServiceType B)
 	{
-		if (!CallbackMap.contains(A) || !CallbackMap[A].contains(B))
+		if (A == GameServiceType::INVALID || !CallbackMap.contains(A) || !CallbackMap[A].contains(B))
 			return;
 
 		CallbackMap[A].erase(B);

@@ -7,4 +7,5 @@ C:\Programming\RailShooterCpp\ext\imgui\imgui_draw.cpp;C:\Programming\RailShoote
 C:\Programming\RailShooterCpp\ext\imgui\imgui_tables.cpp;C:\Programming\RailShooterCpp\RailShooterCpp\x64\Debug\imgui_tables.obj
 C:\Programming\RailShooterCpp\ext\imgui\imgui_widgets.cpp;C:\Programming\RailShooterCpp\RailShooterCpp\x64\Debug\imgui_widgets.obj
 C:\Programming\RailShooterCpp\ext\imgui\misc\cpp\imgui_stdlib.cpp;C:\Programming\RailShooterCpp\RailShooterCpp\x64\Debug\imgui_stdlib.obj
+C:\Programming\RailShooterCpp\src\EckyCS\Systems\ItemRenderData.cpp;C:\Programming\RailShooterCpp\RailShooterCpp\x64\Debug\ItemRenderData.obj
 C:\Programming\RailShooterCpp\src\main.cpp;C:\Programming\RailShooterCpp\RailShooterCpp\x64\Debug\main.obj

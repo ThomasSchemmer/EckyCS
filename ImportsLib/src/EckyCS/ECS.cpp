@@ -2,6 +2,7 @@
 
 #include "SparseSet/SparseSet.h"
 #include "Systems/System.h"
+#include "../GameService/Game.h"
 
 using namespace std;
 namespace EckyCS
@@ -24,6 +25,11 @@ namespace EckyCS
         });
     }
 
+    ECS::ECS()  
+    {
+        Type = GameServiceType::EntityComponentSystem;
+    }
+
     ComponentGroupIdentifier ECS::GetOrCreateGroupIDFor(const EntityID& ID)
     {
         if (!EntityMapping.contains(ID))
@@ -38,9 +44,10 @@ namespace EckyCS
     {
         GetOrCreateSet(EmptyGroup);
         // TODO: add location system
-        ForEachSystem([](const shared_ptr<System>& S)
+        auto Ptr = shared_from_this();
+        ForEachSystem([&Ptr](const shared_ptr<System>& S)
         {
-            S->StartSystem();
+            S->StartSystem(Ptr);
         });
         OnInit.ForEach(Type);
     }

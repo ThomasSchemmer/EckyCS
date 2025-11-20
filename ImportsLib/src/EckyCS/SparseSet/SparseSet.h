@@ -22,7 +22,7 @@ namespace EckyCS
         
     public:
         
-        SparseSet(int InNumPages = 1, int ExpectedEntities = 10) :
+        SparseSet(int InNumPages = 1024, int ExpectedEntities = 10) :
             Components(ExpectedEntities)
         {
             GroupID.AddFlags<Types...>();
@@ -33,9 +33,14 @@ namespace EckyCS
         }
         
         
-        int GetCount() const override 
+        size_t GetCount() const override 
         {
-            return Components.Count - Available;
+            return GetTotalCount() - Available;
+        }
+        
+        size_t GetTotalCount() const override
+        {
+            return Components.Count;
         }
         
         void Add(const EntityID& ID) override
@@ -61,10 +66,22 @@ namespace EckyCS
             Components.Set(Page.Indices[Index], ID, true);
         }
 
+        void AddRange(const vector<EntityID>& IDs) override
+        {
+            for (const auto& ID : IDs)
+            {
+                Add(ID);
+            }
+        }
+
         
 
         template <typename ... SubTypes>
         requires AllContainedIn<tuple<SubTypes...>, tuple<Types...>>
+        /**
+         * Only used for direct setting of Comps, sadly cannot be called from ISparseSet
+         * See SetData(EntityID, int, int) for that
+         */
         void SetData(const EntityID& ID, SubTypes&... Values)
         {
             if (!Has(ID))
@@ -82,21 +99,7 @@ namespace EckyCS
             return Components.Get(TargetIndex);
         }
                 
-        //void Swap(const EntityID& ID1, const EntityID& ID2)
-        //{
         // TODO: swap
-        //    int PageIndexA = GetPageIndex(ID1, false);
-        //    int PageIndexB = GetPageIndex(ID2, false);
-        //    auto& PageA = Pages[PageIndexA];
-        //    auto& PageB = Pages[PageIndexB];
-        //    int IndexInPageA = GetIndexInPage(ID1);
-        //    int IndexInPageB = GetIndexInPage(ID2);
-        //    int DenseIndexA = PageA.Indices[IndexInPageA];
-        //    int DenseIndexB = PageB.Indices[IndexInPageB];
-        //    Values?.Swap(DenseIndexA, DenseIndexB);
-        //    PageA.Indices[IndexInPageA] = DenseIndexB;
-        //    PageB.Indices[IndexInPageB] = DenseIndexA;
-        //}
         
         bool IsValid() const
         {
@@ -109,12 +112,6 @@ namespace EckyCS
         {
             Components.template ForEachEntity<Method>(system);
         }
-        //template <auto Method, typename System>
-        //void CheckEntity(System& system);
-        //template <auto Method, typename System>
-        //EntityID SelectEntityFrom(const vector<EntityID>& IDs, System& system);
-        //template <auto Method, typename System>
-        //void ForEachEntityFrom(const vector<EntityID>& IDs, System& system);
 
     protected:
         ComponentGroup<Types...> Components;
@@ -124,18 +121,6 @@ namespace EckyCS
          * Contains the slot as id and version is always INVALID
          */
         EntityID NextAvailableComponent;
-
-        template <typename... SubTypes>
-        requires AllContainedIn<tuple<SubTypes...>, tuple<Types...>>
-        /** Moves the components to a target pos in the data */
-        void SetDataInternal(const EntityID& ID, SubTypes&... Values)
-        {
-            auto Index = GetTargetIndex(ID);
-            if (Index == SparseSetPage::INVALID_INDEX)
-                return;
-
-            Components.SetData(Index, Values...);
-        }
         
         bool HasInternal(const EntityID& ID, const SparseSetPage& Page, size_t IndexInPage) const override
         {
@@ -208,12 +193,30 @@ namespace EckyCS
             return Components.GetData(TargetIndex, Offset, Size);
         }
 
+        span<Component> GetData(size_t Offset, size_t Size) override
+        {
+            // we want all of the comps, not just a single one 
+            return Components.GetData(0, Offset, Size * Components.Count);
+        }
+
+        span<EntityID> GetIDSpan() override
+        {
+            return Components.GetIDSpan();
+        }
+
         void SetData(const EntityID& ID, int Offset, int Size, void* Value) override
         {
             const size_t TargetIndex = GetTargetIndex(ID);
             const size_t PtrToComp = Offset * Components.Count;
             const size_t PtrInsideComp = TargetIndex * Size;
             Components.SetData(PtrToComp + PtrInsideComp, Size, Value);
+        }
+
+        void SetDataBlock(int Offset, int Size, size_t StartIndex, size_t Count, void* Value) override
+        {
+            const size_t PtrToComp = Offset * Components.Count;
+            const size_t PtrInsideComp = StartIndex * Size;
+            Components.SetData(PtrToComp + PtrInsideComp, Size * Count, Value);
         }
     };
 

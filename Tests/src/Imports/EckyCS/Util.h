@@ -1,7 +1,7 @@
 ﻿#pragma once
-#include "../../../../Imports.Lib/src/EckyCS/Components/ComponentGroup.h"
-#include "../../../../Imports.Lib/src/EckyCS/Entities/Entity.h"
-#include "../../../../Imports.Lib/src/EckyCS/Systems/System.h"
+#include "../../../../ImportsLib/src/EckyCS/Components/ComponentGroup.h"
+#include "../../../../ImportsLib/src/EckyCS/Entities/Entity.h"
+#include "../../../../ImportsLib/src/EckyCS/Systems/System.h"
 
 using namespace std;
 using namespace EckyCS;

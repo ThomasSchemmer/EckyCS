@@ -22,7 +22,7 @@ namespace EckyCS
      * Central class for the ECS - should be the only class that you directly interact with
      * Is a gameservice for added convenience 
      */
-    class ECS : public GameService, public IComponentGroupProvider
+    class ECS : public GameService, public IComponentGroupProvider, public enable_shared_from_this<ECS>
     {
         map<TypeInfo, vector<shared_ptr<System>>> Systems;
         map<ComponentGroupIdentifier, shared_ptr<ISparseSet>> Sets;
@@ -33,6 +33,7 @@ namespace EckyCS
     public:
         void Update() override;
         void FixedUpdate() override;
+        ECS();
         ~ECS() override;
 
         
@@ -63,7 +64,8 @@ namespace EckyCS
             if (!bIsInit)
                 return;
 
-            System->StartSystem();
+            auto Ptr = shared_from_this();
+            System->StartSystem(Ptr);
         }
 
         template<typename T>
@@ -91,7 +93,7 @@ namespace EckyCS
 
                 // sadly we don't have automatic type_info inheritance info,
                 // so we always have to manually check. Will be performance heavy!
-                T* Ptr = dynamic_pointer_cast<T>(Tuple.second[0]);
+                auto Ptr = reinterpret_pointer_cast<T>(Tuple.second[0]);
                 if (!Ptr)
                     continue;
 
@@ -103,7 +105,10 @@ namespace EckyCS
 
         template <typename Comp>
         requires AllComponents<Comp>
-        void AssignComponent(const EntityID& ID){}
+        void AssignComponent(const EntityID& ID)
+        {
+            // todo
+        }
 
         template <typename... Types>
         void RegisterEntity(const ComponentGroupIdentifier& GroupID, const EntityID& ID, Types... Data)
@@ -115,12 +120,53 @@ namespace EckyCS
             Set->SetData(ID, Data...);
         }
 
+        
+        template <typename... Types>
+        /**
+         * Adds a range of entities with the given Data
+         * Warning: Its important the IDs are not yet added, as
+         * it does not single-copy, but rather move the whole mem block!
+         * If the assigned IDs are not continuous in dense memory, it will corrupt!
+         */
+        void RegisterEntities(const ComponentGroupIdentifier& GroupID, const vector<EntityID>& IDs, Types*... Data)
+        {
+            auto Set = GetOrCreateSet<Types...>(GroupID);
+            Set->AddRange(IDs);
+            for (const auto& ID : IDs)
+            {
+                EntityMapping.emplace(ID, GroupID);
+            }
+            Set->SetDataBlock(
+                Set->GetTargetIndex(IDs[0]),
+                IDs.size(),
+                Data...
+            );
+        }
+
         void DeleteEntity(const EntityID& ID)
         {
             assert(EntityMapping.contains(ID));
             auto Set = GetSet(EntityMapping[ID]);
             Set->Remove(ID);
             EntityMapping.erase(ID);
+        }
+
+        template <typename ... Components>
+        requires AllComponents<Components...>
+        void ForEach(EntityAction<Components...>& Action)
+        {
+            ForEach(Get<Components...>(), Action);
+        }
+
+        template <typename ... Components>
+        requires AllComponents<Components...>
+        void ForEach(const ComponentGroupView& View, EntityAction<Components...>& Action)
+        {
+            for (const auto& GroupID : View.Groups)
+            {
+                auto Group = GetSet(*GroupID.get());
+                Group->ForEach(Action);
+            }
         }
         
     protected:

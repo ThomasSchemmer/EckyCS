@@ -1,4 +1,4 @@
-﻿#include "Renderer.h"
+﻿
 
 #include <filesystem>
 #include <fstream>
@@ -10,7 +10,16 @@
 #include <Windows.h>
 #undef byte
 
+#include "GL/glew.h"
+#define GLFW_INCLUDE_NONE
+#include "glfw/include/GLFW/glfw3.h"
+#include "Renderer.h"
+#include "Utils.h"
 #include "../../../ext/imgui/imgui.h"
+#include "../EckyCS/ECS.h"
+#include "../EckyCS/Systems/Rendering/RenderSystem.h"
+#include "../GameService/Game.h"
+using namespace EckyCS;
 
 Renderer::~Renderer()
 {
@@ -20,11 +29,12 @@ Renderer::~Renderer()
 #endif
 }
 
-void Renderer::Init(const std::function<int(int)>& InputCallback)
+void Renderer::Init(std::shared_ptr<GLFWwindow>& Window)
 {
-    CreateVertexBuffer();
     ShaderPtr = new Shader();
-    Camera = make_shared<class Camera>(InputCallback);
+    Camera = make_shared<class Camera>(Window);
+
+    CreateVertexBuffer();
 }
 
 
@@ -35,19 +45,38 @@ void Renderer::InitRenderDoc()
 #endif
 }
 
-void Renderer::Update()
+void Renderer::Update(float Delta)
 {
-    Camera->Update();
+    Camera->Update(Delta);
 }
 
-void Renderer::Render() const
+void Renderer::Render()
 {
+    GL_CHECK_ERROR();
+    
     ShaderPtr->Use();
     ShaderPtr->UpdateVars(Camera);
 
-    glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    auto ServicePtr = Game::GetService(GameServiceType::EntityComponentSystem);
+    auto Ecs = reinterpret_pointer_cast<ECS>(ServicePtr);
+    vector<shared_ptr<System>> Systems;
+	if (!Ecs || !Ecs->TryGetSystems<BaseRenderSystem>(OUT Systems))
+	    return;
+
+    for (auto& System : Systems)
+    {
+        auto RenderSystem = dynamic_pointer_cast<BaseRenderSystem>(System);
+        if (!RenderSystem)
+            continue;
+        
+        RenderSystem->Render();
+    }
+    
+    for (auto& System : Systems)
+    {        
+        System->OnDrawGizmos();
+    }
+    Camera->OnDrawGizmos();
 }
 
 void Renderer::HandleCaptureStart() const
@@ -71,21 +100,33 @@ void Renderer::HandleCaptureStop() const
     RDocAPI->EndFrameCapture(nullptr, nullptr);
 }
 
+shared_ptr<Camera> Renderer::GetCamera() const
+{
+    return Camera;
+}
+
 void Renderer::CreateVertexBuffer()
 {
-    glGenVertexArrays(1, &VAO);
-    glGenBuffersARB(1, &VBO);
-
-    glBindVertexArray(VAO);
-    glBindBufferARB(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
-    // specify layout, 0: vertex pos (vec3), 1: color (vec3), 2: uv (vec2)
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
+    //glGenVertexArrays(1, &VAO);
+    //glGenBuffers(1, &VertexBO);
+//
+    //glBindVertexArray(VAO);
+    //glBindBuffer(GL_ARRAY_BUFFER, VertexBO);
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
+    //// specify layout, 0: vertex pos (vec3), 1: color (vec3), 2: uv (vec2)
+    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    //glEnableVertexAttribArray(0);
+    //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    //glEnableVertexAttribArray(1);
+    //glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    //glEnableVertexAttribArray(2);
+    //
+    //glGenBuffers(1, &PositionBO);
+    //glBindBuffer(GL_ARRAY_BUFFER, PositionBO);
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 100, Positions, GL_STATIC_DRAW);
+    //glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    //glEnableVertexAttribArray(3);
+    //glVertexAttribDivisor(3, 1);  
 }
 
 #ifdef _WIN32

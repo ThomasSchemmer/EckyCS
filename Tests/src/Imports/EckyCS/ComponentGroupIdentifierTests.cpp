@@ -1,8 +1,8 @@
 ﻿#include <memory.h>
 #include "gtest/gtest.h"
-#include "../../../../Imports.Lib/src/EckyCS/Components/ComponentGroupIdentifier.h"
-#include "../../../../Imports.Lib/src/EckyCS/Components/Component.h"
-#include "../../../../Imports.Lib/src/EckyCS/Util/ComponentAllocator.h"
+#include "../../../../ImportsLib/src/EckyCS/Components/ComponentGroupIdentifier.h"
+#include "../../../../ImportsLib/src/EckyCS/Components/Component.h"
+#include "../../../../ImportsLib/src/EckyCS/Util/ComponentAllocator.h"
 
 class TestComponent : public EckyCS::Component
 {

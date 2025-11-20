@@ -1,5 +1,5 @@
 ﻿
-#include "../../../../Imports.Lib/src/EckyCS/Util/BitVector.h"
+#include "../../../../ImportsLib/src/EckyCS/Util/BitVector.h"
 
 #include "gtest/gtest.h"
 

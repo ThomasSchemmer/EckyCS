@@ -1,8 +1,10 @@
 ﻿#pragma once
 #include <memory>
+#include "GL/glew.h"
 #include <renderdoc/renderdoc_app.h>
 
 #include "Camera.h"
+#include "GLFW/glfw3.h"
 
 
 class Shader;
@@ -14,16 +16,16 @@ class Shader;
 class Renderer
 {
 public:
-    unsigned int VBO, VAO;
 
     Renderer() = default;
     ~Renderer();
-    void Init(const std::function<int(int)>& InputCallback);
+    void Init(std::shared_ptr<GLFWwindow>& Window);
     void InitRenderDoc();
-    void Update();
-    void Render() const;
+    void Update(float Delta);
+    void Render();
     void HandleCaptureStart() const;
     void HandleCaptureStop() const;
+    shared_ptr<Camera> GetCamera() const;
 
 private:
     Shader* ShaderPtr = nullptr;
@@ -35,13 +37,6 @@ private:
     void LoadRenderDocWindows();
     void UnloadRenderDocWindows() const;
 #endif
-    
-    float Vertices[24] = {
-        // position          // color    // uv
-        -.5f, -.5f, .0f,     1, 0, 0,    0,    0,    // Bottom-left
-         .5f, -.5f, .0f,     0, 1, 0,    1,    0,    // Bottom-right
-         .0f,  .5f, .0f,     0, 0, 1,    0.5f, 1     // Top
-    };
 
     char RenderDocPath[42] = "./ImportsLib/ext/renderdoc/renderdoc.dll";
 };

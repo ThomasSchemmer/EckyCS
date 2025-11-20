@@ -9,11 +9,14 @@ namespace EckyCS
      */
     class TypeInfo
     {
-        const type_info* Info;
 
     public:
+        
+        const type_info* Info;
+        
         // automatic conversion constructor
         TypeInfo(const type_info& InInfo) : Info(&InInfo) {}
+        TypeInfo(type_info& InInfo) : Info(&InInfo) {}
         
         bool operator<(const TypeInfo& other) const noexcept
         {

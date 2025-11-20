@@ -57,6 +57,7 @@ namespace EckyCS
         requires AllComponents<Types...>
         void AddFlags()
         {
+            _CrtCheckMemory();
             vector<string> Names = {ComponentAllocator::GetNameFor<Types>() ...};
             AddFlags(Names);
         }

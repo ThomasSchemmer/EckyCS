@@ -1,10 +1,10 @@
 ﻿
-#include "../../../../Imports.Lib/src/GAS/GameplayAbilityComponent.h"
-#include "../../../../Imports.Lib/src/GAS/GameplayAbilitySystem.h"
-#include "../../../../Imports.Lib/src/GAS/Attributes/AttributeSet.h"
-#include "../../../../Imports.Lib/src/GAS/Attributes/Attribute.h"
-#include "../../../../Imports.Lib/src/GAS/Attributes/AttributeType.h"
-#include "../../../../Imports.Lib/src/GameService/Game.h"
+#include "../../../../ImportsLib/src/GAS/GameplayAbilityComponent.h"
+#include "../../../../ImportsLib/src/GAS/GameplayAbilitySystem.h"
+#include "../../../../ImportsLib/src/GAS/Attributes/AttributeSet.h"
+#include "../../../../ImportsLib/src/GAS/Attributes/Attribute.h"
+#include "../../../../ImportsLib/src/GAS/Attributes/AttributeType.h"
+#include "../../../../ImportsLib/src/GameService/Game.h"
 #include "gtest/gtest.h"
 
 using namespace GAS;

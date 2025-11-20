@@ -50,6 +50,8 @@ void Shader::UpdateVars(const shared_ptr<Camera>& Camera)
     SetUniformM4("Transform", Transform);
     SetUniformM4("Projection", Camera->Projection);
     SetUniformM4("View", Camera->View);
+    SetUniform3fv("SunPos", Camera->SunPos);
+    SetUniform3fv("CamPos", Camera->Position);
 }
 
 std::string Shader::LoadShader(const std::string& FilePath) {
@@ -142,6 +144,13 @@ void Shader::SetUniformM4(const string& UniformName, const glm::mat4& Value) con
 {
     const int ID = glGetUniformLocation(Program, UniformName.c_str());
     glUniformMatrix4fv(ID, 1, GL_FALSE, value_ptr(Value));
+}
+
+
+void Shader::SetUniform3fv(const string& UniformName, const glm::vec3& Value) const
+{
+    const int ID = glGetUniformLocation(Program, UniformName.c_str());
+    glUniform3fv(ID, 1, value_ptr(Value));
 }
 
 void Shader::SetUniformTexture(const string& UniformName, unsigned int TextureID, GLint Slot) const

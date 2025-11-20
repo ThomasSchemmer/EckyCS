@@ -1,6 +1,6 @@
 ﻿#include "Util.h"
-#include "../../../../Imports.Lib/src/EckyCS/ECS.h"
-#include "../../../../Imports.Lib/src/EckyCS/Entities/EntityGenerator.h"
+#include "../../../../ImportsLib/src/EckyCS/ECS.h"
+#include "../../../../ImportsLib/src/EckyCS/Entities/EntityGenerator.h"
 #include "gtest/gtest.h"
 using namespace std;
 

@@ -5,7 +5,6 @@ namespace EckyCS
     class Component
     {
     public:
-    
     };
 
 }

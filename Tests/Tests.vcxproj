@@ -30,6 +30,9 @@
   <PropertyGroup>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
   </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <EnableASAN>false</EnableASAN>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="Shared" />
@@ -48,9 +51,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Imports.Lib\Imports.Lib.vcxproj">
+    <ProjectReference Include="..\ImportsLib\ImportsLib.vcxproj">
       <Project>{fb9efb06-0e29-4958-80cc-fdc062323295}</Project>
-      <Name>Imports.Lib</Name>
+      <Name>ImportsLib</Name>
     </ProjectReference>
     <ProjectReference Include="..\RailShooterCpp.vcxproj">
       <Project>{4979d7ef-8f04-475c-b791-bc1ed1e92cbd}</Project>

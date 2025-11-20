@@ -121,29 +121,30 @@ namespace EckyCS
 
         size_t GetGreaterCount() const
         {
-            size_t Additional = static_cast<size_t>(Count * 0.5);
+            size_t Additional = static_cast<size_t>(0.5 * Count);
             return Additional + Count;
         }
 
-        bool Has(int TargetIndex) const
+        bool Has(size_t TargetIndex) const
         {
             return !IDs[TargetIndex].IsInvalid(); 
         }
 
-        EntityID& GetID(int TargetIndex) const
+        EntityID& GetID(size_t TargetIndex) const
         {
             return IDs[TargetIndex];
         }
 
         void ChangeSize(size_t NewCount)
         {
-            ChangeSizeIDs(NewCount);
-            ChangeSizeComponents(NewCount);
-            for (size_t i = Count; i < NewCount; i++)
+            int OldCount = Count;
+            Count = NewCount;
+            ChangeSizeIDs(OldCount, NewCount);
+            ChangeSizeComponents(OldCount, NewCount);
+            for (size_t i = OldCount; i < NewCount; i++)
             {
                 Reset(i);
             }
-            Count = NewCount;
         }
 
         /* Resets the target ID at a specific index and can reset components */
@@ -176,6 +177,11 @@ namespace EckyCS
         void SetData(size_t OffsetInData, int Size, const void* Value)
         {
             memcpy(Data + OffsetInData, Value, Size);
+        }
+        
+        span<EntityID> GetIDSpan()
+        {
+            return {IDs, Count};
         }
 
         span<Component> GetData(size_t TargetIndex, size_t Offset, size_t Size) const
@@ -355,11 +361,6 @@ namespace EckyCS
             return span<T>(GetPtrTo<T>(TargetIndex), 1);
         }
         
-        span<EntityID> GetIDSpan()
-        {
-            return {IDs, Count};
-        }
-        
         span<EntityID> GetIDSpan(int Index)
         {
             return {&IDs[Index], 1};
@@ -371,7 +372,7 @@ namespace EckyCS
         T* GetPtrTo()
         {
             constexpr size_t Index = GetIndexOf<T, Types...>();
-            size_t Offset = SumSizesTo<Index, Types...>();
+            size_t Offset = SumSizesTo<Index, Types...>() * Count;
             return reinterpret_cast<T*>(Data + Offset);
         }
 
@@ -389,18 +390,20 @@ namespace EckyCS
             return GetPtrTo<T>() + TargetIndex;
         }
             
-        void ChangeSizeIDs(size_t NewCount)
+        void ChangeSizeIDs(size_t OldCount, size_t NewCount)
         {
             EntityID* NewIDs = new EntityID[NewCount]();
-            std::copy_n(IDs, Count, NewIDs);
+            std::copy_n(IDs, OldCount, NewIDs);
             delete[] IDs;
             IDs = NewIDs;
         }
 
-        void ChangeSizeComponents(size_t NewCount)
+        void ChangeSizeComponents(size_t OldCount, size_t NewCount)
         {
-            byte* NewData = new byte[NewCount]();
-            std::copy_n(Data, Count, NewData);
+            //todo: at this point the data is already 0 again
+            size_t ByteCount = TotalByteCount<Types...>();
+            byte* NewData = new byte[NewCount * ByteCount]();
+            std::copy_n(Data, OldCount * ByteCount, NewData);
             delete[] Data;
             Data = NewData;
         }

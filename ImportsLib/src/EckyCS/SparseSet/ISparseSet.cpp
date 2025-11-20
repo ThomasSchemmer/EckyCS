@@ -39,9 +39,14 @@ namespace EckyCS
         }
     }
 
-    int ISparseSet::GetCount() const
+    size_t ISparseSet::GetCount() const
     { 
         return 0;
+    }
+
+    size_t ISparseSet::GetTotalCount() const
+    {
+        return 0; 
     }
 
     bool ISparseSet::IsFull() const
@@ -64,7 +69,23 @@ namespace EckyCS
         throw std::exception("Needs to be overwritten!");
     }
 
+    
+    void ISparseSet::SetDataBlock(int Offset, int Size, size_t StartIndex, size_t Count, void* Ptr)
+    {
+        throw std::exception("Needs to be overwritten!");
+    }
+
     span<Component> ISparseSet::GetData(const EntityID& ID, size_t Offset, size_t Size)
+    {
+        throw std::exception("Needs to be overwritten!");
+    }
+
+    span<Component> ISparseSet::GetData(size_t Offset, size_t Size)
+    {
+        throw std::exception("Needs to be overwritten!");
+    }
+
+    span<EntityID> ISparseSet::GetIDSpan()
     {
         throw std::exception("Needs to be overwritten!");
     }
@@ -127,6 +148,10 @@ namespace EckyCS
     
     void ISparseSet::CreatePageAtMapping(size_t Index)
     {
+        if (Index >= NumPages)
+        {
+            int asd = 5;
+        }
         assert(Index >= static_cast<size_t>(0) && Index < NumPages);
         size_t FreeIndex = Pages.size();
         Pages.emplace_back();

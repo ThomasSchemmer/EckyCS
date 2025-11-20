@@ -77,16 +77,18 @@ namespace GameImports {
 
         TemplatedDelegate(GameServiceType NewSourceType, GameServiceType ServiceType, Action<shared_ptr<T>> Callback, GameServiceDelegateType NewDelegateType = GameServiceDelegateType::OnStart)
         {
+        	// if we are calling from a non-service, the source will be invalid - the call will be executed anyways
+        	// but no callback detection is possible, so just drop that part
         	const auto SourceService = Game::GetService(NewSourceType);
         	const auto TargetService = Game::GetService<T>(ServiceType);
-        	if (SourceService == nullptr || TargetService == nullptr)
+        	if ((NewSourceType != GameServiceType::INVALID && SourceService == nullptr) || TargetService == nullptr)
 				throw std::exception("ERROR::GAME:INVALID_DELEGATE_TYPE");
         	
 			const bool bIsReady = TargetService->IsReadyFor(NewDelegateType);
             RequiredServices.emplace(std::make_pair(TargetService->Type, bIsReady));
             A = Callback;
             this->DelegateType = NewDelegateType;
-        	this->SourceType = SourceService->Type;
+        	this->SourceType = SourceService ? SourceService->Type : GameServiceType::INVALID;
         	
         	DelegateID = ++CURRENT_DELEGATE_ID;
         	const int Temp = DelegateID;
@@ -103,7 +105,6 @@ namespace GameImports {
             	TargetService->OnInit.Add(NewSourceType, Lambda);
                 break;
             }
-            RunIfReady();
         }
 
     	
@@ -113,10 +114,11 @@ namespace GameImports {
     	 */
 		static void RunAfterServiceInit(Action<shared_ptr<T>> Callback, GameServiceType NewSourceType, GameServiceType ServiceType){
         	auto Delegate = make_shared<TemplatedDelegate>(NewSourceType, ServiceType, Callback, GameServiceDelegateType::OnInit);
-        	if (Delegate->HasRun())
-        		return;
-
         	Game::Instance->Delegates.emplace(std::make_pair(Delegate->DelegateID, Delegate));
+
+        	Delegate->RunIfReady();
+        	if (Delegate->HasRun()) // also removes delegate from map
+        		return;
         	
         	const auto SourceService = Game::GetService(NewSourceType);
         	const auto TargetService = Game::GetService<T>(ServiceType);

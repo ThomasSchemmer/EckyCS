@@ -11,7 +11,7 @@ namespace EckyCS
     class System
     {
     public:
-        virtual void StartSystem() {}
+        virtual void StartSystem(shared_ptr<ECS>& Ecs) {}
         virtual void Tick(float Delta){}
         virtual void FixedTick(float Delta){}
         virtual void LateTick(float Delta){}

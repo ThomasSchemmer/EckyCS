@@ -12,15 +12,16 @@ namespace EckyCS
 
         template <typename ... Types>
         requires AllComponents<Types...>
-        ComponentGroupView<Types...> Get()
+        ComponentGroupView Get()
         {
-            ComponentGroupView<Types...> GroupView;
+            ComponentGroupView GroupView;
             for (const auto& Tuple : GetViewSet())
             {
                 if (!Tuple.first.HasAllFlags<Types...>())
                     continue;
 
-                GroupView.Add(Tuple.second);
+                auto Copy = make_shared<ComponentGroupIdentifier>(Tuple.first);
+                GroupView.Add(Copy);
             }
             return GroupView;
         }

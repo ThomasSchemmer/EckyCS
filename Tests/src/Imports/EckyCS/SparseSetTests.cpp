@@ -1,5 +1,5 @@
 ﻿#include "Util.h"
-#include "../../../../Imports.Lib/src/EckyCS/SparseSet/SparseSet.h"
+#include "../../../../ImportsLib/src/EckyCS/SparseSet/SparseSet.h"
 
 #include "gtest/gtest.h"
 using namespace std;
