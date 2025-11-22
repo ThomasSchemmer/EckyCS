@@ -10,7 +10,7 @@ void ItemRenderData::Create(size_t InCount)
     
     glGenBuffers(1, &ItemBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, ItemBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(ItemComponent) * InCount, nullptr, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(ItemComponent) * InCount, nullptr, GL_DYNAMIC_DRAW);
     glVertexAttribPointer(4, 1, GL_INT, GL_FALSE, sizeof(int), (void*)0);
     glEnableVertexAttribArray(4);
     glVertexAttribDivisor(4, 1); 

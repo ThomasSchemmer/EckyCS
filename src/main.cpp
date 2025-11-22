@@ -7,7 +7,7 @@
 #include "HGame.h"
 #include "../ext/imgui/imgui.h"
 #include "PlayerService.h"
-#include "TestService.h"
+#include "Util/RenderTestService.h"
 #include "../ext/imgui/backends/imgui_impl_glfw.h"
 #include "../ext/imgui/backends/imgui_impl_opengl3.h"
 #include "GameService/Game.h"
@@ -118,8 +118,8 @@ namespace
 		glewInit();
 		
 		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_CULL_FACE);
-		glEnable(GL_BACK);
+		//glEnable(GL_CULL_FACE);
+		//glEnable(GL_BACK);
 		glEnable(GL_DEBUG_OUTPUT);
 		glDebugMessageCallback(GLDebugMessageCallback, nullptr);
 	}
@@ -145,7 +145,6 @@ namespace
 		auto Renderer = Game::GetRenderer();
 		Renderer->HandleCaptureStart();
 		
-		glfwSwapBuffers(Window.get());
 		
 		glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -156,6 +155,7 @@ namespace
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		
 		Renderer->HandleCaptureStop();
+		glfwSwapBuffers(Window.get());
 	}
 
 	void RenderUI() {
@@ -193,7 +193,7 @@ namespace
 
 int main()
 {
-	cout << "Starting glfw";
+	cout << "Starting glfw" << "\n";
 
 	shared_ptr<Renderer> Ptr;
 	InitWindow(Ptr);

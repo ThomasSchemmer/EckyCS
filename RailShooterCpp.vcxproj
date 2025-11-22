@@ -59,7 +59,7 @@
     <ClInclude Include="src\HGame.h" />
     <ClInclude Include="src\PlayerService.h" />
     <ClInclude Include="src\main.h" />
-    <ClInclude Include="src\TestService.h" />
+    <ClInclude Include="src\Util\RenderTestService.h" />
     <ClInclude Include="src\Util\VoxReader.h" />
   </ItemGroup>
   <ItemGroup>
@@ -78,10 +78,6 @@
     <Content Include="ext\glfw\lib-vc2022\glfw3.lib" />
     <Content Include="ext\glfw\lib-vc2022\glfw3dll.lib" />
     <Content Include="ext\glfw\lib-vc2022\glfw3_mt.lib" />
-    <Content Include="src\Shaders\BaseVertexShader.vert" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="src\Shaders\BaseFragmentShader.frag" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="ImportsLib\ImportsLib.vcxproj">

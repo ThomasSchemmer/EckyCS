@@ -1,8 +1,17 @@
 ﻿#pragma once
+#include <cassert>
 #include <fstream>
 #include <iostream>
 
+#include "EckyCS/Components/Base/TransformComponent.h"
+
+namespace EckyCS
+{
+    struct TransformComponent;
+}
+
 using namespace std;
+using namespace EckyCS;
 class VoxReader
 {
 public:

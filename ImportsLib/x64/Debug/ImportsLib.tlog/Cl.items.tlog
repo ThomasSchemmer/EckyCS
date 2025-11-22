@@ -20,4 +20,7 @@ C:\Programming\RailShooterCpp\ImportsLib\src\GAS\GameplayAbilityComponent.cpp;C:
 C:\Programming\RailShooterCpp\ImportsLib\src\GAS\GameplayAbilitySystem.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\GameplayAbilitySystem.obj
 C:\Programming\RailShooterCpp\ImportsLib\src\Renderer\Camera.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\Camera.obj
 C:\Programming\RailShooterCpp\ImportsLib\src\Renderer\Renderer.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\Renderer.obj
-C:\Programming\RailShooterCpp\ImportsLib\src\Renderer\Shader.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\Shader.obj
+C:\Programming\RailShooterCpp\ImportsLib\src\Renderer\BaseShader.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\BaseShader.obj
+C:\Programming\RailShooterCpp\ImportsLib\src\Terrain\TerrainManager.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\TerrainManager.obj
+C:\Programming\RailShooterCpp\ImportsLib\src\Terrain\TerrainShader.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\TerrainShader.obj
+C:\Programming\RailShooterCpp\ImportsLib\src\Util\ShaderHelper.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\ShaderHelper.obj

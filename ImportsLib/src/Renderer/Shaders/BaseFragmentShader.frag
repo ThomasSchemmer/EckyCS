@@ -27,9 +27,7 @@ float GetLight(){
 void main()
 {
     float a = GetLight();
-    vec4 BaseColor = Type > 4 ? vec4(1, 0, 0, 1) : vec4(1);
-    BaseColor.xyz *= a;
-    FragColor = BaseColor;
+    FragColor = vec4(WorldNormals.xyz, 1);
     return;
     //vec4 ContainerColor = texture(ContainerTex, UV);
     //vec4 CornColor = texture(CornTex, UV);

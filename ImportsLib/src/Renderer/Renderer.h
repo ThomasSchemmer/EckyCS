@@ -7,7 +7,12 @@
 #include "GLFW/glfw3.h"
 
 
-class Shader;
+namespace TTerrain
+{
+    class TerrainManager;
+}
+
+class BaseShader;
 
 /**
  * Class enabling displaying objects on the screen
@@ -28,9 +33,10 @@ public:
     shared_ptr<Camera> GetCamera() const;
 
 private:
-    Shader* ShaderPtr = nullptr;
     RENDERDOC_API_1_1_2* RDocAPI = nullptr;
     std::shared_ptr<Camera> Camera;
+    std::shared_ptr<TTerrain::TerrainManager> Terrain;
+    std::shared_ptr<BaseShader> ShaderPtr;
     
     void CreateVertexBuffer();
 #ifdef _WIN32

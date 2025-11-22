@@ -6,7 +6,7 @@ namespace EckyCS
     
     /**
      * Describes a system of the ECS:
-     * modifies components of entities according to certain rules
+     * modifies components of entitises according to certain rules
      */
     class System
     {

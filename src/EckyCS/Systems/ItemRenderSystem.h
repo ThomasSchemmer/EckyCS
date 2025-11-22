@@ -1,13 +1,13 @@
 ﻿#pragma once
 #include "ItemRenderData.h"
 #include "../ItemEntity.h"
-#include "EckyCS/Systems/Rendering/RenderSystem.h"
+#include "EckyCS/Systems/Rendering/EntityRenderSystem.h"
 #include "GameService/GameServiceDelegate.h"
 #include "../Components/ItemComponent.h"
 #include "../ext/imgui/imgui.h"
 
 using namespace EckyCS;
-class ItemRenderSystem : public RenderSystem<ItemEntity, ItemRenderData>
+class ItemRenderSystem : public EntityRenderSystem<ItemEntity, ItemRenderData>
 {
 public:
     void Tick(float Delta) override

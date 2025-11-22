@@ -3,6 +3,7 @@
 #include <fstream>
 
 #include "PlayerService.h"
+#include "VoxReader.h"
 #include "EckyCS/ECS.h"
 #include "EckyCS/Entities/EntityGenerator.h"
 #include "EckyCS/Entities/Plant.h"
@@ -20,17 +21,27 @@ namespace GAS
 
 using namespace GameImports;
 using namespace std;
-class TestService : public GameService, public enable_shared_from_this<TestService>
+class RenderTestService : public GameService, public enable_shared_from_this<RenderTestService>
 {
 public:
-    TestService() 
+    EntityID ID;
+    
+    RenderTestService() 
     {
         Type = GameServiceType::Test;
     }
     
     void StartServiceInternal () override
     {
-        LoadVoxelBlocks(25);
+        //LoadVoxelBlocks(25);
+        
+        ComponentGroupIdentifier GroupID;
+        ItemComponent Comp;
+        TransformComponent Transform;
+        Transform.PosX = 0;
+        Transform.PosY = 5;
+        Transform.PosZ = 0;
+        EntityGenerator::TryCreate<Plant>(OUT GroupID, OUT ID, Comp, Transform);
     }
 
     void LoadVoxel(int GroupTarget)

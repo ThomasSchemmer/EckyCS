@@ -20,14 +20,27 @@ public:
     void GetMouseCoords(glm::vec2& Pos) const;
     int GetKey(int Key) const;
 
+    glm::vec3 GetForward() const;
+    glm::vec3 GetRight() const;
+    glm::vec3 GetUp() const;
+    glm::vec3 GetEulerAngles() const;
+
+    glm::vec2 GetScreenExtent() const;
+    glm::vec2 GetScreenScale() const;
+
 private:
     std::shared_ptr<GLFWwindow> Window;
-    float MoveSpeed;
-    float RotationSpeed;
-    float Angle;
-    float Distance;
-    glm::vec4 CamForward = glm::vec4(1, 0, 0, 0);
-    glm::vec4 CamUp = glm::vec4(0, 1, 0, 0);
+    float MoveSpeed, RotationSpeed;
+    float XAngle, YAngle;
+    int ZoomIndex;
+    glm::vec2 LastMousePos;
+    
+    glm::vec4 WorldForward = glm::vec4(1, 0, 0, 0);
+    glm::vec4 WorldUp = glm::vec4(0, 1, 0, 0);
+    vector<float> ZoomSteps = {0.025f, 0.05f,0.1f, 0.25f, 0.5f, 0.75f, 1, 1.5f, 3, 5};
     
     void ProcessInput(float Delta);
+    void ProcessMouseInput(float Delta);
+    void ProcessWASDInput(float Delta);
+    void ScrollCallback(double xOffset, double yOffset);
 };

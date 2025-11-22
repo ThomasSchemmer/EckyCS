@@ -20,7 +20,7 @@ namespace EckyCS
     template <typename EntityType, typename RenderDataType>
     requires HasRequiredComponents<EntityType> &&
     is_base_of_v<RenderData, RenderDataType>
-    class RenderSystem : public BaseRenderSystem
+    class EntityRenderSystem : public BaseRenderSystem
     {
     private:
         map<ComponentGroupIdentifier, RenderDataType> Datas;

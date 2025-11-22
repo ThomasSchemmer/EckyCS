@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "TestService.h"
+#include "Util/RenderTestService.h"
 #include "EckyCS/ECS.h"
 #include "EckyCS/Systems/ItemMovementSystem.h"
 #include "EckyCS/Systems/ItemRenderSystem.h"
@@ -15,7 +15,7 @@ public:
 		Ecs->AddSystem(std::make_shared<ItemMovementSystem>());
 		
 		Services.push_back(Ecs);
-		Services.push_back(make_shared<TestService>());
+		Services.push_back(make_shared<RenderTestService>());
 	}
 
 	void Update() override

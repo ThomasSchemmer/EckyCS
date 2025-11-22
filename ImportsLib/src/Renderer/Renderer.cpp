@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include "Shader.h"
+#include "BaseShader.h"
 #define WIN32_LEAN_AND_MEAN
 // mask windows byte def, otherwise it overrides std::byte
 #define byte win_byte_override
@@ -17,13 +17,13 @@
 #include "Utils.h"
 #include "../../../ext/imgui/imgui.h"
 #include "../EckyCS/ECS.h"
-#include "../EckyCS/Systems/Rendering/RenderSystem.h"
+#include "../EckyCS/Systems/Rendering/EntityRenderSystem.h"
 #include "../GameService/Game.h"
+#include "../Terrain/TerrainManager.h"
 using namespace EckyCS;
 
 Renderer::~Renderer()
 {
-    delete ShaderPtr;
 #ifdef _WIN32
     UnloadRenderDocWindows();
 #endif
@@ -31,8 +31,9 @@ Renderer::~Renderer()
 
 void Renderer::Init(std::shared_ptr<GLFWwindow>& Window)
 {
-    ShaderPtr = new Shader();
+    ShaderPtr = make_shared<BaseShader>();
     Camera = make_shared<class Camera>(Window);
+    Terrain = make_shared<TTerrain::TerrainManager>(Camera);
 
     CreateVertexBuffer();
 }
@@ -53,10 +54,12 @@ void Renderer::Update(float Delta)
 void Renderer::Render()
 {
     GL_CHECK_ERROR();
+
+    // todo: move into renderpass, aka manager and shader together in some system
+    Terrain->Render();
     
     ShaderPtr->Use();
     ShaderPtr->UpdateVars(Camera);
-
     auto ServicePtr = Game::GetService(GameServiceType::EntityComponentSystem);
     auto Ecs = reinterpret_pointer_cast<ECS>(ServicePtr);
     vector<shared_ptr<System>> Systems;
@@ -72,11 +75,13 @@ void Renderer::Render()
         RenderSystem->Render();
     }
     
+    
     for (auto& System : Systems)
     {        
         System->OnDrawGizmos();
     }
     Camera->OnDrawGizmos();
+    Terrain->OnDrawGizmos();
 }
 
 void Renderer::HandleCaptureStart() const

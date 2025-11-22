@@ -30,13 +30,13 @@ namespace EckyCS
         
         
         glBindBuffer(GL_ARRAY_BUFFER, OffsetBuffer);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(TransformComponent) * InCount, nullptr, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(TransformComponent) * InCount, nullptr, GL_DYNAMIC_DRAW);
         glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(3);
         glVertexAttribDivisor(3, 1); 
         
         glBindBuffer(GL_ARRAY_BUFFER, IDBuffer);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(EntityID) * InCount, nullptr, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(EntityID) * InCount, nullptr, GL_DYNAMIC_DRAW);
         
     }
 
@@ -44,11 +44,6 @@ namespace EckyCS
     void RenderData::Render() const
     {
         glBindVertexArray(VAO);
-        GLint vao, vbo, prog;
-        glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &vao);
-        glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &vbo);
-        glGetIntegerv(GL_CURRENT_PROGRAM, &prog);
-        
         glDrawArraysInstanced(GL_TRIANGLES, 0, 36, static_cast<int>(Count));
     }
 }
