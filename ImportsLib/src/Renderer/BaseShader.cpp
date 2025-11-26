@@ -29,6 +29,7 @@ BaseShader::BaseShader()
 
 BaseShader::~BaseShader()
 {
+    
 }
 
 void BaseShader::Use()

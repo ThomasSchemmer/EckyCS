@@ -10,7 +10,7 @@
 #include <Windows.h>
 #undef byte
 
-#include "GL/glew.h"
+#include <glew/include/GL/glew.h>
 #define GLFW_INCLUDE_NONE
 #include "glfw/include/GLFW/glfw3.h"
 #include "Renderer.h"
@@ -55,7 +55,6 @@ void Renderer::Render()
 {
     GL_CHECK_ERROR();
 
-    // todo: move into renderpass, aka manager and shader together in some system
     Terrain->Render();
     
     ShaderPtr->Use();
@@ -90,7 +89,7 @@ void Renderer::HandleCaptureStart() const
         return;
     
     ImGui::Begin("RenderDoc");
-    if (ImGui::Button("Capture"))
+    if (ImGui::Button("Capture") || Camera->GetKey(GLFW_KEY_F11) == GLFW_PRESS)
     {
         RDocAPI->StartFrameCapture(nullptr, nullptr);
     }
@@ -103,6 +102,12 @@ void Renderer::HandleCaptureStop() const
         return;
 
     RDocAPI->EndFrameCapture(nullptr, nullptr);
+
+    char pathBuffer[4096];
+    auto Num = RDocAPI->GetNumCaptures();
+    RDocAPI->GetCapture(Num - 1, pathBuffer, nullptr, nullptr);
+    
+    RDocAPI->LaunchReplayUI(1, pathBuffer);
 }
 
 shared_ptr<Camera> Renderer::GetCamera() const

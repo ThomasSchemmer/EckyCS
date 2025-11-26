@@ -155,3 +155,40 @@ void Camera::ScrollCallback(double xOffset, double yOffset)
     ZoomIndex = static_cast<int>(round(ZoomIndex + yOffset));
     ZoomIndex = clamp(ZoomIndex, 0, static_cast<int>(ZoomSteps.size()) - 1);
 }
+
+
+glm::vec3 Camera::GetMouseWorldPos() const
+{
+    // we need to convert from pixel to (zoomed-in) world space
+    // translate mouse position to world space
+    glm::vec2 MouseScreenPos; 
+    GetMouseCoords(MouseScreenPos);
+    
+    const auto ScreenExtend = GetScreenExtent();
+    const auto ScreenScale = GetScreenScale();
+    const auto ScreenExtendScaled = ScreenExtend / ScreenScale;
+    const float HScale = ScreenExtend.x / ScreenExtend.y;
+
+    // we need to adjust for screen width/height relation
+    auto MouseWorldPos = (MouseScreenPos - ScreenExtendScaled) * ScreenScale;
+    MouseWorldPos.y *= 1 + (HScale - 1) / 2.0f;
+
+    // rotate the once-screen vector based on camera angle
+    auto Temp = glm::vec3(MouseWorldPos.x, 0, MouseWorldPos.y);
+    glm::mat4 R = glm::rotate(glm::mat4(1.f), YAngle, glm::vec3(0,1,0));
+    auto MousePosRotated = glm::vec3(R * glm::vec4(Temp, 1.f));
+    
+    // now that its translated to world space we can add the camera offset to it
+    auto Origin = Position;
+    auto Dir = GetForward();
+    auto PlaneOrigin = glm::vec3(0,0,0);
+    auto PlaneNormal = glm::vec3(0, 1, 0);
+
+    // Parametric intersection with plane at (0,0,0)
+    float Denom = dot(PlaneNormal, Dir);
+    float t = dot(PlaneOrigin - Origin, PlaneNormal) / Denom;
+    auto Pos = t * Dir + Origin;
+    Pos.x += MousePosRotated.x;
+    Pos.z += MousePosRotated.z;
+    return Pos;
+}

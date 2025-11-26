@@ -2,8 +2,8 @@
 #include <memory>
 #include <glm/glm.hpp>
 
-#include "GL/glew.h"
-#include "GLFW/glfw3.h"
+#include <glew/include/GL/glew.h>
+#include "GLFW/include/GLFW/glfw3.h"
 
 using namespace std;
 class Camera
@@ -27,6 +27,12 @@ public:
 
     glm::vec2 GetScreenExtent() const;
     glm::vec2 GetScreenScale() const;
+
+    /**
+     * Maps the current mouse cursor to the intersection point at
+     * a plane with origin (0,0,0) and normal (0, 1, 0)
+     */
+    glm::vec3 GetMouseWorldPos() const;
 
 private:
     std::shared_ptr<GLFWwindow> Window;

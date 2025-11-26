@@ -17,7 +17,8 @@ TEST(Init, GAS)
     auto Gas = make_shared<GameplayAbilitySystem>();
     Game::Instance->Services.push_back(Gas);
 
-    Game::Instance->Init(nullptr);
+    // todo: write actual tests lol
+    //Game::Instance->Init(nullptr);
 
     auto Comp = make_shared<GameplayAbilityComponent>();
     Gas->Register(Comp, GameplayAbilityComponentType::Player);

@@ -95,13 +95,19 @@ namespace Util
         return ID;
     }
 
-    void ShaderHelper:: SetUniform1f(const string& UniformName, float Value, unsigned int Program) 
+    void ShaderHelper::SetUniform1f(const string& UniformName, float Value, unsigned int Program) 
     {
         const int ID = glGetUniformLocation(Program, UniformName.c_str());
         glUniform1f(ID, Value);
     }
+    
+    void ShaderHelper::SetUniform1ui(const string& UniformName, unsigned int Value, unsigned int Program) 
+    {
+        const int ID = glGetUniformLocation(Program, UniformName.c_str());
+        glUniform1ui(ID, Value);
+    }
 
-    void ShaderHelper:: SetUniformM4(const string& UniformName, const glm::mat4& Value, unsigned int Program) 
+    void ShaderHelper::SetUniformM4(const string& UniformName, const glm::mat4& Value, unsigned int Program) 
     {
         const int ID = glGetUniformLocation(Program, UniformName.c_str());
         glUniformMatrix4fv(ID, 1, GL_FALSE, value_ptr(Value));
@@ -114,11 +120,46 @@ namespace Util
         glUniform3fv(ID, 1, value_ptr(Value));
     }
 
+    void ShaderHelper:: SetUniform2fv(const string& UniformName, const glm::vec2& Value, unsigned int Program) 
+    {
+        const int ID = glGetUniformLocation(Program, UniformName.c_str());
+        glUniform2fv(ID, 1, value_ptr(Value));
+    }
+
+    void ShaderHelper:: SetUniform3iv(const string& UniformName, const glm::ivec3& Value, unsigned int Program) 
+    {
+        const int ID = glGetUniformLocation(Program, UniformName.c_str());
+        glUniform3iv(ID, 1, value_ptr(Value));
+    }
+
+    void ShaderHelper:: SetUniform2iv(const string& UniformName, const glm::ivec2& Value, unsigned int Program) 
+    {
+        const int ID = glGetUniformLocation(Program, UniformName.c_str());
+        glUniform2iv(ID, 1, value_ptr(Value));
+    }
+
     void ShaderHelper:: ShaderHelper::SetUniformTexture(const string& UniformName, unsigned int TextureID, GLint Slot, unsigned int Program) 
     {
         const int ID = glGetUniformLocation(Program, UniformName.c_str());
         glUniform1i(ID, Slot);
         glActiveTexture(GL_TEXTURE0 + Slot);
         glBindTexture(GL_TEXTURE_2D, TextureID);
+    }
+
+    void ShaderHelper::ResetBufferCounter(GLuint Buffer)
+    {
+        // reset append counter
+        GLuint zero = 0;
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, Buffer);
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLuint), &zero);
+    }
+
+    GLsizei ShaderHelper::ReadBufferCount(GLuint Buffer)
+    {
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, Buffer);
+        auto Ptr = static_cast<GLsizei*>(glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLsizei), GL_MAP_READ_BIT));
+        GLsizei Tmp = *Ptr;
+        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+        return Tmp;
     }
 }

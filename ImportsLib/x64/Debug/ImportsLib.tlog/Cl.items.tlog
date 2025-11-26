@@ -1,3 +1,12 @@
+C:\Programming\RailShooterCpp\ImportsLib\ext\imgui\backends\imgui_impl_glfw.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\imgui_impl_glfw.obj
+C:\Programming\RailShooterCpp\ImportsLib\ext\imgui\backends\imgui_impl_opengl2.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\imgui_impl_opengl2.obj
+C:\Programming\RailShooterCpp\ImportsLib\ext\imgui\backends\imgui_impl_opengl3.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\imgui_impl_opengl3.obj
+C:\Programming\RailShooterCpp\ImportsLib\ext\imgui\backends\imgui_impl_win32.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\imgui_impl_win32.obj
+C:\Programming\RailShooterCpp\ImportsLib\ext\imgui\imgui.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\imgui.obj
+C:\Programming\RailShooterCpp\ImportsLib\ext\imgui\imgui_demo.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\imgui_demo.obj
+C:\Programming\RailShooterCpp\ImportsLib\ext\imgui\imgui_draw.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\imgui_draw.obj
+C:\Programming\RailShooterCpp\ImportsLib\ext\imgui\imgui_tables.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\imgui_tables.obj
+C:\Programming\RailShooterCpp\ImportsLib\ext\imgui\imgui_widgets.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\imgui_widgets.obj
 C:\Programming\RailShooterCpp\ImportsLib\Imports.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\Imports.obj
 C:\Programming\RailShooterCpp\ImportsLib\src\EckyCS\Components\Component.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\Component.obj
 C:\Programming\RailShooterCpp\ImportsLib\src\EckyCS\Components\ComponentGroupIdentifier.cpp;C:\Programming\RailShooterCpp\ImportsLib\x64\Debug\ComponentGroupIdentifier.obj

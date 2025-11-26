@@ -1,17 +1,27 @@
 ﻿#pragma once
+#define NOGDI
+#include <gl\gl.h>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <memory>
 #include <string>
 
-#include "../Renderer/Camera.h"
-#include "GL/glew.h"
 
-namespace TTerrain
-{
-    class TerrainShader;
-}
+class Camera;
 
 namespace TTerrain
 {
     using namespace std;
+    class TerrainShaderSettings;
+    class TerrainShader;
+
+    enum class TerrainComputeMode : uint8_t
+    {
+        CountTriangles = 0,
+        GenerateTriangles = 1,
+        GenerateTex = 2,
+        ApplySelection = 3,
+    };
 
     /**
      * Provides access for all thing related to the terrain
@@ -24,31 +34,38 @@ namespace TTerrain
         TerrainManager(const shared_ptr<Camera>& CamPtr);
         ~TerrainManager();
 
-        void Dispatch() const;
-        void Render() const;
+        void DispatchBrush() const;
+        void DispatchGenerate();
+        void Render();
         void OnDrawGizmos() const;
 
     private:
         shared_ptr<Camera> CamPtr;
         shared_ptr<TerrainShader> Shader;
+        const int Width = 1024, Height = 1024;
+        GLsizei AppendCount = 0;
+
+        glm::vec3 GlobalWorldPos = glm::vec3(0);
+        glm::vec2 TexSize = glm::vec2(Width, Height);
+        glm::vec3 WorldSize = glm::vec3(100, 25, 100);
+        
         
         unsigned int ComputeProgram;
         GLuint ResultTex;
-        GLuint VertexBuffer;
+        //GLuint FixedVertexBuffer;
         GLuint VAO;
+        GLuint VertexBuffer;
+        GLuint NormalBuffer;
+        GLuint CountBuffer;
+        GLuint SelectionBuffer;
 
         void CreateMesh();
         void CreateCompute();
+        void UpdateComputeVars() const;
+        void Dispatch(TerrainComputeMode Mode) const;
+        TerrainShaderSettings GetStandardSettings() const;
         
         string ComputePath = "./ImportsLib/src/Terrain/Shaders/Terrain.comp";
 
-        float PlaneVertices[18] = {
-            0, 0, 0,
-            0, 0, 100,
-            100, 0, 0,
-            0, 0, 100,
-            100, 0, 100,
-            100, 0, 0,
-        };
     };
 }

@@ -4,8 +4,8 @@
 #include <iostream>
 #include <string>
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include <glew/include/GL/glew.h>
+#include "GLFW/include/GLFW/glfw3.h"
 #include <glm/gtc/type_ptr.hpp>
 
 namespace Util
@@ -24,16 +24,19 @@ namespace Util
         static unsigned int CompileShader(const string& Code, GLenum Type);
 
         static unsigned int CreateProgram(const vector<unsigned int>& ShaderIDs);
-
         static unsigned int CreateTexture(const string& FilePath, GLint Format);
 
         static void SetUniform1f(const string& UniformName, float Value, unsigned int Program);
-
+        static void SetUniform1ui(const string& UniformName, unsigned int Value, unsigned int Program);
         static void SetUniformM4(const string& UniformName, const glm::mat4& Value, unsigned int Program);
-
         static void SetUniform3fv(const string& UniformName, const glm::vec3& Value, unsigned int Program) ;
-
+        static void SetUniform2fv(const string& UniformName, const glm::vec2& Value, unsigned int Program) ;
+        static void SetUniform3iv(const string& UniformName, const glm::ivec3& Value, unsigned int Program) ;
+        static void SetUniform2iv(const string& UniformName, const glm::ivec2& Value, unsigned int Program) ;
         static void SetUniformTexture(const string& UniformName, unsigned int TextureID, GLint Slot, unsigned int Program);
+
+        static void ResetBufferCounter(GLuint Buffer);
+        static GLsizei ReadBufferCount(GLuint Buffer);
 
     };
 }

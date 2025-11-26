@@ -107,7 +107,7 @@ namespace EckyCS
         }
 
         template <typename... SubTypes>
-        View<SubTypes...> GetData(const EntityID& ID)
+        View<SubTypes...> GetData(EntityID& ID)
         {
             auto IDs = span(&ID, 1);
             return make_tuple(IDs, GetSpan<SubTypes>(ID)...);

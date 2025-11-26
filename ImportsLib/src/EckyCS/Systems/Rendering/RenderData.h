@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include <GL/glew.h>
+#include <glew/include/GL/glew.h>
 
 #include "../../Components/ComponentGroupIdentifier.h"
 #include "../../Util/TypeInfo.h"

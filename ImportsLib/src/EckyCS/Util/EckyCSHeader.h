@@ -89,6 +89,7 @@ namespace EckyCS
     
     /** Overload for tuple types **/
     template<class T, class Tuple>
+    requires (tuple_size<Tuple>::value >= 0)
     constexpr size_t GetIndexOf()
     {
         return []<size_t... I>(std::index_sequence<I...>)

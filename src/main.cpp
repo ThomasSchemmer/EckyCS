@@ -1,8 +1,8 @@
 #include "main.h"
 
 #include <iostream>
-#include "GL/glew.h"
-#include <GLFW/glfw3.h>
+#include <glew/include/GL/glew.h>
+#include "GLFW/include/GLFW/glfw3.h"
 
 #include "HGame.h"
 #include "../ext/imgui/imgui.h"
@@ -118,10 +118,10 @@ namespace
 		glewInit();
 		
 		glEnable(GL_DEPTH_TEST);
-		//glEnable(GL_CULL_FACE);
-		//glEnable(GL_BACK);
-		glEnable(GL_DEBUG_OUTPUT);
-		glDebugMessageCallback(GLDebugMessageCallback, nullptr);
+		glEnable(GL_CULL_FACE);
+		glEnable(GL_BACK);
+		glDisable(GL_DEBUG_OUTPUT);
+		//glDebugMessageCallback(GLDebugMessageCallback, nullptr);
 	}
 
 	void InitImGUI() {

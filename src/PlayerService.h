@@ -1,5 +1,5 @@
 #pragma once
-#include "GameService/GameService.h"
+#include <GameService/GameService.h>
 
 using namespace GameImports;
 

@@ -3,6 +3,7 @@
 
 namespace EckyCS
 {
+    class ECS;
     
     /**
      * Describes a system of the ECS:
