@@ -24,12 +24,15 @@ TEST(Helper, ComponentGroup)
     EXPECT_EQ(Pos2, 2);
 }
 
+
 TEST(Constructor, ComponentGroup)
 {
     ComponentGroup<TestComponent, OtherTestComponent> CG(10);
 
+#ifdef _TEST_BUILD //defined in projects "Test" C++->Preprocessor settings
     EXPECT_TRUE(CG.GetIDs() != nullptr);
     EXPECT_TRUE(CG.GetData() != nullptr);
+#endif
     
     auto NameA = typeid(TestComponent).name();
     auto NameB = typeid(OtherTestComponent).name();
@@ -37,8 +40,6 @@ TEST(Constructor, ComponentGroup)
     EXPECT_TRUE(CG.GroupID.HasFlag(NameA));
     EXPECT_TRUE(CG.GroupID.HasFlag(NameB));
     EXPECT_FALSE(CG.GroupID.HasFlag(NameC));
-
-    
 }
 
 

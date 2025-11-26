@@ -39,6 +39,10 @@ cmake_install.cmake
 Makefile
 build/
 
+x64/
+Tests/x64/
+
 # Other common files
 *.log
+*.tlog
 *.DS_Stores
