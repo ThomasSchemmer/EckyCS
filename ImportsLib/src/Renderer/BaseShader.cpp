@@ -11,8 +11,8 @@ using namespace Util;
 
 BaseShader::BaseShader()
 {
-    std::string VertexCode = ShaderHelper::LoadShader(VertexShaderPath);
-    std::string FragmentCode = ShaderHelper::LoadShader(FragmentShaderPath);
+    std::string VertexCode = ShaderHelper::LoadShaderFromResource(VertexShader);
+    std::string FragmentCode = ShaderHelper::LoadShaderFromResource(FragmentShader);
 
     unsigned int Vertex = ShaderHelper::CompileShader(VertexCode, GL_VERTEX_SHADER);
     unsigned int Fragment = ShaderHelper::CompileShader(FragmentCode, GL_FRAGMENT_SHADER);

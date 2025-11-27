@@ -114,7 +114,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)ImportsLib\ext;$(SolutionDir)ext\;$(SolutionDir)ImportsLib\ext\glew\include;$(SolutionDir)ImportsLib\ext\glfw\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)ImportsLib\ext;$(SolutionDir)ext\;$(SolutionDir)ImportsLib\ext\glew\include;$(SolutionDir)ImportsLib\ext\glfw\include;$(SolutionDir)ImportsLib\src\Renderer\Shaders;$(SolutionDir)ImportsLib\src\Terrain\Shaders</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -268,10 +268,11 @@
     <ClInclude Include="src\Util\ShaderHelper.h" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="src\Renderer\Shaders\BaseFragmentShader.frag" />
-    <Content Include="src\Renderer\Shaders\BaseVertexShader.vert" />
-    <Content Include="src\Terrain\Shaders\Terrain.comp" />
+    <EmbeddedResource Include="src\Renderer\Shaders\BaseFragmentShader.frag" />
+    <EmbeddedResource Include="src\Renderer\Shaders\BaseVertexShader.vert" />
     <Content Include="src\Terrain\Shaders\TerrainFragmentShader.frag" />
+    <Content Include="src\Terrain\Shaders\TerrainMesh.comp" />
+    <Content Include="src\Terrain\Shaders\TerrainSelect.comp" />
     <Content Include="src\Terrain\Shaders\TerrainVertexShader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

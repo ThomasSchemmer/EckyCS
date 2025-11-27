@@ -1,0 +1,7 @@
+BASE_VERTEX_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/BaseVertexShader.vert"
+BASE_FRAGMENT_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/BaseFragmentShader.frag"
+
+TERRAIN_VERTEX_SHADER  RCDATA  "./ImportsLib/src/Terrain/Shaders/TerrainVertexShader.vert"
+TERRAIN_FRAGMENT_SHADER  RCDATA  "./ImportsLib/src/Terrain/Shaders/TerrainFragmentShader.frag"
+TERRAIN_MESH_COMPUTE_SHADER  RCDATA  "./ImportsLib/src/Terrain/Shaders/TerrainMesh.comp"
+TERRAIN_SELECT_COMPUTE_SHADER  RCDATA  "./ImportsLib/src/Terrain/Shaders/TerrainSelect.comp"

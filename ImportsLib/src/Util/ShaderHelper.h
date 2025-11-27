@@ -20,9 +20,11 @@ namespace Util
     {
     public:
         static string LoadShader(const string& FilePath);
+        static string LoadShaderFromResource(const wchar_t* Name);
 
         static unsigned int CompileShader(const string& Code, GLenum Type);
 
+        static unsigned int CreateProgram(const vector<const wchar_t*>& Resources);
         static unsigned int CreateProgram(const vector<unsigned int>& ShaderIDs);
         static unsigned int CreateTexture(const string& FilePath, GLint Format);
 

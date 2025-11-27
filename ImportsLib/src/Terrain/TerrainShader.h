@@ -36,8 +36,8 @@ namespace TTerrain
         glm::mat4 Transform;
         int Width, Height;
    
-        string VertexShaderPath = "./ImportsLib/src/Terrain/Shaders/TerrainVertexShader.vert";
-        string FragmentShaderPath = "./ImportsLib/src/Terrain/Shaders/TerrainFragmentShader.frag";
+        const wchar_t* VertexShader = L"TERRAIN_VERTEX_SHADER";
+        const wchar_t* FragmentShader = L"TERRAIN_FRAGMENT_SHADER";
     
     };
 }

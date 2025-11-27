@@ -1,9 +1,14 @@
 ﻿#version 430 
 
+/**
+ * Multi-modal Shader either:
+ * - creating a heightmap
+ * - creating a mesh according to the heightmap
+ * TODO: remove Mode, doesnt really work that well
+ */
 #define MODE_COUNT_TRIANGLES 0
 #define MODE_GENERATE_TRIANGLES 1
 #define MODE_GENERATE_TEX 2
-#define MODE_APPLY_SELECTION 3
 
 layout(local_size_x = 32, local_size_y = 32) in;
 
@@ -18,11 +23,6 @@ layout(std430, binding = 1) buffer NormalBuffer {
 layout(std430, binding = 2) buffer CountBuffer {
     uint Count;
 } Counter;
-
-layout(std430, binding = 3) buffer SelectionBuffer {
-    uint Entries[]; 
-} Selection;
-
 
 layout(binding = 0, rgba16f) uniform image2D Result;
 
@@ -234,19 +234,6 @@ void GenerateHeightMesh(ivec3 id){
     }
 }
 
-void ApplySelection(ivec3 id){
-    if (_Mode != MODE_APPLY_SELECTION)
-        return;
-    
-    int BrushSize = 5;
-    vec2 BrushUV = (_BrushPos.xz - _WorldPos.xz) / _WorldSize.xz * _TexSize;
-    vec2 diff = BrushUV - id.xz;
-    float dist2 = dot(diff, diff);
-    float d = 1 - dist2 / (BrushSize * BrushSize);
-    uint GlobalIndex = id.z * _TexSize.x + id.x;
-    Selection.Entries[GlobalIndex] = uint(d * 256);
-}
-
 void GenerateTex(ivec3 id){
     if (_Mode != MODE_GENERATE_TEX)
         return;
@@ -259,5 +246,4 @@ void main() {
     
     GenerateTex(id);
     GenerateHeightMesh(id);
-    ApplySelection(id);
 }

@@ -50,7 +50,8 @@ namespace TTerrain
         glm::vec3 WorldSize = glm::vec3(100, 25, 100);
         
         
-        unsigned int ComputeProgram;
+        unsigned int ComputeProgramMesh;
+        unsigned int ComputeProgramSelect;
         GLuint ResultTex;
         //GLuint FixedVertexBuffer;
         GLuint VAO;
@@ -61,11 +62,12 @@ namespace TTerrain
 
         void CreateMesh();
         void CreateCompute();
-        void UpdateComputeVars() const;
-        void Dispatch(TerrainComputeMode Mode) const;
+        void UpdateComputeVars(GLuint Program) const;
+        void Dispatch(TerrainComputeMode Mode, GLuint Target) const;
         TerrainShaderSettings GetStandardSettings() const;
         
-        string ComputePath = "./ImportsLib/src/Terrain/Shaders/Terrain.comp";
+        const wchar_t* ComputeShaderMesh = L"TERRAIN_MESH_COMPUTE_SHADER";
+        const wchar_t* ComputeShaderSelect = L"TERRAIN_SELECT_COMPUTE_SHADER";
 
     };
 }

@@ -25,9 +25,6 @@ namespace TTerrain
 
     void TerrainManager::Render()
     {        
-        glUseProgram(ComputeProgram);
-        UpdateComputeVars();
-    
         if (CamPtr->GetKey(GLFW_KEY_SPACE) == GLFW_PRESS)
         {
             DispatchGenerate();
@@ -46,35 +43,39 @@ namespace TTerrain
 
     void TerrainManager::DispatchBrush() const
     {
-        ShaderHelper::SetUniform3fv("_BrushPos", CamPtr->GetMouseWorldPos(), ComputeProgram);
+        glUseProgram(ComputeProgramSelect);
+        ShaderHelper::SetUniform3fv("_BrushPos", CamPtr->GetMouseWorldPos(), ComputeProgramSelect);
+        UpdateComputeVars(ComputeProgramSelect);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, SelectionBuffer);
-        Dispatch(TerrainComputeMode::ApplySelection);
+        Dispatch(TerrainComputeMode::ApplySelection, ComputeProgramSelect);
     }
 
 
     void TerrainManager::DispatchGenerate() 
     {
+        glUseProgram(ComputeProgramMesh);
         ShaderHelper::ResetBufferCounter(CountBuffer);
     
         glBindImageTexture(0, ResultTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, VertexBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, NormalBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, CountBuffer);
         
         // calculate how many vertices we will have
-        Dispatch(TerrainComputeMode::CountTriangles);
+        Dispatch(TerrainComputeMode::CountTriangles, ComputeProgramMesh);
         AppendCount = ShaderHelper::ReadBufferCount(CountBuffer);
 
         // allocate the exact amount for the buffers 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, VertexBuffer);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * 4 * AppendCount, nullptr, GL_DYNAMIC_COPY);
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(float) * 4 * AppendCount, nullptr, GL_DYNAMIC_STORAGE_BIT);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, NormalBuffer); // needs only one normal per triangle
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * 4 * AppendCount / 3, nullptr, GL_DYNAMIC_COPY);
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(float) * 4 * AppendCount / 3, nullptr, GL_DYNAMIC_STORAGE_BIT);
+        
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, VertexBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, NormalBuffer);
 
         ShaderHelper::ResetBufferCounter(CountBuffer);
     
         // actually compute the vertices & normals
-        Dispatch(TerrainComputeMode::GenerateTriangles);
+        Dispatch(TerrainComputeMode::GenerateTriangles, ComputeProgramMesh);
         
         // The count is now the actual amount of triangles to render
         AppendCount = ShaderHelper::ReadBufferCount(CountBuffer);
@@ -105,12 +106,8 @@ namespace TTerrain
 
     void TerrainManager::CreateCompute()
     {
-        string ComputeCode = ShaderHelper::LoadShader(ComputePath);
-        unsigned int Compute = ShaderHelper::CompileShader(ComputeCode, GL_COMPUTE_SHADER);
-
-        vector IDs = {Compute};
-        ComputeProgram = ShaderHelper::CreateProgram(IDs);
-        glDeleteShader(Compute);
+        ComputeProgramMesh = ShaderHelper::CreateProgram({ComputeShaderMesh});
+        ComputeProgramSelect = ShaderHelper::CreateProgram({ComputeShaderSelect});
 
         glGenTextures(1, &ResultTex);
         glBindTexture(GL_TEXTURE_2D, ResultTex);
@@ -132,24 +129,24 @@ namespace TTerrain
 
         glGenBuffers(1, &SelectionBuffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, SelectionBuffer); 
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int) * Width * Height, nullptr, GL_DYNAMIC_COPY);
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int) * Width * Height, nullptr, GL_DYNAMIC_STORAGE_BIT);
 
-        glUseProgram(ComputeProgram);
-        UpdateComputeVars();
-        Dispatch(TerrainComputeMode::GenerateTex);
+        glUseProgram(ComputeProgramMesh);
+        UpdateComputeVars(ComputeProgramMesh);
+        Dispatch(TerrainComputeMode::GenerateTex, ComputeProgramMesh);
     }
 
 
-    void TerrainManager::UpdateComputeVars() const
+    void TerrainManager::UpdateComputeVars(GLuint Program) const
     {
-        ShaderHelper::SetUniform3fv("_WorldPos", GlobalWorldPos, ComputeProgram);
-        ShaderHelper::SetUniform2iv("_TexSize", TexSize, ComputeProgram);
-        ShaderHelper::SetUniform3iv("_WorldSize", WorldSize, ComputeProgram);
+        ShaderHelper::SetUniform3fv("_WorldPos", GlobalWorldPos, Program);
+        ShaderHelper::SetUniform2iv("_TexSize", TexSize, Program);
+        ShaderHelper::SetUniform3iv("_WorldSize", WorldSize, Program);
     }
 
-    void TerrainManager::Dispatch(TerrainComputeMode Mode) const
+    void TerrainManager::Dispatch(TerrainComputeMode Mode, GLuint Target) const
     {
-        ShaderHelper::SetUniform1ui("_Mode", static_cast<GLuint>(Mode), ComputeProgram);
+        ShaderHelper::SetUniform1ui("_Mode", static_cast<GLuint>(Mode), Target);
         glDispatchCompute(Width / 32, Height / 32, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
     }

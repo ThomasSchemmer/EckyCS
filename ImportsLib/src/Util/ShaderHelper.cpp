@@ -3,9 +3,27 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "./stb/stb_image.h"
 
+#include <windows.h>
+#include <string>
+
 namespace Util
 {
     using namespace std;
+
+    string ShaderHelper::LoadShaderFromResource(const wchar_t* Name)
+    {
+        HRSRC rc = FindResourceW(nullptr, Name, RT_RCDATA);
+        if (!rc) {
+            wcerr << "ERROR::SHADER::FILE_MISSING: " << Name << "\n";
+            return "";
+        }
+
+        HGLOBAL h = LoadResource(nullptr, rc);
+        DWORD size = SizeofResource(nullptr, rc);
+        const char* data = static_cast<const char*>(LockResource(h));
+
+        return string(data, size);
+    };
     
     string ShaderHelper::LoadShader(const string& FilePath) {
         ifstream ShaderFile;
@@ -26,7 +44,9 @@ namespace Util
             cerr << "ERROR::SHADER::FILE_MISSING: " << e.what() << "\n";
         }
         return ShaderCode;
-    };
+    }
+
+    
 
     
     unsigned int ShaderHelper::CompileShader(const string& Code, GLenum Type)
@@ -161,5 +181,23 @@ namespace Util
         GLsizei Tmp = *Ptr;
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
         return Tmp;
+    }
+
+    unsigned int ShaderHelper::CreateProgram(const vector<const wchar_t*>& Resources)
+    {
+        vector<unsigned int> IDs;
+        for (auto& Resource : Resources)
+        {
+            string ComputeCode = LoadShaderFromResource(Resource);
+            unsigned int Compute = CompileShader(ComputeCode, GL_COMPUTE_SHADER);
+            IDs.push_back(Compute);
+        }
+
+        auto Result = CreateProgram(IDs);
+        for (auto& ID : IDs)
+        {
+            glDeleteShader(ID);
+        }
+        return Result;
     }
 }

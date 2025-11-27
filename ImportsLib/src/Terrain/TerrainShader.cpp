@@ -8,8 +8,8 @@ using namespace Util;
 TTerrain::TerrainShader::TerrainShader(int InWidth, int InHeight) :
     Width(InWidth), Height(InHeight)
 {
-    string VertexCode = ShaderHelper::LoadShader(VertexShaderPath);
-    string FragmentCode = ShaderHelper::LoadShader(FragmentShaderPath);
+    string VertexCode = ShaderHelper::LoadShaderFromResource(VertexShader);
+    string FragmentCode = ShaderHelper::LoadShaderFromResource(FragmentShader);
 
     unsigned int Vertex = ShaderHelper::CompileShader(VertexCode, GL_VERTEX_SHADER);
     unsigned int Fragment = ShaderHelper::CompileShader(FragmentCode, GL_FRAGMENT_SHADER);

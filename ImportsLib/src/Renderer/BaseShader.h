@@ -25,7 +25,7 @@ public:
 
 private:
     glm::mat4 Transform;    
-    string VertexShaderPath = "./ImportsLib/src/Renderer/Shaders/BaseVertexShader.vert";
-    string FragmentShaderPath = "./ImportsLib/src/Renderer/Shaders/BaseFragmentShader.frag";
+    const wchar_t* VertexShader = L"BASE_VERTEX_SHADER";
+    const wchar_t* FragmentShader = L"BASE_FRAGMENT_SHADER";
     
 };
