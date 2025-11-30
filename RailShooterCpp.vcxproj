@@ -20,6 +20,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\EckyCS\Systems\ItemRenderData.cpp" />
+    <ClCompile Include="src\GAS\AC_Player.cpp" />
+    <ClCompile Include="src\GAS\GA_SelfPoison.cpp" />
+    <ClCompile Include="src\GAS\GE_DegenLife.cpp" />
+    <ClCompile Include="src\HGame.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -30,6 +34,9 @@
     <ClInclude Include="src\EckyCS\Systems\ItemMovementSystem.h" />
     <ClInclude Include="src\EckyCS\Systems\ItemRenderData.h" />
     <ClInclude Include="src\EckyCS\Systems\ItemRenderSystem.h" />
+    <ClInclude Include="src\GAS\AC_Player.h" />
+    <ClInclude Include="src\GAS\GA_SelfPoison.h" />
+    <ClInclude Include="src\GAS\GE_DegenLife.h" />
     <ClInclude Include="src\HGame.h" />
     <ClInclude Include="src\PlayerService.h" />
     <ClInclude Include="src\main.h" />

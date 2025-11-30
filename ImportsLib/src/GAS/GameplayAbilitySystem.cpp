@@ -6,7 +6,12 @@
 
 namespace GAS
 {
-    void GameplayAbilitySystem::Update() const
+    GameplayAbilitySystem::GameplayAbilitySystem()
+    {
+        Type = GameServiceType::GameplayAbilitySystem;
+    }
+
+    void GameplayAbilitySystem::Update()
     {
         for (const auto& Pair : Components)
         {

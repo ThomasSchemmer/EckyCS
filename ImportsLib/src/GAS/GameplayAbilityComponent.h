@@ -29,7 +29,7 @@ namespace GAS
      * Handles GAS interactions per object,
      * can execute @GameplayAbility's and check @Attribute's
      */
-    class GameplayAbilityComponent : enable_shared_from_this<GameplayAbilityComponent>
+    class GameplayAbilityComponent : public enable_shared_from_this<GameplayAbilityComponent>
     {
         // for calling @AddEffect
         friend class GameplayAbilitySystem;
@@ -59,10 +59,10 @@ namespace GAS
         bool TryGetAnyActiveEffectsByTags(const vector<string>& Tags, vector<shared_ptr<GameplayEffect>>& FoundEffects);
         bool TryGetAnyActiveEffectByTag(const string& Tag, shared_ptr<GameplayEffect>& FoundEffect);
         void RemoveEffectByTag(const string& Tag);
-        void RemoveEffect(shared_ptr<GameplayEffect> Effect);
+        void RemoveEffect(const shared_ptr<GameplayEffect>& Effect);
 
-        void GrantAbility(shared_ptr<GameplayAbility> Ability);
-        void RemoveAbility(shared_ptr<GameplayAbility> Ability);
+        void GrantAbility(const shared_ptr<GameplayAbility>& Ability);
+        void RemoveAbility(const shared_ptr<GameplayAbility>& Ability);
         vector<shared_ptr<GameplayAbility>> GetGrantedAbilities() const;
         bool HasAbility(shared_ptr<GameplayAbility> Ability) const;
         void RunAfterAbilityGranted(AbilityType AbilityType, GameImports::Action<shared_ptr<GameplayAbility>>& Callback);

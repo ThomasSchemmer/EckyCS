@@ -18,7 +18,7 @@ public:
 
 	void PrintTest()
 	{
-		std::cout << "Hi there" << "\n";
+		// cout << "Hi there" << "\n";
 	}
 	void StopServiceInternal() override {}
 	void ResetServiceInternal() override {}

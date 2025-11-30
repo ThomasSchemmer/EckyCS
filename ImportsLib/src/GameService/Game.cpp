@@ -6,6 +6,9 @@
 
 #include "GameServiceDelegate.h"
 #include "../Renderer/Renderer.h"
+#include "../Player/PlayerController.h"
+
+using namespace Player;
 
 namespace GameImports {
 
@@ -33,6 +36,9 @@ namespace GameImports {
 	{
 		State = GameState::InGame;
 		RendererPtr->Init(Window);
+
+		WindowPtr = Window;
+		
 		for (auto& Service: Services)
 		{
 			ServicesInternal.emplace(Service->Type, Service);
