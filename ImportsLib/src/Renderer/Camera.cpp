@@ -64,6 +64,11 @@ int Camera::GetKey(int Key) const
     return glfwGetKey(Window.get(), Key);
 }
 
+int Camera::GetMouse(int Key) const
+{
+    return glfwGetMouseButton(Window.get(), Key);
+}
+
 glm::vec3 Camera::GetForward() const
 {
     glm::vec3 Forward;
@@ -130,7 +135,7 @@ void Camera::ProcessWASDInput(float Delta)
 void Camera::ProcessMouseInput(float Delta)
 {
     static bool bWasRightMouseDown = false;
-    const bool bIsRightMouseDown = glfwGetMouseButton(Window.get(), GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
+    const bool bIsRightMouseDown = GetMouse(GLFW_MOUSE_BUTTON_RIGHT);
     const bool bIsRightMouseDownNow = !bWasRightMouseDown && bIsRightMouseDown;
 
     double MouseX, MouseY;

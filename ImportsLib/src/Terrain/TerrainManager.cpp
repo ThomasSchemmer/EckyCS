@@ -24,15 +24,7 @@ namespace TTerrain
     }
 
     void TerrainManager::Render()
-    {        
-        if (CamPtr->GetKey(GLFW_KEY_SPACE) == GLFW_PRESS)
-        {
-            DispatchGenerate();
-        }
-        //if (CamPtr->GetKey(GLFW_KEY_O) == GLFW_PRESS)
-        {
-            DispatchBrush();
-        }
+    {       
     
         Shader->Use();
         Shader->UpdateVars(CamPtr, GetStandardSettings());
@@ -40,14 +32,29 @@ namespace TTerrain
         glDrawArrays(GL_TRIANGLES, 0, AppendCount);
     }
 
+    void TerrainManager::Update(float Delta)
+    {
+        HandleInput();
+        if (CamPtr->GetKey(GLFW_KEY_SPACE) == GLFW_PRESS)
+        {
+            DispatchGenerate();
+        }
+        if (bIsSelecting)
+        {
+            DispatchBrush();
+        }
+        bWasPressingRaise = bIsRaising;
+    }
+
 
     void TerrainManager::DispatchBrush() const
     {
+        GLuint Mode = static_cast<GLuint>(bIsSelecting ? TerrainSelectionMode::Additive : TerrainSelectionMode::Clear);
         glUseProgram(ComputeProgramSelect);
         ShaderHelper::SetUniform3fv("_BrushPos", CamPtr->GetMouseWorldPos(), ComputeProgramSelect);
         UpdateComputeVars(ComputeProgramSelect);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, SelectionBuffer);
-        Dispatch(TerrainComputeMode::ApplySelection, ComputeProgramSelect);
+        Dispatch(Mode, ComputeProgramSelect);
     }
 
 
@@ -60,7 +67,7 @@ namespace TTerrain
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, CountBuffer);
         
         // calculate how many vertices we will have
-        Dispatch(TerrainComputeMode::CountTriangles, ComputeProgramMesh);
+        Dispatch((GLuint)TerrainComputeMode::CountTriangles, ComputeProgramMesh);
         AppendCount = ShaderHelper::ReadBufferCount(CountBuffer);
 
         // allocate the exact amount for the buffers 
@@ -75,7 +82,7 @@ namespace TTerrain
         ShaderHelper::ResetBufferCounter(CountBuffer);
     
         // actually compute the vertices & normals
-        Dispatch(TerrainComputeMode::GenerateTriangles, ComputeProgramMesh);
+        Dispatch((GLuint)TerrainComputeMode::GenerateTriangles, ComputeProgramMesh);
         
         // The count is now the actual amount of triangles to render
         AppendCount = ShaderHelper::ReadBufferCount(CountBuffer);
@@ -84,14 +91,36 @@ namespace TTerrain
         glBindImageTexture(1, 0, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
     }
 
-    void TerrainManager::OnDrawGizmos() const
+    void TerrainManager::OnDrawGizmos() 
     {
         auto Pos = CamPtr->GetMouseWorldPos();
-        ImGui::Begin("OpenGL Texture Text");
+        ImGui::Begin("TerrainTool");
         ImGui::Text("Pos: %.2f|%.2f|%.2f", Pos.x, Pos.y, Pos.z);
         ImGui::Text("Appnd: %i", AppendCount);
+        ImGui::Checkbox("Raise: ", &bIsRaising);
+        ImGui::Checkbox("Select: ", &bIsSelecting);
         ImGui::Image((ImTextureID)(intptr_t)ResultTex, ImVec2(Width, Height));
         ImGui::End();
+    }
+
+    void TerrainManager::HandleToggle(bool* bIsDoing, bool* bWasDoing, GLint Key) const
+    {
+        bool bIsPressing = CamPtr->GetKey(Key) == GLFW_PRESS;
+        *bIsDoing = !*bWasDoing && bIsPressing ? !*bIsDoing : *bIsDoing;
+        *bWasDoing = bIsPressing;
+    }
+    
+    void TerrainManager::HandleToggleMouse(bool* bIsDoing, bool* bWasDoing, GLint Key) const
+    {
+        bool bIsPressing = CamPtr->GetMouse(Key) == GLFW_PRESS;
+        *bIsDoing = !*bWasDoing && bIsPressing ? !*bIsDoing : *bIsDoing;
+        *bWasDoing = bIsPressing;
+    }
+
+    void TerrainManager::HandleInput()
+    {
+        HandleToggle(&bIsSelecting, &bWasPressingSelect, GLFW_KEY_LEFT_SHIFT);
+        bIsRaising = CamPtr->GetMouse(GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
     }
 
     void TerrainManager::CreateMesh()
@@ -133,7 +162,7 @@ namespace TTerrain
 
         glUseProgram(ComputeProgramMesh);
         UpdateComputeVars(ComputeProgramMesh);
-        Dispatch(TerrainComputeMode::GenerateTex, ComputeProgramMesh);
+        Dispatch((GLuint)TerrainComputeMode::GenerateTex, ComputeProgramMesh);
     }
 
 
@@ -144,9 +173,9 @@ namespace TTerrain
         ShaderHelper::SetUniform3iv("_WorldSize", WorldSize, Program);
     }
 
-    void TerrainManager::Dispatch(TerrainComputeMode Mode, GLuint Target) const
+    void TerrainManager::Dispatch(GLuint Mode, GLuint Target) const
     {
-        ShaderHelper::SetUniform1ui("_Mode", static_cast<GLuint>(Mode), Target);
+        ShaderHelper::SetUniform1ui("_Mode", Mode, Target);
         glDispatchCompute(Width / 32, Height / 32, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
     }

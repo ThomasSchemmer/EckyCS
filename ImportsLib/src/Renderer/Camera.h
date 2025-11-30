@@ -19,6 +19,7 @@ public:
 
     void GetMouseCoords(glm::vec2& Pos) const;
     int GetKey(int Key) const;
+    int GetMouse(int Key) const;
 
     glm::vec3 GetForward() const;
     glm::vec3 GetRight() const;

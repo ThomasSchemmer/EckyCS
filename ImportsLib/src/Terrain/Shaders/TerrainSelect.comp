@@ -14,15 +14,17 @@ uniform ivec2 _TexSize;
 uniform ivec3 _WorldSize;
 uniform vec3 _WorldPos;
 uniform vec3 _BrushPos;
+uniform uint _Mode;
 
 void ApplySelection(ivec3 id){
+    uint GlobalIndex = id.z * _TexSize.x + id.x;
+            
     int BrushSize = 5;
     vec2 BrushUV = (_BrushPos.xz - _WorldPos.xz) / _WorldSize.xz * _TexSize;
     vec2 diff = BrushUV - id.xz;
     float dist2 = dot(diff, diff);
     float d = 1 - dist2 / (BrushSize * BrushSize);
-    uint GlobalIndex = id.z * _TexSize.x + id.x;
-    Selection.Entries[GlobalIndex] = uint(d * 256);
+    Selection.Entries[GlobalIndex] += _Mode == 0 ? 0 : uint(d * 255);
 }
 
 void main() {

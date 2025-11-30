@@ -49,6 +49,7 @@ void Renderer::InitRenderDoc()
 void Renderer::Update(float Delta)
 {
     Camera->Update(Delta);
+    Terrain->Update(Delta);
 }
 
 void Renderer::Render()
