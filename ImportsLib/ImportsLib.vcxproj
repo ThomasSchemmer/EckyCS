@@ -201,6 +201,7 @@
     <ClCompile Include="src\Renderer\Camera.cpp" />
     <ClCompile Include="src\Renderer\Renderer.cpp" />
     <ClCompile Include="src\Renderer\BaseShader.cpp" />
+    <ClCompile Include="src\Terrain\TerrainData.cpp" />
     <ClCompile Include="src\Terrain\TerrainManager.cpp" />
     <ClCompile Include="src\Terrain\TerrainShader.cpp" />
     <ClCompile Include="src\Util\ShaderHelper.cpp" />
@@ -261,6 +262,7 @@
     <ClInclude Include="src\Renderer\Renderer.h" />
     <ClInclude Include="src\Renderer\BaseShader.h" />
     <ClInclude Include="src\Renderer\Utils.h" />
+    <ClInclude Include="src\Terrain\TerrainData.h" />
     <ClInclude Include="src\Terrain\TerrainManager.h" />
     <ClInclude Include="src\Terrain\TerrainShader.h" />
     <ClInclude Include="src\Util\ActionMap.h" />
@@ -270,8 +272,10 @@
   <ItemGroup>
     <EmbeddedResource Include="src\Renderer\Shaders\BaseFragmentShader.frag" />
     <EmbeddedResource Include="src\Renderer\Shaders\BaseVertexShader.vert" />
+    <Content Include="src\Terrain\Shaders\Cubic.glsl" />
     <Content Include="src\Terrain\Shaders\TerrainFragmentShader.frag" />
     <Content Include="src\Terrain\Shaders\TerrainMesh.comp" />
+    <Content Include="src\Terrain\Shaders\TerrainPaint.comp" />
     <Content Include="src\Terrain\Shaders\TerrainSelect.comp" />
     <Content Include="src\Terrain\Shaders\TerrainVertexShader.vert" />
   </ItemGroup>

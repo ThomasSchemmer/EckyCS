@@ -1,10 +1,10 @@
-﻿#define WIN32_LEAN_AND_MEAN
-
+﻿
 #include <glew/include/GL/glew.h>
 #include <GLFW/include/GLFW/glfw3.h>
 #include <imgui/imgui.h>
 #include "TerrainManager.h"
 
+#include "TerrainData.h"
 #include "../Renderer/Camera.h"
 #include "../Util/ShaderHelper.h"
 
@@ -18,89 +18,155 @@ namespace TTerrain
     TerrainManager::TerrainManager(const shared_ptr<Camera>& InCamPtr)
     {
         CamPtr = InCamPtr;
-        Shader = make_shared<TerrainShader>(Width, Height);
+        Shader = make_shared<TerrainShader>(TerrainData::TexSize, TerrainData::TexSize);
         CreateCompute();
-        CreateMesh();
+        CreateTerrainAt(glm::vec3(0));
     }
 
     void TerrainManager::Render()
     {       
-    
-        Shader->Use();
-        Shader->UpdateVars(CamPtr, GetStandardSettings());
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, AppendCount);
+        DispatchCompute();
+        RenderTriangles();
+        bWasPressingRaise = bIsRaising;
+        bWasPressingSelect = bIsSelecting;
     }
 
     void TerrainManager::Update(float Delta)
     {
         HandleInput();
-        if (CamPtr->GetKey(GLFW_KEY_SPACE) == GLFW_PRESS)
-        {
-            DispatchGenerate();
+    }
+
+    void TerrainManager::DispatchCompute()
+    {
+        if (!bIsEditing)
+            return;
+        
+        HandleResetting();
+        HandleSelecting();
+        HandlePainting();
+    }
+
+    void TerrainManager::HandlePainting()
+    { 
+        if (bIsRaising || !bWasPressingRaise)
+            return;
+
+        for (auto& Data : Datas){
+            glUseProgram(ComputeProgramPaint);
+            ShaderHelper::SetUniform3fv("_BrushPos", RaiseStartWorldPos, ComputeProgramPaint);
+            UpdateComputeVars(ComputeProgramPaint);
+            Data.DispatchPaint();
+
+            glUseProgram(ComputeProgramMesh);
+            UpdateComputeVars(ComputeProgramMesh);
+            Data.DispatchGenerate();
+
+            glUseProgram(ComputeProgramSelect);
+            UpdateComputeVars(ComputeProgramSelect);
+            Data.DispatchSelect((GLuint)TerrainSelectionMode::Clear);
         }
+    }
+
+    void TerrainManager::HandleSelecting() const
+    {
         if (bIsSelecting)
         {
-            DispatchBrush();
+            glUseProgram(ComputeProgramSelect);
+            UpdateComputeVars(ComputeProgramSelect);
+            ShaderHelper::SetUniform3fv("_BrushPos", CamPtr->GetMouseWorldPos(), ComputeProgramSelect);
+            ShaderHelper::SetUniform3fv("_StartWorldPos", SelectStartWorldPos, ComputeProgramSelect);
+            for (const auto& Data : Datas)
+            {
+                Data.UpdateComputeVars(ComputeProgramSelect);
+                Data.DispatchSelect((GLuint)TerrainSelectionMode::Additive);
+            }
         }
-        bWasPressingRaise = bIsRaising;
+        
+        // resets the selection once we let go of shift
+        if (!bIsSelecting && bWasPressingSelect)
+        {
+            glUseProgram(ComputeProgramSelect);
+            UpdateComputeVars(ComputeProgramSelect);
+            ShaderHelper::SetUniform3fv("_StartWorldPos", SelectStartWorldPos, ComputeProgramSelect);
+            for (const auto& Data : Datas)
+            {
+                Data.UpdateComputeVars(ComputeProgramSelect);
+                Data.DispatchSelect((GLuint)TerrainSelectionMode::Clear);
+            }
+        }
     }
 
-
-    void TerrainManager::DispatchBrush() const
+    void TerrainManager::HandleResetting()
     {
-        GLuint Mode = static_cast<GLuint>(bIsSelecting ? TerrainSelectionMode::Additive : TerrainSelectionMode::Clear);
-        glUseProgram(ComputeProgramSelect);
-        ShaderHelper::SetUniform3fv("_BrushPos", CamPtr->GetMouseWorldPos(), ComputeProgramSelect);
-        UpdateComputeVars(ComputeProgramSelect);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, SelectionBuffer);
-        Dispatch(Mode, ComputeProgramSelect);
-    }
+        if (!bIsResetting)
+            return;
 
-
-    void TerrainManager::DispatchGenerate() 
-    {
         glUseProgram(ComputeProgramMesh);
-        ShaderHelper::ResetBufferCounter(CountBuffer);
-    
-        glBindImageTexture(0, ResultTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, CountBuffer);
-        
-        // calculate how many vertices we will have
-        Dispatch((GLuint)TerrainComputeMode::CountTriangles, ComputeProgramMesh);
-        AppendCount = ShaderHelper::ReadBufferCount(CountBuffer);
-
-        // allocate the exact amount for the buffers 
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, VertexBuffer);
-        glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(float) * 4 * AppendCount, nullptr, GL_DYNAMIC_STORAGE_BIT);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, NormalBuffer); // needs only one normal per triangle
-        glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(float) * 4 * AppendCount / 3, nullptr, GL_DYNAMIC_STORAGE_BIT);
-        
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, VertexBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, NormalBuffer);
-
-        ShaderHelper::ResetBufferCounter(CountBuffer);
-    
-        // actually compute the vertices & normals
-        Dispatch((GLuint)TerrainComputeMode::GenerateTriangles, ComputeProgramMesh);
-        
-        // The count is now the actual amount of triangles to render
-        AppendCount = ShaderHelper::ReadBufferCount(CountBuffer);
-    
-        //clear binding to make the tex displayable in UI
-        glBindImageTexture(1, 0, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
+        UpdateComputeVars(ComputeProgramMesh);
+        for (auto& Data : Datas)
+        {
+            Data.UpdateComputeVars(ComputeProgramMesh);
+            Data.DispatchResetHeight();
+            Data.DispatchGenerate();
+        }
     }
 
+    void TerrainManager::RenderTriangles() const
+    {
+        Shader->Use();
+        auto Settings = GetStandardSettings();
+        for (const auto& TData : Datas)
+        {
+            TData.ApplyToSettings(Settings);
+            Shader->UpdateVars(CamPtr, Settings);
+            TData.RenderTriangles();
+        }
+    }
+    
     void TerrainManager::OnDrawGizmos() 
     {
         auto Pos = CamPtr->GetMouseWorldPos();
         ImGui::Begin("TerrainTool");
-        ImGui::Text("Pos: %.2f|%.2f|%.2f", Pos.x, Pos.y, Pos.z);
-        ImGui::Text("Appnd: %i", AppendCount);
-        ImGui::Checkbox("Raise: ", &bIsRaising);
-        ImGui::Checkbox("Select: ", &bIsSelecting);
-        ImGui::Image((ImTextureID)(intptr_t)ResultTex, ImVec2(Width, Height));
+        ImGui::Checkbox("Editable", &bIsEditing);
+        if (bIsEditing)
+        {
+            ImGui::Text("Pos: %.2f|%.2f|%.2f", Pos.x, Pos.y, Pos.z);
+            ImGui::Text("Appnd: %i", GetTotalAppendCount());
+            ImGui::Checkbox("Raise: ", &bIsRaising);
+            ImGui::Checkbox("Select: ", &bIsSelecting);
+            ImGui::Text("Brush Settings:");
+            ImGui::SliderInt("Size: ", &BrushSize, 1, 10);
+            ImGui::SliderInt("Strength: ", &BrushStrength, 1, 10);
+        
+            glm::vec2 Diff;
+            CamPtr->GetMouseCoords(Diff);
+            Diff = BrushStartScreenPos - Diff;
+            ImGui::Text("Diff: %.2f|%.2f", Diff.x, Diff.y);
+        
+            ImGui::Spacing();
+            ImGui::SetNextItemWidth(150);
+            ImGui::ColorPicker3("Dirt", glm::value_ptr(DirtColor), ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoOptions);
+            ImGui::SetNextItemWidth(150);
+            ImGui::ColorPicker3("Grass", glm::value_ptr(GrassColor), ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoOptions);
+            ImGui::SliderFloat("Scale: ", &GrassScale, 0, 0.25);
+            ImGui::SliderFloat("Quantize: ", &GrassQuantize, 2, 10);
+        
+            ImGui::Spacing();
+            if (ImGui::Button("Save")) SaveData();
+            if (ImGui::Button("Load")) LoadData();
+        }
         ImGui::End();
+    }
+
+    void TerrainManager::CleanUp() const
+    {
+        for (auto& Data : Datas)
+        {
+            Data.CleanUp();
+        }
+        glDeleteProgram(ComputeProgramMesh);
+        glDeleteProgram(ComputeProgramPaint);
+        glDeleteProgram(ComputeProgramSelect);
     }
 
     void TerrainManager::HandleToggle(bool* bIsDoing, bool* bWasDoing, GLint Key) const
@@ -117,85 +183,143 @@ namespace TTerrain
         *bWasDoing = bIsPressing;
     }
 
-    void TerrainManager::HandleInput()
+    int TerrainManager::GetBrushDirection() const
     {
-        HandleToggle(&bIsSelecting, &bWasPressingSelect, GLFW_KEY_LEFT_SHIFT);
-        bIsRaising = CamPtr->GetMouse(GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+        glm::vec2 BrushEnd;
+        CamPtr->GetMouseCoords(BrushEnd);
+        // y dir is flipped in opengl
+        return -static_cast<int>(glm::sign(BrushEnd.y - BrushStartScreenPos.y));
     }
 
-    void TerrainManager::CreateMesh()
+    void TerrainManager::CreateTerrainAt(glm::vec3 WorldPos)
     {
-        glGenVertexArrays(1, &VAO);
-        glBindVertexArray(VAO);
+        auto& Tmp = Datas.emplace_back(WorldPos, ComputeProgramMesh, ComputeProgramPaint, ComputeProgramSelect);
+        glUseProgram(ComputeProgramMesh);
+        UpdateComputeVars(ComputeProgramMesh);
+        Tmp.DispatchGenerate();
+    }
 
-        // Will be filled by compute
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, VertexBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, NormalBuffer);
+    void TerrainManager::HandleInput()
+    {
+        if (ImGui::GetIO().WantCaptureMouse)
+            return;
+        
+        bIsSelecting = CamPtr->GetKey(GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
+        bIsRaising = CamPtr->GetMouse(GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+        bIsResetting = CamPtr->GetKey(GLFW_KEY_O) == GLFW_PRESS;
+        if (bIsRaising && !bWasPressingRaise)
+        {
+            CamPtr->GetMouseCoords(BrushStartScreenPos);
+            RaiseStartWorldPos = CamPtr->GetMouseWorldPos();
+        }
+        if (bIsSelecting && !bWasPressingSelect)
+        {
+            SelectStartWorldPos = CamPtr->GetMouseWorldPos();
+        }
     }
 
     void TerrainManager::CreateCompute()
     {
         ComputeProgramMesh = ShaderHelper::CreateProgram({ComputeShaderMesh});
+        ComputeProgramPaint = ShaderHelper::CreateProgram({ComputeShaderPaint});
         ComputeProgramSelect = ShaderHelper::CreateProgram({ComputeShaderSelect});
-
-        glGenTextures(1, &ResultTex);
-        glBindTexture(GL_TEXTURE_2D, ResultTex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, Width, Height, 0,GL_RGBA, GL_FLOAT, nullptr);
-        // have to clamp to avoid invalid meshes at the edges
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        // we only need to read the required size, then allocate the actual buffers later
-        glGenBuffers(1, &CountBuffer);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, CountBuffer);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int), nullptr, GL_DYNAMIC_COPY);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, CountBuffer);
-    
-        glGenBuffers(1, &NormalBuffer);
-        glGenBuffers(1, &VertexBuffer);
-
-        glGenBuffers(1, &SelectionBuffer);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, SelectionBuffer); 
-        glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int) * Width * Height, nullptr, GL_DYNAMIC_STORAGE_BIT);
-
-        glUseProgram(ComputeProgramMesh);
-        UpdateComputeVars(ComputeProgramMesh);
-        Dispatch((GLuint)TerrainComputeMode::GenerateTex, ComputeProgramMesh);
     }
-
 
     void TerrainManager::UpdateComputeVars(GLuint Program) const
     {
-        ShaderHelper::SetUniform3fv("_WorldPos", GlobalWorldPos, Program);
-        ShaderHelper::SetUniform2iv("_TexSize", TexSize, Program);
-        ShaderHelper::SetUniform3iv("_WorldSize", WorldSize, Program);
+        int Dir = GetBrushDirection();
+        ShaderHelper::SetUniform2iv("_TexSize", glm::ivec2(TerrainData::TexSize), Program);
+        ShaderHelper::SetUniform1ui("_BrushSize", BrushSize, Program);
+        ShaderHelper::SetUniform1i("_BrushStrength", BrushStrength * Dir, Program);
+        ShaderHelper::SetUniform1ui("_HasSelection", bIsSelecting, Program);
     }
 
-    void TerrainManager::Dispatch(GLuint Mode, GLuint Target) const
+    GLsizei TerrainManager::GetTotalAppendCount() const
     {
-        ShaderHelper::SetUniform1ui("_Mode", Mode, Target);
-        glDispatchCompute(Width / 32, Height / 32, 1);
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+        GLsizei TotalAppendCount = 0;
+        for (auto& Data : Datas)
+        {
+            TotalAppendCount += Data.AppendCount;
+        }
+        return TotalAppendCount;
     }
 
     TerrainShaderSettings TerrainManager::GetStandardSettings() const
     {
         TerrainShaderSettings Settings;
-        Settings.GlobalWorldPos = GlobalWorldPos;
-        Settings.ResultTex = ResultTex;
-        Settings.VertexBuffer = VertexBuffer;
-        Settings.NormalBuffer = NormalBuffer;
-        Settings.SelectionBuffer = SelectionBuffer;
         Settings.BrushPos = CamPtr->GetMouseWorldPos();
-        Settings.TexSize = glm::ivec2(Width, Height);
+        Settings.BrushSize = BrushSize;
+        Settings.TexSize = glm::ivec2(TerrainData::TexSize);
+        Settings.DirtColor = DirtColor;
+        Settings.GrassColor = GrassColor;
+        Settings.GrassScale = GrassScale;
+        Settings.GrassQuantize = GrassQuantize;
+        // will be filled by the different chunks
+        Settings.GlobalWorldPos = glm::vec3(0);
+        Settings.VertexBuffer = 0;
+        Settings.NormalBuffer = 0;
+        Settings.HeightBuffer = 0;
+        Settings.SelectionBuffer = 0;
+        Settings.WorldSize = glm::vec3(0);
         return Settings;
     }
 
-
-    TerrainManager::~TerrainManager()
+    void TerrainManager::SaveData() const
     {
-        //todo: here and shader: kill program if valid
+        size_t DataCount = Datas.size();
+        size_t BufferSize = TerrainData::GetHeightBufferSize();
+
+        // we can calculate all sizes from the count
+        std::ofstream file("output.bin", std::ios::binary);
+        file.write(reinterpret_cast<char*>(&DataCount), sizeof(size_t));
+        
+        // write WorldPos and Height data for each terrain chunk
+        for (auto& TData : Datas)
+        {
+            file.write(reinterpret_cast<const char*>(&TData.GlobalWorldPos.x), sizeof(glm::vec3));
+            std::vector<uint32_t> Data(BufferSize / sizeof(uint32_t));
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, TData.HeightBuffer);
+            glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, BufferSize, Data.data());
+            file.write(reinterpret_cast<char*>(Data.data()), BufferSize);
+        }
+
+        file.close();
+    }
+
+    void TerrainManager::LoadData()
+    {
+        Datas.clear();
+        
+        std::ifstream File("output.bin", std::ios::binary);
+
+        File.seekg(0, std::ios::end);
+        size_t FileSize = File.tellg();
+        File.seekg(0, std::ios::beg);
+        size_t ChunkCount;
+        File.read(reinterpret_cast<char*>(&ChunkCount), sizeof(size_t));
+
+        FileSize -= sizeof(size_t);
+        size_t BytesPerChunk = FileSize / ChunkCount;
+        size_t DataPerChunk = BytesPerChunk - sizeof(glm::vec3);
+
+        std::vector<uint32_t> Data;
+        Data.resize(DataPerChunk / sizeof(uint32_t));
+        for (size_t i = 0; i < ChunkCount; i++)
+        {
+            glm::vec3 WorldPos;
+            File.read(reinterpret_cast<char*>(&WorldPos), sizeof(glm::vec3));
+            File.read(reinterpret_cast<char*>(Data.data()), DataPerChunk);
+            auto& TerrainData = Datas.emplace_back(WorldPos, ComputeProgramMesh, ComputeProgramPaint, ComputeProgramSelect);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, TerrainData.HeightBuffer);
+            glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, DataPerChunk, Data.data());
+        }
+        File.close();
+        
+        glUseProgram(ComputeProgramMesh);
+        UpdateComputeVars(ComputeProgramMesh);
+        for (auto& TData : Datas)
+        {
+            TData.DispatchGenerate();
+        }
     }
 }

@@ -400,7 +400,6 @@ namespace EckyCS
 
         void ChangeSizeComponents(size_t OldCount, size_t NewCount)
         {
-            //todo: at this point the data is already 0 again
             size_t ByteCount = TotalByteCount<Types...>();
             byte* NewData = new byte[NewCount * ByteCount]();
             std::copy_n(Data, OldCount * ByteCount, NewData);

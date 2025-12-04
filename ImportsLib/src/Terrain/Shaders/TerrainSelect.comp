@@ -4,27 +4,56 @@
  * Shader updating the selection mask for terrain modifications
  * Compares mouse input with buffer index mapped to world position
  */
-layout(local_size_x = 32, local_size_y = 32) in;
+#define DISPATCH_SIZE 2
+layout(local_size_x = DISPATCH_SIZE, local_size_y = DISPATCH_SIZE) in;
 
-layout(std430, binding = 3) buffer SelectionBuffer {
-    uint Entries[]; 
+layout(std430, binding = 3) buffer HeightBuffer {
+    uint Value[];   // ranges from 0..MAX_VALUE
+} Heights;
+
+layout(std430, binding = 4) buffer SelectionBuffer {
+    uint Entries[]; // either 0 or 1!
 } Selection;
+
+
+#define MODE_CLEAR 0
+#define MODE_SET 1
+//TODO: add "removing" selection mode
+#define MAX_VALUE 10
 
 uniform ivec2 _TexSize;
 uniform ivec3 _WorldSize;
 uniform vec3 _WorldPos;
+uniform vec3 _StartWorldPos;
 uniform vec3 _BrushPos;
+uniform uint _BrushSize;
 uniform uint _Mode;
 
 void ApplySelection(ivec3 id){
     uint GlobalIndex = id.z * _TexSize.x + id.x;
-            
-    int BrushSize = 5;
+    
+    // use the mouse pos as origin, distance to it as falloff value
     vec2 BrushUV = (_BrushPos.xz - _WorldPos.xz) / _WorldSize.xz * _TexSize;
-    vec2 diff = BrushUV - id.xz;
-    float dist2 = dot(diff, diff);
-    float d = 1 - dist2 / (BrushSize * BrushSize);
-    Selection.Entries[GlobalIndex] += _Mode == 0 ? 0 : uint(d * 255);
+    vec2 Diff = BrushUV - id.xz;
+    float DistSqr = dot(Diff, Diff);
+    float DistNorm = 1 - DistSqr / (_BrushSize * _BrushSize);
+    DistNorm = clamp(round(DistNorm), 0, 1);
+
+    // can only add to selection if the current height is the same 
+    // as the first selected height (to make managing plateaus easier)
+    vec2 OriginalUV = (_StartWorldPos.xz - _WorldPos.xz) / _WorldSize.xz * _TexSize;
+    uint OriginalIndex = uint(OriginalUV.y) * _TexSize.x + uint(OriginalUV.x);
+    uint OriginalHeight = Heights.Value[OriginalIndex];
+    uint Height = Heights.Value[GlobalIndex];
+    
+    // convert to binary mapping
+    uint OldValue = Selection.Entries[GlobalIndex];
+    uint NewValue = uint(DistNorm);
+    NewValue = (OriginalHeight == Height) ? NewValue : 0; 
+    uint Value = _Mode == MODE_SET ? (NewValue + OldValue) : 0;
+    Value = clamp(Value, uint(0), uint(1));
+    
+    Selection.Entries[GlobalIndex] = Value;
 }
 
 void main() {

@@ -29,7 +29,7 @@ namespace GameImports {
 		Services.clear();
 	}
 
-	void Game::Init(std::shared_ptr<GLFWwindow>& Window)
+	void Game::Init(GLFWwindow* Window)
 	{
 		State = GameState::InGame;
 		RendererPtr->Init(Window);

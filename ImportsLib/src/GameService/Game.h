@@ -55,7 +55,7 @@ namespace GameImports {
 		virtual ~Game();
 
 		/** Starts the initialization of the whole game - should be run before any frames*/
-		void Init(shared_ptr<GLFWwindow>& Window);
+		void Init(GLFWwindow* Window);
 
 		virtual void Update();
 		virtual void FixedUpdate() const;

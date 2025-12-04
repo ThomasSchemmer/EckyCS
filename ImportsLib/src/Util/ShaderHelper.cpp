@@ -10,6 +10,16 @@ namespace Util
 {
     using namespace std;
 
+    wstring ShaderHelper::ToWString(const string& str)
+    {
+        int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.c_str(),
+                                              (int)str.size(), nullptr, 0);
+        wstring result(size_needed, 0);
+        MultiByteToWideChar(CP_UTF8, 0, str.c_str(),
+                            (int)str.size(), result.data(), size_needed);
+        return result;
+    }
+
     string ShaderHelper::LoadShaderFromResource(const wchar_t* Name)
     {
         HRSRC rc = FindResourceW(nullptr, Name, RT_RCDATA);
@@ -21,9 +31,41 @@ namespace Util
         HGLOBAL h = LoadResource(nullptr, rc);
         DWORD size = SizeofResource(nullptr, rc);
         const char* data = static_cast<const char*>(LockResource(h));
+        
+        return LoadResourceIncludes(string(data, size));
+    }
 
-        return string(data, size);
+    string ShaderHelper::LoadResourceIncludes(const string& Code)
+    {
+        stringstream In(Code);
+        stringstream Out;
+        string Line;
+
+        while (getline(In, Line))
+        {
+            string trimmed = Line;
+            trimmed.erase(0, trimmed.find_first_not_of(" \t"));
+
+            if (trimmed.starts_with("#include"))
+            {
+                size_t firstQuote = trimmed.find('"');
+                size_t lastQuote  = trimmed.find_last_of('"');
+                if (firstQuote == string::npos || firstQuote == lastQuote)
+                    throw runtime_error("Malformed #include line: " + Line);
+
+                string Name = trimmed.substr(firstQuote + 1, lastQuote - firstQuote - 1);
+                auto WName = ToWString(Name);
+                Out << LoadShaderFromResource(WName.c_str()) << "\n";
+            }
+            else
+            {
+                Out << Line << "\n";
+            }
+        }
+        return Out.str();
     };
+
+    
     
     string ShaderHelper::LoadShader(const string& FilePath) {
         ifstream ShaderFile;
@@ -120,7 +162,13 @@ namespace Util
         const int ID = glGetUniformLocation(Program, UniformName.c_str());
         glUniform1f(ID, Value);
     }
-    
+
+    void ShaderHelper::SetUniform1i(const string& UniformName, int Value, unsigned int Program)
+    {
+        const int ID = glGetUniformLocation(Program, UniformName.c_str());
+        glUniform1i(ID, Value);
+    }
+
     void ShaderHelper::SetUniform1ui(const string& UniformName, unsigned int Value, unsigned int Program) 
     {
         const int ID = glGetUniformLocation(Program, UniformName.c_str());

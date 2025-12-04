@@ -22,6 +22,7 @@ public:
 
     void Use();
     void UpdateVars(const shared_ptr<Camera>& Camera);
+    void CleanUp() const;
 
 private:
     glm::mat4 Transform;    

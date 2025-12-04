@@ -53,3 +53,10 @@ void BaseShader::UpdateVars(const shared_ptr<Camera>& Camera)
     ShaderHelper::SetUniform3fv("SunPos", Camera->SunPos, Program);
     ShaderHelper::SetUniform3fv("CamPos", Camera->Position, Program);
 }
+
+void BaseShader::CleanUp() const
+{
+    glDeleteProgram(Program);
+    glDeleteTextures(1, &ContainerTex);
+    glDeleteTextures(1, &CornTex);
+}

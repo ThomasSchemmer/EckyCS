@@ -24,12 +24,13 @@ public:
 
     Renderer() = default;
     ~Renderer();
-    void Init(std::shared_ptr<GLFWwindow>& Window);
+    void Init(GLFWwindow* Window);
     void InitRenderDoc();
     void Update(float Delta);
     void Render();
     void HandleCaptureStart() const;
     void HandleCaptureStop() const;
+    void CleanUp() const;
     shared_ptr<Camera> GetCamera() const;
 
 private:

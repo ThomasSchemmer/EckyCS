@@ -17,10 +17,13 @@ namespace TTerrain
     {
     public:
         glm::vec3 GlobalWorldPos;
-        GLuint ResultTex;
-        GLuint VertexBuffer, NormalBuffer, SelectionBuffer;
+        GLuint VertexBuffer, NormalBuffer, HeightBuffer, SelectionBuffer;
         glm::vec3 BrushPos;
-        glm::ivec2 TexSize;
+        unsigned int BrushSize;
+        glm::ivec2 TexSize, WorldSize;
+        
+        glm::vec3 GrassColor, DirtColor;
+        float GrassScale, GrassQuantize;
     };
     
     class TerrainShader

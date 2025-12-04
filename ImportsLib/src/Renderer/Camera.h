@@ -14,7 +14,7 @@ public:
     glm::vec3 SunPos = glm::vec3(10, 10, 10);
 
     void Update(float Delta);
-    Camera(const std::shared_ptr<GLFWwindow>& Window);
+    Camera(GLFWwindow* Window);
     virtual void OnDrawGizmos();
 
     void GetMouseCoords(glm::vec2& Pos) const;
@@ -36,7 +36,7 @@ public:
     glm::vec3 GetMouseWorldPos() const;
 
 private:
-    std::shared_ptr<GLFWwindow> Window;
+    GLFWwindow* Window;
     float MoveSpeed, RotationSpeed;
     float XAngle, YAngle;
     int ZoomIndex;

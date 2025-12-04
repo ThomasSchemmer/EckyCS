@@ -22,14 +22,9 @@
 #include "../Terrain/TerrainManager.h"
 using namespace EckyCS;
 
-Renderer::~Renderer()
-{
-#ifdef _WIN32
-    UnloadRenderDocWindows();
-#endif
-}
+Renderer::~Renderer() {}
 
-void Renderer::Init(std::shared_ptr<GLFWwindow>& Window)
+void Renderer::Init(GLFWwindow* Window)
 {
     ShaderPtr = make_shared<BaseShader>();
     Camera = make_shared<class Camera>(Window);
@@ -109,6 +104,15 @@ void Renderer::HandleCaptureStop() const
     RDocAPI->GetCapture(Num - 1, pathBuffer, nullptr, nullptr);
     
     RDocAPI->LaunchReplayUI(1, pathBuffer);
+}
+
+void Renderer::CleanUp() const
+{
+    Terrain->CleanUp();
+    ShaderPtr->CleanUp();
+#ifdef _WIN32
+    UnloadRenderDocWindows();
+#endif
 }
 
 shared_ptr<Camera> Renderer::GetCamera() const

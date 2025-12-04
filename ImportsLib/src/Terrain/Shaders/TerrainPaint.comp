@@ -1,0 +1,47 @@
+﻿#version 430 
+
+#define MAX_VALUE 10
+/** 
+ * Shader updating the heightmap that is used to generate 
+ * the actual triangle mesh
+ */
+#define DISPATCH_SIZE 2
+layout(local_size_x = DISPATCH_SIZE, local_size_y = DISPATCH_SIZE) in;
+
+layout(std430, binding = 3) buffer HeightBuffer {
+    uint Value[]; // should only handle 0..MAX_VALUE!
+} Heights;
+
+layout(std430, binding = 4) buffer SelectionBuffer {
+    uint Entries[]; // either 0 or 1! TODO: make bitwise, to inc memory efficiency
+} Selection;
+
+uniform ivec2 _TexSize;
+uniform ivec3 _WorldSize;
+uniform vec3 _WorldPos;
+uniform vec3 _BrushPos;
+uniform uint _BrushSize;
+uniform int _BrushStrength;
+uniform uint _HasSelection;
+
+void main() {
+    ivec3 id = ivec3(gl_GlobalInvocationID.x, 0, gl_GlobalInvocationID.y);
+
+    uint GlobalIndex = id.z * _TexSize.x + id.x;
+    uint OldValue = Heights.Value[GlobalIndex];
+
+    // get distance to mouse pos, use it as falloff strength
+    vec2 BrushUV = (_BrushPos.xz - _WorldPos.xz) / _WorldSize.xz * _TexSize;
+    vec2 Dist = BrushUV - id.xz;
+    float DistSqr = dot(Dist, Dist);
+    float NormDist = 1 - DistSqr / (_BrushSize * _BrushSize);
+    NormDist = clamp(NormDist, 0, 1);
+    
+    uint SelectionMask = _HasSelection == 1 ? Selection.Entries[GlobalIndex] : uint(round(NormDist));
+    
+    // has to be int, cause _BrushStrength can be negative
+    int NewValue = int(_BrushStrength * SelectionMask);
+    uint Value = uint(clamp(int(OldValue) + NewValue, 0, MAX_VALUE));
+    
+    Heights.Value[GlobalIndex] = Value;
+}

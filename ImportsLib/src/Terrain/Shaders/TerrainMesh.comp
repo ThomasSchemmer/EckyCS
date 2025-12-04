@@ -4,13 +4,14 @@
  * Multi-modal Shader either:
  * - creating a heightmap
  * - creating a mesh according to the heightmap
- * TODO: remove Mode, doesnt really work that well
  */
 #define MODE_COUNT_TRIANGLES 0
 #define MODE_GENERATE_TRIANGLES 1
-#define MODE_GENERATE_TEX 2
+#define MODE_RESET_HEIGHT 2
+#define MAX_VALUE 10
 
-layout(local_size_x = 32, local_size_y = 32) in;
+#define DISPATCH_SIZE 2
+layout(local_size_x = DISPATCH_SIZE, local_size_y = DISPATCH_SIZE) in;
 
 layout(std430, binding = 0) buffer PositionBuffer {
     vec4 Entries[];
@@ -24,7 +25,9 @@ layout(std430, binding = 2) buffer CountBuffer {
     uint Count;
 } Counter;
 
-layout(binding = 0, rgba16f) uniform image2D Result;
+layout(std430, binding = 3) buffer HeightBuffer {
+    uint Value[];
+} Heights;
 
 uniform ivec2 _TexSize;
 uniform ivec3 _WorldSize;
@@ -35,7 +38,6 @@ uniform vec3 _BrushPos;
 uniform uint _Mode;
 
 const uint VertCount = 6;
-const int Bands = 10;
 const int VertexMapLength = 28;
 const int VertexLookupLength0 = 15;
 const int VertexLookupLength1 = 48;
@@ -67,21 +69,21 @@ const int VertexMap[] =
  */
 const int VertexLookup[] =
 {
-    0, 1, 2, 1, 3, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    0, 1, 2, 1, 6, 7, 7, 2, 1, 6, 11, 7, 6, 10, 11, 10, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    0, 1, 3, 0, 11, 5, 0, 3, 11, 7, 9, 11, 5, 11, 9, 9, 7, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    0, 1, 5, 1, 6, 5, 5, 10, 9, 6, 10, 5, 9, 10, 2, 2, 10, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    0, 1, 5, 1, 6, 5, 5, 12, 9, 12, 14, 9, 12, 6, 15, 6, 10, 15, 9, 14, 7, 7, 2, 9, 15, 10, 3, 3, 11, 15, 15, 14, 7, 7, 11, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    0, 3, 2, 0, 4, 10, 10, 3, 0, 4, 8, 6, 6, 10, 4, 8, 1, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    0, 4, 7, 7, 2, 0, 4, 8, 11, 11, 7, 4, 8, 1, 3, 3, 11, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    0, 4, 7, 7, 2, 0, 4, 8, 13, 13, 12, 4, 14, 15, 11, 11, 7, 14, 15, 10, 3, 3, 11, 15, 8, 1, 6, 6, 13, 8, 13, 6, 10, 10, 15, 13, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    0, 4, 5, 4, 8, 9, 9, 5, 4, 8, 1, 6, 7, 2, 9, 9, 8, 6, 6, 7, 9, 7, 6, 10, 10, 11, 7, 10, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    0, 4, 5, 4, 8, 9, 9, 5, 4, 8, 1, 6, 8, 6, 7, 7, 9, 8, 9, 7, 2, 10, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    0, 4, 5, 4, 8, 9, 9, 5, 4, 8, 1, 6, 7, 2, 9, 9, 8, 6, 6, 7, 9, 7, 6, 10, 10, 11, 7, 10, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    0, 4, 5, 4, 10, 11, 11, 5, 4, 10, 3, 11, 4, 8, 6, 6, 10, 4, 5, 11, 7, 7, 9, 5, 9, 7, 2, 8, 1, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    8, 1, 3, 3, 11, 8, 4, 8, 13, 13, 12, 4, 14, 15, 11, 11, 7, 14, 0, 4, 12, 12, 5, 0, 9, 14, 7, 7, 2, 9, 5, 12, 14, 14, 9, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    9, 10, 3, 3, 2, 9, 5, 9, 14, 14, 12, 5, 15, 10, 6, 6, 13, 15, 0, 4, 12, 12, 5, 0, 8, 1, 6, 6, 13, 8, 4, 8, 13, 13, 12, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    0, 4, 12, 12, 5, 0, 8, 1, 6, 6, 13, 8, 15, 10, 3, 3, 11, 15, 7, 2, 9, 9, 14, 7, 9, 5, 12, 12, 14, 9, 4, 8, 13, 13, 12, 4, 13, 6, 10, 10, 15, 13, 11, 7, 14, 14, 15, 11
+    /* 0*/ 0, 1, 2, 1, 3, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 1*/ 0, 1, 2, 1, 6, 7, 7, 2, 1, 6, 11, 7, 6, 10, 11, 10, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 2*/ 0, 1, 3, 0, 11, 5, 0, 3, 11, 7, 9, 11, 5, 11, 9, 9, 7, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 3*/ 0, 1, 5, 1, 6, 5, 5, 10, 9, 6, 10, 5, 9, 10, 2, 2, 10, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 4*/ 0, 1, 5, 1, 6, 5, 5, 12, 9, 12, 14, 9, 12, 6, 15, 6, 10, 15, 9, 14, 7, 7, 2, 9, 15, 10, 3, 3, 11, 15, 15, 7, 14, 11, 7, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 5*/ 0, 3, 2, 0, 4, 10, 10, 3, 0, 4, 8, 6, 6, 10, 4, 8, 1, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 6*/ 0, 4, 7, 7, 2, 0, 4, 8, 11, 11, 7, 4, 8, 1, 3, 3, 11, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 7*/ 0, 4, 7, 7, 2, 0, 4, 8, 13, 13, 12, 4, 14, 15, 11, 11, 7, 14, 15, 10, 3, 3, 11, 15, 8, 1, 6, 6, 13, 8, 13, 6, 10, 10, 15, 13, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 8*/ 0, 4, 5, 4, 8, 9, 9, 5, 4, 8, 1, 6, 7, 2, 9, 9, 8, 6, 6, 7, 9, 7, 6, 10, 10, 11, 7, 10, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 9*/ 0, 4, 5, 4, 8, 9, 9, 5, 4, 8, 1, 6, 8, 6, 7, 7, 9, 8, 9, 7, 2, 10, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /*10*/ 0, 4, 5, 4, 8, 9, 9, 5, 4, 8, 1, 6, 7, 2, 9, 9, 8, 6, 6, 7, 9, 7, 6, 10, 10, 11, 7, 10, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /*11*/ 0, 4, 5, 4, 10, 11, 11, 5, 4, 10, 3, 11, 4, 8, 6, 6, 10, 4, 5, 11, 7, 7, 9, 5, 9, 7, 2, 8, 1, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /*12*/ 8, 1, 3, 3, 11, 8, 4, 8, 13, 13, 12, 4, 14, 15, 11, 11, 7, 14, 0, 4, 12, 12, 5, 0, 9, 14, 7, 7, 2, 9, 5, 12, 14, 14, 9, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /*13*/ 9, 10, 3, 3, 2, 9, 9, 5, 14, 14, 5, 12, 15, 6, 10, 13, 6, 15, 0, 4, 12, 12, 5, 0, 8, 1, 6, 6, 13, 8, 4, 8, 13, 13, 12, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /*14*/ 0, 4, 12, 12, 5, 0, 8, 1, 6, 6, 13, 8, 15, 10, 3, 3, 11, 15, 7, 2, 9, 9, 14, 7, 9, 5, 12, 12, 14, 9, 4, 8, 13, 13, 12, 4, 13, 6, 10, 10, 15, 13, 11, 7, 14, 14, 15, 11
 };
 
 
@@ -114,8 +116,8 @@ const float VertexToWorld[48] = {
 };
 
 int GetHeightID(int Heights[4]){
-    int HeightMap[Bands];
-    for (int i = 0; i < Bands; i++){
+    int HeightMap[MAX_VALUE];
+    for (int i = 0; i < MAX_VALUE; i++){
         HeightMap[i] = -1;
     }
 
@@ -165,9 +167,9 @@ void GenerateTriangles(ivec3 id, int Heights[4], int Start, int End){
         vec3 B = GetVertex(VertexLookup[i + 1], Heights) + id;
         vec3 C = GetVertex(VertexLookup[i + 2], Heights) + id;
         // scale back down to 1x1x1
-        A.y = A.y / (Bands - 2) * _WorldSize.y;
-        B.y = B.y / (Bands - 2) * _WorldSize.y;
-        C.y = C.y / (Bands - 2) * _WorldSize.y;
+        A.y = A.y / (MAX_VALUE - 2) * _WorldSize.y;
+        B.y = B.y / (MAX_VALUE - 2) * _WorldSize.y;
+        C.y = C.y / (MAX_VALUE - 2) * _WorldSize.y;
         A.xz = A.xz / _TexSize * _WorldSize.xz;
         B.xz = B.xz / _TexSize * _WorldSize.xz;
         C.xz = C.xz / _TexSize * _WorldSize.xz;
@@ -200,21 +202,19 @@ void CountTriangles(ivec3 id, int Heights[4], int Start, int End){
 void GenerateHeightMesh(ivec3 id){
     if (_Mode != MODE_COUNT_TRIANGLES && _Mode != MODE_GENERATE_TRIANGLES)
         return;
+    
     // height indicates the type of mesh via lookup table
-    // clamped to different height bands
-
-    // reading out of bounds will produce undefined (0), even if we set tex mode Clamp
-    int ClampW = _TexSize.x - 1;
-    int ClampH = _TexSize.y - 1;
-    ivec2 Offset0 = ivec2(clamp(id.x + 0, 0, ClampW), clamp(id.z + 1, 0, ClampH));
-    ivec2 Offset1 = ivec2(clamp(id.x + 1, 0, ClampW), clamp(id.z + 1, 0, ClampH));
-    ivec2 Offset2 = ivec2(clamp(id.x + 0, 0, ClampW), clamp(id.z + 0, 0, ClampH));
-    ivec2 Offset3 = ivec2(clamp(id.x + 1, 0, ClampW), clamp(id.z + 0, 0, ClampH));
-    int Height0 = int(imageLoad(Result, Offset0).r * (Bands - 1));
-    int Height1 = int(imageLoad(Result, Offset1).r * (Bands - 1));
-    int Height2 = int(imageLoad(Result, Offset2).r * (Bands - 1));
-    int Height3 = int(imageLoad(Result, Offset3).r * (Bands - 1));
-
+    // clamped to different height "bands"
+    int Offset0 = clamp(id.z + 1, 0, _TexSize.y - 1) * _TexSize.x + clamp(id.x + 0, 0, _TexSize.x - 1);
+    int Offset1 = clamp(id.z + 1, 0, _TexSize.y - 1) * _TexSize.x + clamp(id.x + 1, 0, _TexSize.x - 1);
+    int Offset2 = clamp(id.z + 0, 0, _TexSize.y - 1) * _TexSize.x + clamp(id.x + 0, 0, _TexSize.x - 1);
+    int Offset3 = clamp(id.z + 0, 0, _TexSize.y - 1) * _TexSize.x + clamp(id.x + 1, 0, _TexSize.x - 1);
+    
+    int Height0 = clamp(int(Heights.Value[Offset0]), 0, MAX_VALUE - 1);
+    int Height1 = clamp(int(Heights.Value[Offset1]), 0, MAX_VALUE - 1);
+    int Height2 = clamp(int(Heights.Value[Offset2]), 0, MAX_VALUE - 1);
+    int Height3 = clamp(int(Heights.Value[Offset3]), 0, MAX_VALUE - 1);
+        
     int Heights[4] = { Height0, Height1, Height2, Height3 };
     int HeightID = GetHeightID(Heights);
     if (HeightID >= VertexMapLength)
@@ -235,13 +235,17 @@ void GenerateHeightMesh(ivec3 id){
 }
 
 void GenerateTex(ivec3 id){
-    if (_Mode != MODE_GENERATE_TEX)
+    if (_Mode != MODE_RESET_HEIGHT)
         return;
-    
-    imageStore(Result, id.xz, vec4(_Mode, 0, 0, 1));
+
+    uint GlobalIndex = id.z * _TexSize.x + id.x;
+    Heights.Value[GlobalIndex] = 0;
 }
 
 void main() {
+    if (gl_GlobalInvocationID.x >= _TexSize.x * DISPATCH_SIZE || gl_GlobalInvocationID.y >= _TexSize.y * DISPATCH_SIZE)
+        return;
+    
     ivec3 id = ivec3(gl_GlobalInvocationID.x, 0, gl_GlobalInvocationID.y);
     
     GenerateTex(id);

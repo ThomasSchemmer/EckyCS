@@ -33,19 +33,24 @@ void TTerrain::TerrainShader::Use() const
 
 void TTerrain::TerrainShader::UpdateVars(const shared_ptr<Camera>& Camera, const TerrainShaderSettings& Settings) const
 {
+    ShaderHelper::SetUniform2iv("TexSize", Settings.TexSize, Program);
+    ShaderHelper::SetUniform2iv("WorldSize", Settings.WorldSize, Program);
     ShaderHelper::SetUniform3fv("GlobalWorldPos", Settings.GlobalWorldPos, Program);
     ShaderHelper::SetUniform1f("BrushSize", 2, Program);
     ShaderHelper::SetUniform3fv("BrushPos", Settings.BrushPos, Program);
+    ShaderHelper::SetUniform1ui("BrushSize", Settings.BrushSize, Program);
     ShaderHelper::SetUniformM4("Transform", Transform, Program);
     ShaderHelper::SetUniformM4("Projection", Camera->Projection, Program);
     ShaderHelper::SetUniformM4("View", Camera->View, Program);
+    ShaderHelper::SetUniform3fv("GrassColor", Settings.GrassColor, Program);
+    ShaderHelper::SetUniform3fv("DirtColor", Settings.DirtColor, Program);
+    ShaderHelper::SetUniform1f("GrassScale", Settings.GrassScale, Program);
+    ShaderHelper::SetUniform1f("GrassQuantize", Settings.GrassQuantize, Program);
 
-    
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, Settings.VertexBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, Settings.NormalBuffer);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, Settings.SelectionBuffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, Settings.HeightBuffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, Settings.SelectionBuffer);
 
-    ShaderHelper::SetUniformTexture("ResultTex", Settings.ResultTex, 0, Program);
-    ShaderHelper::SetUniform2iv("TexSize", Settings.TexSize, Program);
 }
 

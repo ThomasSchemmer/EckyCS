@@ -67,7 +67,7 @@ namespace
         std::cerr << std::endl;
     }
 
-	std::shared_ptr<GLFWwindow> Window;
+	GLFWwindow* Window;
 		
 	void error_callback(int error, const char* description)
 	{
@@ -99,20 +99,12 @@ namespace
 		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 		glfwWindowHint(GLFW_DEPTH_BITS, 24);
 		
-		GLFWwindow* Raw = glfwCreateWindow(Mode->width, Mode->height, "My Title", nullptr, nullptr);
-		glfwSetWindowPos(Raw, 0, 0);
-
-		// TODO:remove:auto delete on releasing the ptr
-		Window = std::shared_ptr<GLFWwindow>(Raw, [](GLFWwindow* w) {
-			if (glfwGetCurrentContext() && w)
-			{
-				glfwDestroyWindow(w);
-			}
-		});
+		Window = glfwCreateWindow(Mode->width, Mode->height, "My Title", nullptr, nullptr);
 		if (!Window)
 			return;
-
-		glfwMakeContextCurrent(Window.get());
+		
+		glfwSetWindowPos(Window, 0, 0);
+		glfwMakeContextCurrent(Window);
 		glfwSwapInterval(0); 
 
 		glewInit();
@@ -129,7 +121,7 @@ namespace
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 
-		ImGui_ImplGlfw_InitForOpenGL(Window.get(), true);
+		ImGui_ImplGlfw_InitForOpenGL(Window, true);
 		ImGui_ImplOpenGL3_Init();
 
 		ImGui::StyleColorsDark();
@@ -155,7 +147,7 @@ namespace
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		
 		Renderer->HandleCaptureStop();
-		glfwSwapBuffers(Window.get());
+		glfwSwapBuffers(Window);
 	}
 
 	void RenderUI() {
@@ -177,14 +169,18 @@ namespace
 
 	void DestroyWorld()
 	{
+		Game::Instance->RendererPtr->CleanUp();
+		Game::Instance->RendererPtr.reset();
 		Game::Instance.reset();
 	}
 
 	void CleanUp() {
-		DestroyWorld();
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
+		
+		glfwDestroyWindow(Window);
+		DestroyWorld();
 		glfwTerminate();
 	}
 
@@ -204,12 +200,13 @@ int main()
 
 	InitImGUI();
 	InitWorld(Ptr);
+	Ptr.reset();
 		
 	int display_w, display_h;
-	glfwGetFramebufferSize(Window.get(), &display_w, &display_h);
+	glfwGetFramebufferSize(Window, &display_w, &display_h);
 	glViewport(0, 0, display_w, display_h);
 
-	while (!glfwWindowShouldClose(Window.get()))
+	while (!glfwWindowShouldClose(Window))
 	{
 		glfwPollEvents();
 		Update();
@@ -217,7 +214,6 @@ int main()
 		RenderUI();
 		Render();
 	}
-
 	CleanUp();
 	return 0;
 }

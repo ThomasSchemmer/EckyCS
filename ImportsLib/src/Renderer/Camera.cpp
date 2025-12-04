@@ -16,7 +16,7 @@ void Camera::Update(float Delta)
     View = lookAt(Position, Position + GetForward(), GetUp());
 }
 
-Camera::Camera(const std::shared_ptr<GLFWwindow>& InWindow) :
+Camera::Camera(GLFWwindow* InWindow) :
     MoveSpeed(250), RotationSpeed(1),
     XAngle(glm::radians(45.0f)), YAngle(glm::radians(45.0f)),   
     LastMousePos(glm::vec2(0,0)), ZoomIndex(4)
@@ -26,11 +26,11 @@ Camera::Camera(const std::shared_ptr<GLFWwindow>& InWindow) :
     View = glm::mat4(1.0f);
     
     auto Origin = glm::vec3(0, 0, 0);
-    auto Dir = glm::vec3(0.35f, 0.7f, 0.61f);
-    Position = Origin + 100.0f * Dir;
+    auto Dir = normalize(glm::vec3(0.35f, 0.7f, 0.61f));
+    Position = Origin + 200.0f * Dir;
 
-    glfwSetWindowUserPointer(Window.get(), this);
-    glfwSetScrollCallback(Window.get(),
+    glfwSetWindowUserPointer(Window, this);
+    glfwSetScrollCallback(Window,
     [](GLFWwindow* win, double xOffset, double yOffset)
     {
         auto Cam = static_cast<Camera*>(glfwGetWindowUserPointer(win));
@@ -54,19 +54,19 @@ void Camera::OnDrawGizmos()
 void Camera::GetMouseCoords(glm::vec2& Pos) const
 {
     double MouseX, MouseY;
-    glfwGetCursorPos(Window.get(), &MouseX, &MouseY);
+    glfwGetCursorPos(Window, &MouseX, &MouseY);
     Pos.x = static_cast<float>(MouseX);
     Pos.y = static_cast<float>(MouseY);
 }
 
 int Camera::GetKey(int Key) const
 {
-    return glfwGetKey(Window.get(), Key);
+    return glfwGetKey(Window, Key);
 }
 
 int Camera::GetMouse(int Key) const
 {
-    return glfwGetMouseButton(Window.get(), Key);
+    return glfwGetMouseButton(Window, Key);
 }
 
 glm::vec3 Camera::GetForward() const
@@ -96,7 +96,7 @@ glm::vec3 Camera::GetEulerAngles() const
 glm::vec2 Camera::GetScreenExtent() const
 {
     int Width, Height;
-    glfwGetFramebufferSize(Window.get(), &Width, &Height);
+    glfwGetFramebufferSize(Window, &Width, &Height);
     auto Scale = GetScreenScale();
     float W = static_cast<float>(Width) / 2 * Scale.x;
     float H = static_cast<float>(Height) / 2 * Scale.y;
@@ -139,7 +139,7 @@ void Camera::ProcessMouseInput(float Delta)
     const bool bIsRightMouseDownNow = !bWasRightMouseDown && bIsRightMouseDown;
 
     double MouseX, MouseY;
-    glfwGetCursorPos(Window.get(), &MouseX, &MouseY);
+    glfwGetCursorPos(Window, &MouseX, &MouseY);
      
     if (bIsRightMouseDownNow)
     {
