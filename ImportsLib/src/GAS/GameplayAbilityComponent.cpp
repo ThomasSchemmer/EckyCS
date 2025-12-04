@@ -221,7 +221,7 @@ namespace GAS
         RemoveAbility(Effect->GrantedAbility);
     }
     
-    void GameplayAbilityComponent::RemoveEffect(shared_ptr<GameplayEffect> Effect)
+    void GameplayAbilityComponent::RemoveEffect(const shared_ptr<GameplayEffect>& Effect)
     {
         for (auto& Tag : Effect->GrantedTags.IDs)
         {
@@ -229,7 +229,7 @@ namespace GAS
         }
     }
 
-    void GameplayAbilityComponent::GrantAbility(shared_ptr<GameplayAbility> Ability)
+    void GameplayAbilityComponent::GrantAbility(const shared_ptr<GameplayAbility>& Ability)
     {
         GrantedAbilities.emplace(Ability->Type, Ability);
         Ability->AssignedToComponent = shared_from_this();
@@ -243,7 +243,7 @@ namespace GAS
         Ability->OnGranted();
     }
     
-    void GameplayAbilityComponent::RemoveAbility(shared_ptr<GameplayAbility> Ability)
+    void GameplayAbilityComponent::RemoveAbility(const shared_ptr<GameplayAbility>& Ability)
     {
         GrantedAbilities.erase(Ability->Type);
         OnAbilityRemoved.ForEach(Ability);

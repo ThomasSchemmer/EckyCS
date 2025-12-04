@@ -24,7 +24,7 @@ namespace GAS
         Ended
     };
     
-    class GameplayAbility : enable_shared_from_this<GameplayAbility>
+    class GameplayAbility : public enable_shared_from_this<GameplayAbility>
     {
     public:
         AbilityType Type;

@@ -198,6 +198,7 @@
     <ClCompile Include="src\GAS\Effects\GameplayEffectModifier.cpp" />
     <ClCompile Include="src\GAS\GameplayAbilityComponent.cpp" />
     <ClCompile Include="src\GAS\GameplayAbilitySystem.cpp" />
+    <ClCompile Include="src\Player\PlayerController.cpp" />
     <ClCompile Include="src\Renderer\Camera.cpp" />
     <ClCompile Include="src\Renderer\Renderer.cpp" />
     <ClCompile Include="src\Renderer\BaseShader.cpp" />
@@ -258,6 +259,7 @@
     <ClInclude Include="src\GAS\Tags\GameplayTags.h" />
     <ClInclude Include="src\GAS\Tags\GameplayTagSourceContainer.h" />
     <ClInclude Include="src\GAS\Tags\GameplayTagToken.h" />
+    <ClInclude Include="src\Player\PlayerController.h" />
     <ClInclude Include="src\Renderer\Camera.h" />
     <ClInclude Include="src\Renderer\Renderer.h" />
     <ClInclude Include="src\Renderer\BaseShader.h" />

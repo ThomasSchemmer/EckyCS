@@ -1,4 +1,4 @@
-﻿#version 430
+#version 430
 
 
 layout(std430, binding = 0) buffer PositionBuffer {

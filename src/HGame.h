@@ -2,24 +2,21 @@
 #include "Util/RenderTestService.h"
 #include "EckyCS/ECS.h"
 #include "EckyCS/Systems/ItemMovementSystem.h"
-#include "EckyCS/Systems/ItemRenderSystem.h"
 #include "GameService/Game.h"
+#include "Player/PlayerController.h"
+
+using namespace GAS;
+using namespace Player;
 
 class HGame : public Game
 {
 public:
-	HGame(const std::function<float()>& TF) : Game(TF)
-	{
-		auto Ecs = std::make_shared<ECS>();
-		Ecs->AddSystem(std::make_shared<ItemRenderSystem>());
-		Ecs->AddSystem(std::make_shared<ItemMovementSystem>());
-		
-		Services.push_back(Ecs);
-		Services.push_back(make_shared<RenderTestService>());
-	}
+    HGame(const std::function<float()>& TF);
 
-	void Update() override
-	{
-		Game::Update();
-	}
+    void Init(shared_ptr<GLFWwindow>& Window) override;
+
+    void Update() override
+    {
+        Game::Update();
+    }
 };
