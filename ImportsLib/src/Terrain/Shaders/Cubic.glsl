@@ -1,4 +1,4 @@
-﻿//https://github.com/jobtalle/CubicNoise/blob/master/glsl/cubicNoise.glsl
+//https://github.com/jobtalle/CubicNoise/blob/master/glsl/cubicNoise.glsl
 float random(vec3 x) {
     return fract(sin(x.x + x.y * 57.0 + x.z * 113.0) * 43758.5453);
 }
