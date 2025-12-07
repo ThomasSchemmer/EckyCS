@@ -41,6 +41,8 @@ build/
 
 x64/
 Tests/x64/
+ImportsLib/x64/
+RailShooterCpp/x64/
 
 # Other common files
 *.log
