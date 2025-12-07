@@ -37,7 +37,7 @@ namespace GameImports {
 		// the whole project shouldn't include glfw just for the time 
 		function<float()> TimeFunction;
 	public:
-		shared_ptr<GLFWwindow> WindowPtr; // TODO: remove when input system arrives
+		GLFWwindow* WindowPtr; // TODO: remove when input system arrives
 
 		GameState State = GameState::InGame;
 		GameMode Mode = GameMode::InGameMode;
@@ -56,7 +56,7 @@ namespace GameImports {
 		virtual ~Game();
 
 		/** Starts the initialization of the whole game - should be run before any frames*/
-		virtual void Init(shared_ptr<GLFWwindow>& Window);
+		virtual void Init(GLFWwindow* Window);
 
 		virtual void Update();
 		virtual void FixedUpdate() const;

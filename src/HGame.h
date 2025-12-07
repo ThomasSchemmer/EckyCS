@@ -13,7 +13,7 @@ class HGame : public Game
 public:
     HGame(const std::function<float()>& TF);
 
-    void Init(shared_ptr<GLFWwindow>& Window) override;
+    void Init(GLFWwindow* Window) override;
 
     void Update() override
     {
