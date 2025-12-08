@@ -2,7 +2,7 @@
 #include <filesystem>
 #include <fstream>
 
-#include "PlayerService.h"
+#include "../PlayerService.h"
 #include "VoxReader.h"
 #include "EckyCS/ECS.h"
 #include "EckyCS/Entities/EntityGenerator.h"

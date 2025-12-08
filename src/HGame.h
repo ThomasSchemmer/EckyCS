@@ -1,9 +1,9 @@
 ﻿#pragma once
-#include "Util/RenderTestService.h"
 #include "EckyCS/ECS.h"
 #include "EckyCS/Systems/ItemMovementSystem.h"
 #include "GameService/Game.h"
 #include "Player/PlayerController.h"
+#include "Util/RenderTestService.h"
 
 using namespace GAS;
 using namespace Player;

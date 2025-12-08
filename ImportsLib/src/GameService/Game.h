@@ -4,7 +4,7 @@
 #include <unordered_set>
 
 #include "GameService.h"
-#include <glew/include/GL/glew.h>
+#include <GL/glew.h>
 #include "GLFW/glfw3.h"
 
 class Renderer;

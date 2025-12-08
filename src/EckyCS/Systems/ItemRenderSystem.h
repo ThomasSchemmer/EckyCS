@@ -4,7 +4,7 @@
 #include "EckyCS/Systems/Rendering/EntityRenderSystem.h"
 #include "GameService/GameServiceDelegate.h"
 #include "../Components/ItemComponent.h"
-#include "../ext/imgui/imgui.h"
+#include "imgui.h"
 
 using namespace EckyCS;
 class ItemRenderSystem : public EntityRenderSystem<ItemEntity, ItemRenderData>

@@ -1,0 +1,34 @@
+﻿add_library(EckyCS
+        ECS.cpp
+        Components/Base/TransformComponent.h
+        Components/Component.cpp
+        Components/Component.h
+        Components/ComponentGroup.h
+        Components/ComponentGroupIdentifier.cpp
+        Components/ComponentGroupIdentifier.h
+        Components/ComponentGroupView.h
+        Components/IComponentGroupProvider.h
+        Entities/Entity.h
+        Entities/EntityGenerator.h
+        SparseSet/ISparseSet.cpp
+        SparseSet/SparseSet.cpp
+        SparseSet/SparseSetPage.h
+        SparseSet/SparseSet.h
+        SparseSet/ISparseSet.h
+        Systems/Rendering/EntityRenderSystem.h
+        Systems/Rendering/RenderData.cpp
+        Systems/Rendering/RenderData.h
+        Systems/System.h
+        Util/BitVector.cpp
+        Util/EckyCSHeader.h
+        Util/TypeInfo.h
+        Util/EntityID.h
+        Util/BitVector.h
+        Util/ComponentAllocator.h
+        Util/EntityID.cpp
+        Util/ComponentAllocator.cpp
+)
+target_link_libraries(EckyCS
+        PUBLIC
+        libglew_static
+)

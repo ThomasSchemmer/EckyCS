@@ -3,6 +3,7 @@
 #include "../ItemEntity.h"
 #include "../Components/ItemComponent.h"
 #include "EckyCS/Util/TypeInfo.h"
+#include "GL/glew.h"
 
 void ItemRenderData::Create(size_t InCount)
 {

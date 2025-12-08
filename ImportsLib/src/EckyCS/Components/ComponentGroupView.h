@@ -2,8 +2,8 @@
 #include <memory>
 #include <vector>
 
-#include "../Components/ComponentGroupIdentifier.h"
-#include "../GameService/Game.h"
+#include "ComponentGroupIdentifier.h"
+#include "GameService/Game.h"
 
 
 namespace EckyCS

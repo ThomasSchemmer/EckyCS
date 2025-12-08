@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <vcruntime_typeinfo.h>
+#include <typeinfo>
 
 namespace EckyCS
 {

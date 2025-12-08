@@ -1,23 +1,22 @@
 #include "main.h"
 
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 #include <iostream>
-#include <glew/include/GL/glew.h>
-#include "GLFW/include/GLFW/glfw3.h"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 #include "HGame.h"
-#include "../ext/imgui/imgui.h"
 #include "PlayerService.h"
-#include "Util/RenderTestService.h"
-#include "../ext/imgui/backends/imgui_impl_glfw.h"
-#include "../ext/imgui/backends/imgui_impl_opengl3.h"
-#include "GameService/Game.h"
 #include "Renderer/Renderer.h"
+#include "Util/RenderTestService.h"
 
 
 using namespace GameImports;
 namespace
 {
-	
+
     void APIENTRY GLDebugMessageCallback(
         GLenum source,
         GLenum type,
@@ -68,7 +67,7 @@ namespace
     }
 
 	GLFWwindow* Window;
-		
+
 	void error_callback(int error, const char* description)
 	{
 		fprintf(stderr, "Error: %s\n", description);
@@ -81,34 +80,34 @@ namespace
 	}
 
 	void InitWindow(shared_ptr<Renderer>& Ptr) {
-		
+
 		InitRenderDoc(Ptr);
 		if (!glfwInit())
 			return;
-		
+
 		glfwSetErrorCallback(error_callback);
 
 		// configure borderless maximized window
 		GLFWmonitor* Monitor = glfwGetPrimaryMonitor();
 		const GLFWvidmode* Mode = glfwGetVideoMode(Monitor);
-		glfwWindowHint(GLFW_DECORATED, GLFW_FALSE); 
+		glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 		glfwWindowHint(GLFW_DEPTH_BITS, 24);
-		
+
 		Window = glfwCreateWindow(Mode->width, Mode->height, "My Title", nullptr, nullptr);
 		if (!Window)
 			return;
-		
+
 		glfwSetWindowPos(Window, 0, 0);
 		glfwMakeContextCurrent(Window);
-		glfwSwapInterval(0); 
+		glfwSwapInterval(0);
 
 		glewInit();
-		
+
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_BACK);
@@ -136,16 +135,16 @@ namespace
 
 		auto Renderer = Game::GetRenderer();
 		Renderer->HandleCaptureStart();
-		
-		
+
+
 		glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
+
 		Renderer->Render();
-		
+
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-		
+
 		Renderer->HandleCaptureStop();
 		glfwSwapBuffers(Window);
 	}
@@ -178,13 +177,13 @@ namespace
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
-		
+
 		glfwDestroyWindow(Window);
 		DestroyWorld();
 		glfwTerminate();
 	}
 
-	
+
 }
 
 int main()
@@ -201,7 +200,7 @@ int main()
 	InitImGUI();
 	InitWorld(Ptr);
 	Ptr.reset();
-		
+
 	int display_w, display_h;
 	glfwGetFramebufferSize(Window, &display_w, &display_h);
 	glViewport(0, 0, display_w, display_h);

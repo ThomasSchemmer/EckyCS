@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <memory>
-#include <glew/include/GL/glew.h>
+#include <GL/glew.h>
 #include <renderdoc/renderdoc_app.h>
 
 #include "Camera.h"

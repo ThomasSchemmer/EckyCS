@@ -2,8 +2,8 @@
 #include <memory>
 #include <glm/glm.hpp>
 
-#include <glew/include/GL/glew.h>
-#include "GLFW/include/GLFW/glfw3.h"
+#include <GL/glew.h>
+#include "GLFW/glfw3.h"
 
 using namespace std;
 class Camera

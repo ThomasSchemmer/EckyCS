@@ -1,0 +1,24 @@
+﻿add_library(GAS
+        Abilities/AbilityType.h
+        Abilities/GameplayAbility.h
+        Abilities/GameplayAbilityInstanceable.h
+        Abilities/GameplayAbility.cpp
+        Attributes/Attribute.cpp
+        Attributes/AttributeSet.h
+        Attributes/AttributeType.h
+        Attributes/AttributeSet.cpp
+        Attributes/Attribute.h
+        Effects/GameplayEffect.cpp
+        Effects/GameplayEffectModifier.cpp
+        Effects/GameplayEffectModifier.h
+        Effects/GameplayEffect.h
+        Tags/GameplayTagContainer.h
+        Tags/GameplayTagSourceContainer.h
+        Tags/GameplayTagToken.h
+        Tags/GameplayTags.h
+        Tags/GameplayTagMask.h
+        GameplayAbilityComponent.cpp
+        GameplayAbilityComponent.h
+        GameplayAbilitySystem.h
+        GameplayAbilitySystem.cpp
+)
