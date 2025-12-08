@@ -153,14 +153,13 @@ namespace EckyCS
 
     template <typename>
     struct ExtractViewArgs;
-    
+
     template <typename System, typename... T>
-    /** Helps the compiler auto-extract templated types */
-    struct ExtractViewArgs<bool (System::*)(ComponentGroupIdentifier, size_t, View<T...>&)>
+    struct ExtractViewArgs<bool (System::*)(ComponentGroupIdentifier, std::size_t, View<T...>&)>
     {
         using Types = std::tuple<T...>;
     };
-    
+
     template <typename Tuple>
     /** Helper struct to go from Tuple<A, B, C> to A, B, C*/
     struct UnpackTuple;

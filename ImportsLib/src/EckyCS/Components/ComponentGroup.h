@@ -79,7 +79,7 @@ namespace EckyCS
          */
         void ForEachEntity(System& system)
         {
-            using MethodT = decltype((Method));
+            using MethodT = decltype(Method);
             using TargetTuple = typename ExtractViewArgs<MethodT>::Types;
 
             // Forward to a helper to unpack the tuple
