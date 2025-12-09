@@ -206,7 +206,7 @@ namespace Util
         glUniform2iv(ID, 1, value_ptr(Value));
     }
 
-    void ShaderHelper:: ShaderHelper::SetUniformTexture(const string& UniformName, unsigned int TextureID, GLint Slot, unsigned int Program) 
+    void ShaderHelper::SetUniformTexture(const string& UniformName, unsigned int TextureID, GLint Slot, unsigned int Program) 
     {
         const int ID = glGetUniformLocation(Program, UniformName.c_str());
         glUniform1i(ID, Slot);

@@ -5,6 +5,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Camera.h"
+#include "Light.h"
 
 #include "../Util/ShaderHelper.h"
 using namespace Util;
@@ -37,7 +38,7 @@ void BaseShader::Use()
     glUseProgram(Program);
 }
 
-void BaseShader::UpdateVars(const shared_ptr<Camera>& Camera)
+void BaseShader::UpdateVars(const shared_ptr<Camera>& Camera, const shared_ptr<Light>& Light) const
 {
 
     float Time = static_cast<float>(glfwGetTime());
@@ -50,7 +51,8 @@ void BaseShader::UpdateVars(const shared_ptr<Camera>& Camera)
     ShaderHelper::SetUniformM4("Transform", Transform, Program);
     ShaderHelper::SetUniformM4("Projection", Camera->Projection, Program);
     ShaderHelper::SetUniformM4("View", Camera->View, Program);
-    ShaderHelper::SetUniform3fv("SunPos", Camera->SunPos, Program);
+    ShaderHelper::SetUniform3fv("LightPos", Light->Position, Program);
+    ShaderHelper::SetUniform3fv("LightDir", Light->GetForward(), Program);
     ShaderHelper::SetUniform3fv("CamPos", Camera->Position, Program);
 }
 

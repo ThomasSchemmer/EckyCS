@@ -8,17 +8,17 @@ in vec2 UV;
 
 uniform sampler2D ContainerTex;
 uniform sampler2D CornTex;
-uniform vec3 SunPos;
+uniform vec3 LightPos;
+uniform vec3 LightDir;
 uniform vec3 CamPos;
 
 float GetLight(){
     float ambi = 0.1;
     vec3 Norm = normalize(WorldNormals.xyz);
-    vec3 lightDir = normalize(SunPos - WorldPos.xyz);
-    float diff = max(dot(Norm, lightDir), 0.0);
+    float diff = max(dot(Norm, LightDir), 0.0);
     
     vec3 viewDir = normalize(CamPos - WorldPos.xyz);
-    vec3 reflectDir = reflect(-lightDir, Norm);
+    vec3 reflectDir = reflect(-LightDir, Norm);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
     
     return spec + diff + ambi;
@@ -27,7 +27,7 @@ float GetLight(){
 void main()
 {
     float a = GetLight();
-    FragColor = vec4(WorldNormals.xyz, 1);
+    FragColor = vec4(WorldNormals.xyz * a, 1);
     return;
     //vec4 ContainerColor = texture(ContainerTex, UV);
     //vec4 CornColor = texture(CornTex, UV);

@@ -202,9 +202,6 @@ int main()
 	InitWorld(Ptr);
 	Ptr.reset();
 		
-	int display_w, display_h;
-	glfwGetFramebufferSize(Window, &display_w, &display_h);
-	glViewport(0, 0, display_w, display_h);
 
 	while (!glfwWindowShouldClose(Window))
 	{

@@ -10,7 +10,7 @@ bool GA_SelfPoison::ShouldActivate()
     if (!GameplayAbility::ShouldActivate())
         return false;
 
-    return glfwGetKey(GameImports::Game::Instance->WindowPtr.get(), GLFW_KEY_X) == GLFW_PRESS;
+    return glfwGetKey(GameImports::Game::Instance->WindowPtr, GLFW_KEY_X) == GLFW_PRESS;
 }
 
 void GA_SelfPoison::OnActivate()

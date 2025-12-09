@@ -12,9 +12,12 @@ layout(std430, binding = 1) buffer NormalBuffer {
 uniform mat4 Transform; 
 uniform mat4 View; 
 uniform mat4 Projection; 
+uniform mat4 LightView; 
+uniform mat4 LightProjection; 
 out vec4 WorldPos;
 out vec4 WorldNormals;
 out vec2 UV;
+out vec4 PosLightClip;
 
 const int Size = 100;
 
@@ -26,4 +29,5 @@ void main()
     WorldNormals = Transform * vec4(normal.xyz, 1);
     UV = vec2(pos.xz / float(Size));
     gl_Position = Projection * View * WorldPos;
+    PosLightClip = LightProjection * LightView * WorldPos;
 }

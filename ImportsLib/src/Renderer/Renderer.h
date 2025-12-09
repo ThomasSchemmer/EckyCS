@@ -4,7 +4,9 @@
 #include <renderdoc/renderdoc_app.h>
 
 #include "Camera.h"
+#include "Light.h"
 #include "GLFW/glfw3.h"
+#include "Passes/RenderPass.h"
 
 
 namespace TTerrain
@@ -23,23 +25,44 @@ class Renderer
 public:
 
     Renderer() = default;
-    ~Renderer();
+    ~Renderer() = default;
     void Init(GLFWwindow* Window);
     void InitRenderDoc();
-    void Update(float Delta);
+    void Update(float Delta) const;
     void Render();
     void HandleCaptureStart() const;
     void HandleCaptureStop() const;
-    void CleanUp() const;
-    shared_ptr<Camera> GetCamera() const;
+    void CleanUp();
+    std::shared_ptr<Camera> GetCamera() const;
+    std::shared_ptr<Light> GetLight();
+    RenderPassType GetCurrentRenderPassType() const;
+
+    template<typename T>
+    requires std::is_base_of_v<RenderPass, T>
+    T* GetRenderPass()
+    {
+        for (auto& Pass : RenderPasses)
+        {
+            auto TPass = dynamic_cast<T*>(Pass.get());
+            if (!TPass)
+                continue;
+
+            return TPass;
+        }
+        return nullptr;
+    }
 
 private:
     RENDERDOC_API_1_1_2* RDocAPI = nullptr;
     std::shared_ptr<Camera> Camera;
+    std::shared_ptr<Light> LightPtr;
     std::shared_ptr<TTerrain::TerrainManager> Terrain;
     std::shared_ptr<BaseShader> ShaderPtr;
+    std::vector<std::shared_ptr<RenderPass>> RenderPasses;
+    std::shared_ptr<RenderPass> CurrentRenderPass;
+
+    void InitRenderPasses(GLFWwindow* Window);
     
-    void CreateVertexBuffer();
 #ifdef _WIN32
     void LoadRenderDocWindows();
     void UnloadRenderDocWindows() const;

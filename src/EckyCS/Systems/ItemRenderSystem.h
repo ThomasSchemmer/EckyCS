@@ -5,6 +5,7 @@
 #include "GameService/GameServiceDelegate.h"
 #include "../Components/ItemComponent.h"
 #include "../ext/imgui/imgui.h"
+#include "Renderer/Renderer.h"
 
 using namespace EckyCS;
 class ItemRenderSystem : public EntityRenderSystem<ItemEntity, ItemRenderData>
@@ -15,9 +16,14 @@ public:
         if (!Ecs)
             return;
 
+        auto Light = Game::Instance->RendererPtr->GetLight();
         TotalCount = 0;
-        EntityAction Action = [this](ComponentGroupIdentifier GroupID, size_t Count, View<ItemComponent, TransformComponent>& Data) -> bool {
-            TotalCount += Count; 
+        EntityAction Action = [this, &Light](ComponentGroupIdentifier GroupID, size_t Count, View<ItemComponent, TransformComponent>& Data) -> bool {
+            TotalCount += Count;
+            auto Transforms = Get<TransformComponent>(Data);
+            Transforms[0].PosX = Light->Position.x;
+            Transforms[0].PosY = Light->Position.y;
+            Transforms[0].PosZ = Light->Position.z;
             return this->Register(GroupID, Count, Data);
         };
         Ecs->ForEach<ItemComponent, TransformComponent>(Action);

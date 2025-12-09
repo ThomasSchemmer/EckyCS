@@ -7,20 +7,26 @@
 #include "TerrainData.h"
 #include "../Renderer/Camera.h"
 #include "../Util/ShaderHelper.h"
+#include "../GameService/Game.h"
 
 #include "TerrainShader.h"
+#include "../Renderer/Renderer.h"
+#include "../Renderer/Passes/ShadowPass.h"
 
 using namespace std;
 using namespace Util;
+using namespace GameImports;
 
 namespace TTerrain
 {
-    TerrainManager::TerrainManager(const shared_ptr<Camera>& InCamPtr)
+    TerrainManager::TerrainManager()
     {
-        CamPtr = InCamPtr;
-        Shader = make_shared<TerrainShader>(TerrainData::TexSize, TerrainData::TexSize);
+        RendererPtr = Game::Instance->RendererPtr;
+        CamPtr = RendererPtr->GetCamera();
+        LightPtr = RendererPtr->GetLight();
+        Shader = make_shared<TerrainShader>();
         CreateCompute();
-        CreateTerrainAt(glm::vec3(0));
+        CreateTerrainAt(glm::vec3(-5, 0, -5));
     }
 
     void TerrainManager::Render()
@@ -118,7 +124,7 @@ namespace TTerrain
         for (const auto& TData : Datas)
         {
             TData.ApplyToSettings(Settings);
-            Shader->UpdateVars(CamPtr, Settings);
+            Shader->UpdateVars(Settings);
             TData.RenderTriangles();
         }
     }
@@ -246,7 +252,8 @@ namespace TTerrain
 
     TerrainShaderSettings TerrainManager::GetStandardSettings() const
     {
-        TerrainShaderSettings Settings;
+        static TerrainShaderSettings Settings;
+        Settings.RenderPassType = RendererPtr->GetCurrentRenderPassType();
         Settings.BrushPos = CamPtr->GetMouseWorldPos();
         Settings.BrushSize = BrushSize;
         Settings.TexSize = glm::ivec2(TerrainData::TexSize);
@@ -254,6 +261,10 @@ namespace TTerrain
         Settings.GrassColor = GrassColor;
         Settings.GrassScale = GrassScale;
         Settings.GrassQuantize = GrassQuantize;
+        Settings.Camera = CamPtr;
+        Settings.Light = LightPtr;
+        Settings.ShadowMap = RendererPtr->GetRenderPass<ShadowPass>()->DepthTex;
+        
         // will be filled by the different chunks
         Settings.GlobalWorldPos = glm::vec3(0);
         Settings.VertexBuffer = 0;
@@ -261,6 +272,7 @@ namespace TTerrain
         Settings.HeightBuffer = 0;
         Settings.SelectionBuffer = 0;
         Settings.WorldSize = glm::vec3(0);
+        
         return Settings;
     }
 
@@ -289,7 +301,8 @@ namespace TTerrain
     void TerrainManager::LoadData()
     {
         Datas.clear();
-        
+
+        // basically the reverse of @SaveData()
         std::ifstream File("output.bin", std::ios::binary);
 
         File.seekg(0, std::ios::end);

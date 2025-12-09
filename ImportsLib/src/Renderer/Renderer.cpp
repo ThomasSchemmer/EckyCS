@@ -14,23 +14,31 @@
 #define GLFW_INCLUDE_NONE
 #include "glfw/include/GLFW/glfw3.h"
 #include "Renderer.h"
-#include "Utils.h"
 #include "../../../ext/imgui/imgui.h"
 #include "../EckyCS/ECS.h"
 #include "../EckyCS/Systems/Rendering/EntityRenderSystem.h"
 #include "../GameService/Game.h"
 #include "../Terrain/TerrainManager.h"
+#include "Passes/BasePass.h"
+#include "Passes/ShadowPass.h"
+#include "Util/Utils.h"
 using namespace EckyCS;
 
-Renderer::~Renderer() {}
 
 void Renderer::Init(GLFWwindow* Window)
 {
     ShaderPtr = make_shared<BaseShader>();
     Camera = make_shared<class Camera>(Window);
-    Terrain = make_shared<TTerrain::TerrainManager>(Camera);
+    LightPtr = make_shared<Light>(
+        glm::vec3(10),
+        glm::vec3(glm::radians(125.0f), glm::radians(140.0f), 0),
+        glm::vec3(1),
+        Window,
+        Camera
+    );
+    Terrain = make_shared<TTerrain::TerrainManager>();
 
-    CreateVertexBuffer();
+    InitRenderPasses(Window);
 }
 
 
@@ -41,9 +49,20 @@ void Renderer::InitRenderDoc()
 #endif
 }
 
-void Renderer::Update(float Delta)
+void Renderer::InitRenderPasses(GLFWwindow* Window)
+{
+    auto SPass = make_shared<ShadowPass>();
+    SPass->Create(Window);
+    auto BPass = make_shared<BasePass>();
+    BPass->Create(Window);
+    RenderPasses.emplace_back(SPass);
+    RenderPasses.emplace_back(BPass);
+}
+
+void Renderer::Update(float Delta) const
 {
     Camera->Update(Delta);
+    LightPtr->Update(Delta);
     Terrain->Update(Delta);
 }
 
@@ -51,25 +70,33 @@ void Renderer::Render()
 {
     GL_CHECK_ERROR();
 
-    Terrain->Render();
-    
-    ShaderPtr->Use();
-    ShaderPtr->UpdateVars(Camera);
     auto ServicePtr = Game::GetService(GameServiceType::EntityComponentSystem);
     auto Ecs = reinterpret_pointer_cast<ECS>(ServicePtr);
     vector<shared_ptr<System>> Systems;
-	if (!Ecs || !Ecs->TryGetSystems<BaseRenderSystem>(OUT Systems))
-	    return;
-
-    for (auto& System : Systems)
-    {
-        auto RenderSystem = dynamic_pointer_cast<BaseRenderSystem>(System);
-        if (!RenderSystem)
-            continue;
-        
-        RenderSystem->Render();
-    }
+    Ecs->TryGetSystems<BaseRenderSystem>(OUT Systems);
     
+    for (auto& Pass : RenderPasses)
+    {
+        Pass->Use();
+        CurrentRenderPass = Pass;
+        
+        Terrain->Render();
+    
+        ShaderPtr->Use();
+        ShaderPtr->UpdateVars(Camera, LightPtr);
+
+        for (auto& System : Systems)
+        {
+            auto RenderSystem = dynamic_pointer_cast<BaseRenderSystem>(System);
+            if (!RenderSystem)
+                continue;
+        
+            RenderSystem->Render();
+        }
+        
+        CurrentRenderPass = nullptr;
+        Pass->UnUse();
+    }
     
     for (auto& System : Systems)
     {        
@@ -77,6 +104,7 @@ void Renderer::Render()
     }
     Camera->OnDrawGizmos();
     Terrain->OnDrawGizmos();
+    LightPtr->OnDrawGizmos();
 }
 
 void Renderer::HandleCaptureStart() const
@@ -106,10 +134,15 @@ void Renderer::HandleCaptureStop() const
     RDocAPI->LaunchReplayUI(1, pathBuffer);
 }
 
-void Renderer::CleanUp() const
+void Renderer::CleanUp()
 {
     Terrain->CleanUp();
     ShaderPtr->CleanUp();
+    for (auto& Pass : RenderPasses)
+    {
+        Pass->CleanUp();
+    }
+    RenderPasses.clear();
 #ifdef _WIN32
     UnloadRenderDocWindows();
 #endif
@@ -120,28 +153,14 @@ shared_ptr<Camera> Renderer::GetCamera() const
     return Camera;
 }
 
-void Renderer::CreateVertexBuffer()
+shared_ptr<Light> Renderer::GetLight()
 {
-    //glGenVertexArrays(1, &VAO);
-    //glGenBuffers(1, &VertexBO);
-//
-    //glBindVertexArray(VAO);
-    //glBindBuffer(GL_ARRAY_BUFFER, VertexBO);
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
-    //// specify layout, 0: vertex pos (vec3), 1: color (vec3), 2: uv (vec2)
-    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    //glEnableVertexAttribArray(0);
-    //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    //glEnableVertexAttribArray(1);
-    //glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    //glEnableVertexAttribArray(2);
-    //
-    //glGenBuffers(1, &PositionBO);
-    //glBindBuffer(GL_ARRAY_BUFFER, PositionBO);
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 100, Positions, GL_STATIC_DRAW);
-    //glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-    //glEnableVertexAttribArray(3);
-    //glVertexAttribDivisor(3, 1);  
+    return LightPtr;
+}
+
+RenderPassType Renderer::GetCurrentRenderPassType() const
+{
+    return CurrentRenderPass ? CurrentRenderPass->Type : RenderPassType::Invalid;
 }
 
 #ifdef _WIN32

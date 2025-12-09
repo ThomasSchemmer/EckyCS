@@ -4,6 +4,7 @@
 #include <glew/include/GL/glew.h>
 #include <glm/glm.hpp>
 
+class Light;
 class Camera;
 /**
  * Class changing the actual display of elements on the screen
@@ -21,7 +22,7 @@ public:
     ~BaseShader();
 
     void Use();
-    void UpdateVars(const shared_ptr<Camera>& Camera);
+    void UpdateVars(const shared_ptr<Camera>& Camera, const shared_ptr<Light>& Light) const;
     void CleanUp() const;
 
 private:

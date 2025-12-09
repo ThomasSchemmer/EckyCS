@@ -38,9 +38,6 @@ public:
         ComponentGroupIdentifier GroupID;
         ItemComponent Comp;
         TransformComponent Transform;
-        Transform.PosX = 0;
-        Transform.PosY = 5;
-        Transform.PosZ = 0;
         EntityGenerator::TryCreate<Plant>(OUT GroupID, OUT ID, Comp, Transform);
     }
 

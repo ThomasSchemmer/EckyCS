@@ -46,8 +46,10 @@ public:
 
         glm::vec2 Pos;
         Cam->GetMouseCoords(Pos);
+        auto WorldPos = Cam->GetMouseWorldPos();
         ImGui::Begin("IMS");
         ImGui::Text("Pos: %.2f|%.2f", Pos.x, Pos.y);
+        ImGui::Text("World: %.2f|%.2f|%.2f", WorldPos.x, WorldPos.y, WorldPos.z);
         ImGui::Text("Enabled: %s", (bShouldTrigger ? "true" : "false"));
         ImGui::End();
     }

@@ -18,7 +18,7 @@ HGame::HGame(const std::function<float()>& TF) : Game(TF)
     Services.push_back(GAS);
 }
 
-void HGame::Init(shared_ptr<GLFWwindow>& Window)
+void HGame::Init(GLFWwindow* Window)
 {
     Game::Init(Window);
 

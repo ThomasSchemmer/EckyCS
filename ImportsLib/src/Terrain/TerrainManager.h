@@ -8,6 +8,8 @@
 #include "TerrainData.h"
 
 
+class Renderer;
+class Light;
 class Camera;
 
 namespace TTerrain
@@ -24,7 +26,7 @@ namespace TTerrain
     class TerrainManager
     {
     public:
-        TerrainManager(const shared_ptr<Camera>& CamPtr);
+        TerrainManager();
         ~TerrainManager() = default;
 
         void Render();
@@ -36,7 +38,9 @@ namespace TTerrain
         //todo: this is kinda inefficient, better to have one big buffer instead of clustering
         vector<TerrainData> Datas;
         shared_ptr<Camera> CamPtr;
+        shared_ptr<Light> LightPtr;
         shared_ptr<TerrainShader> Shader;
+        shared_ptr<Renderer> RendererPtr;
 
         bool bIsEditing = false;
         bool bIsSelecting = false;
