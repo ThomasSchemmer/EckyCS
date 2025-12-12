@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include <cstdint>
 
+class Gizmos;
+
 namespace EckyCS
 {
     class ECS;
@@ -16,7 +18,7 @@ namespace EckyCS
         virtual void Tick(float Delta){}
         virtual void FixedTick(float Delta){}
         virtual void LateTick(float Delta){}
-        virtual void OnDrawGizmos() {}
+        virtual void OnDrawGizmos(const shared_ptr<Gizmos>& Gizmos) {}
 
         System() = default;
         virtual ~System() = default;

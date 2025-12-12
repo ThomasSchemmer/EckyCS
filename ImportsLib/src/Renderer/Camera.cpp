@@ -6,6 +6,7 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/quaternion_geometric.hpp>
 
+#include "Gizmos.h"
 #include "imgui/imgui.h"
 using namespace std;
 
@@ -38,14 +39,9 @@ Camera::Camera(GLFWwindow* InWindow) :
         auto Cam = static_cast<Camera*>(glfwGetWindowUserPointer(win));
         Cam->ScrollCallback(xOffset, yOffset);
     });
-    
-    // todo: delete
-    ClipPlanes = glm::vec2(0, 20);
-    Position = glm::vec3(0, 10, 0);
-    EulerAngles = glm::vec3(glm::radians(90.0f), glm::radians(-90.0f), 0);
 }
 
-void Camera::OnDrawGizmos()
+void Camera::OnDrawGizmos(const shared_ptr<Gizmos>& Gizmos)
 {
     auto Forward = GetForward();
     ImGui::Begin("Transform");
@@ -82,8 +78,8 @@ void Camera::ProcessInput(float Delta)
 
 void Camera::ProcessWASDInput(float Delta)
 {
-    const auto Forward = glm::vec3(1, 0, 1);
-    const auto Right = glm::vec3(1, 0, -1);
+    constexpr auto Forward = glm::vec3(1, 0, 1);
+    constexpr auto Right = glm::vec3(1, 0, -1);
 
     auto Zoom = ZoomSteps[ZoomIndex];
     Position -= GetKey(GLFW_KEY_W) == GLFW_PRESS ?
@@ -151,7 +147,7 @@ glm::vec3 Camera::GetScreenWorldPos(glm::vec2 ScreenPos) const
     glm::mat4 R = glm::rotate(glm::mat4(1.f), EulerAngles.y, glm::vec3(0,1,0));
     auto MousePosRotated = glm::vec3(R * glm::vec4(Temp, 1.f));
     
-    // now that its translated to world space we can add the camera offset to it
+    // now that it's translated to world space we can add the camera offset to it
     auto Origin = Position;
     auto Dir = GetForward();
     auto PlaneOrigin = glm::vec3(0,0,0);

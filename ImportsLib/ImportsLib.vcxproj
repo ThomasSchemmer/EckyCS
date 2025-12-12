@@ -200,10 +200,89 @@
     <ClCompile Include="src\GAS\GameplayAbilitySystem.cpp" />
     <ClCompile Include="src\Player\PlayerController.cpp" />
     <ClCompile Include="src\Renderer\Camera.cpp" />
+    <ClCompile Include="src\Renderer\Gizmos.cpp" />
     <ClCompile Include="src\Renderer\Light.cpp" />
     <ClCompile Include="src\Renderer\Passes\RenderPass.cpp" />
+    <ClCompile Include="src\Renderer\Passes\ShadowPass.cpp" />
     <ClCompile Include="src\Renderer\Renderer.cpp" />
-    <ClCompile Include="src\Renderer\BaseShader.cpp" />
+    <ClCompile Include="src\Renderer\Shaders\BaseShader.cpp">
+      <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <Optimization>Disabled</Optimization>
+      <SupportJustMyCode>true</SupportJustMyCode>
+      <AssemblerOutput>NoListing</AssemblerOutput>
+      <AssemblerListingLocation>x64\Debug\</AssemblerListingLocation>
+      <UndefineAllPreprocessorDefinitions>false</UndefineAllPreprocessorDefinitions>
+      <BrowseInformation>false</BrowseInformation>
+      <BrowseInformationFile>x64\Debug\</BrowseInformationFile>
+      <CompileAs>Default</CompileAs>
+      <UseDynamicDebugging>false</UseDynamicDebugging>
+      <ConformanceMode>true</ConformanceMode>
+      <DiagnosticsFormat>Column</DiagnosticsFormat>
+      <DisableLanguageExtensions>false</DisableLanguageExtensions>
+      <ErrorReporting>Prompt</ErrorReporting>
+      <ExpandAttributedSource>false</ExpandAttributedSource>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <EnableASAN>false</EnableASAN>
+      <EnableFuzzer>false</EnableFuzzer>
+      <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <EnableVectorLength>NotSet</EnableVectorLength>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
+      <GenerateModuleDependencies>false</GenerateModuleDependencies>
+      <GenerateSourceDependencies>false</GenerateSourceDependencies>
+      <GenerateXMLDocumentationFiles>false</GenerateXMLDocumentationFiles>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+      <MinimalRebuild>false</MinimalRebuild>
+      <ModuleDependenciesFile>x64\Debug\</ModuleDependenciesFile>
+      <ModuleOutputFile>x64\Debug\</ModuleOutputFile>
+      <OmitDefaultLibName>false</OmitDefaultLibName>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <ObjectFileName>x64\Debug\</ObjectFileName>
+      <CallingConvention>Cdecl</CallingConvention>
+      <ProgramDataBaseFileName>C:\Programming\RailShooterCpp\x64\Debug\ImportsLib.pdb</ProgramDataBaseFileName>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>x64\Debug\ImportsLib.pch</PrecompiledHeaderOutputFile>
+      <PreprocessToFile>false</PreprocessToFile>
+      <PreprocessKeepComments>false</PreprocessKeepComments>
+      <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
+      <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+      <ShowIncludes>false</ShowIncludes>
+      <SourceDependenciesFile>x64\Debug\</SourceDependenciesFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <SmallerTypeCheck>false</SmallerTypeCheck>
+      <SpectreMitigation>false</SpectreMitigation>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <TrackerLogDirectory>x64\Debug\ImportsLib.tlog\</TrackerLogDirectory>
+      <TranslateIncludes>false</TranslateIncludes>
+      <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <UseFullPaths>true</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <XMLDocumentationFileName>x64\Debug\</XMLDocumentationFileName>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <IntelJCCErratum>false</IntelJCCErratum>
+      <BuildStlModules>false</BuildStlModules>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <ExternalWarningLevel>InheritWarningLevel</ExternalWarningLevel>
+      <TreatExternalTemplatesAsInternal>true</TreatExternalTemplatesAsInternal>
+      <DisableAnalyzeExternal>false</DisableAnalyzeExternal>
+      <PreprocessorDefinitions>GLEW_STATIC;_DEBUG;_LIB;_UNICODE;UNICODE;</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>C:\Programming\RailShooterCpp\ImportsLib\ext;C:\Programming\RailShooterCpp\ext\;C:\Programming\RailShooterCpp\ImportsLib\ext\glew\include;C:\Programming\RailShooterCpp\ImportsLib\ext\glfw\include;C:\Programming\RailShooterCpp\ImportsLib\src\Renderer\Shaders;C:\Programming\RailShooterCpp\ImportsLib\src\Terrain\Shaders</AdditionalIncludeDirectories>
+      <LibCompiled>true</LibCompiled>
+    </ClCompile>
+    <ClCompile Include="src\Renderer\Shaders\DepthShader.cpp" />
     <ClCompile Include="src\Renderer\Util\Projector.cpp" />
     <ClCompile Include="src\Renderer\Util\Transform.cpp" />
     <ClCompile Include="src\Terrain\TerrainData.cpp" />
@@ -265,12 +344,14 @@
     <ClInclude Include="src\GAS\Tags\GameplayTagToken.h" />
     <ClInclude Include="src\Player\PlayerController.h" />
     <ClInclude Include="src\Renderer\Camera.h" />
+    <ClInclude Include="src\Renderer\Gizmos.h" />
     <ClInclude Include="src\Renderer\Light.h" />
     <ClInclude Include="src\Renderer\Passes\BasePass.h" />
     <ClInclude Include="src\Renderer\Passes\RenderPass.h" />
     <ClInclude Include="src\Renderer\Passes\ShadowPass.h" />
     <ClInclude Include="src\Renderer\Renderer.h" />
-    <ClInclude Include="src\Renderer\BaseShader.h" />
+    <ClInclude Include="src\Renderer\Shaders\BaseShader.h" />
+    <ClInclude Include="src\Renderer\Shaders\DepthShader.h" />
     <ClInclude Include="src\Renderer\Util\Projector.h" />
     <ClInclude Include="src\Renderer\Util\Transform.h" />
     <ClInclude Include="src\Renderer\Util\Utils.h" />
@@ -282,14 +363,18 @@
     <ClInclude Include="src\Util\ShaderHelper.h" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="src\Renderer\Shaders\BaseFragmentShader.frag" />
-    <EmbeddedResource Include="src\Renderer\Shaders\BaseVertexShader.vert" />
+    <Content Include="src\Renderer\Shaders\glsl\BlurTex.comp" />
+    <Content Include="src\Renderer\Shaders\glsl\DepthFragmentShader.frag" />
+    <Content Include="src\Renderer\Shaders\glsl\DepthVertexShader.vert" />
+    <Content Include="src\Renderer\Shaders\glsl\Shadow.glsl" />
     <Content Include="src\Terrain\Shaders\Cubic.glsl" />
     <Content Include="src\Terrain\Shaders\TerrainFragmentShader.frag" />
     <Content Include="src\Terrain\Shaders\TerrainMesh.comp" />
     <Content Include="src\Terrain\Shaders\TerrainPaint.comp" />
     <Content Include="src\Terrain\Shaders\TerrainSelect.comp" />
     <Content Include="src\Terrain\Shaders\TerrainVertexShader.vert" />
+    <EmbeddedResource Include="src\Renderer\Shaders\glsl\BaseFragmentShader.frag" />
+    <EmbeddedResource Include="src\Renderer\Shaders\glsl\BaseVertexShader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -12,6 +12,7 @@ public:
         Type = RenderPassType::BasePass; 
         bCreateFrameBuffer = false;
         glfwGetFramebufferSize(Window, &Width, &Height);
+        Name = "BasePass";
         RenderPass::Create(Window);
     }
 };

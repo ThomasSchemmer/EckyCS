@@ -7,6 +7,8 @@
 #include "Util/Projector.h"
 #include "Util/Transform.h"
 
+class Gizmos;
+
 class Camera : public Projector
 {
 public:
@@ -14,7 +16,7 @@ public:
 
     void Update(float Delta);
     Camera(GLFWwindow* Window);
-    virtual void OnDrawGizmos();
+    virtual void OnDrawGizmos(const std::shared_ptr<Gizmos>& Gizmos);
 
     void GetMouseCoords(glm::vec2& Pos) const;
     int GetKey(int Key) const;

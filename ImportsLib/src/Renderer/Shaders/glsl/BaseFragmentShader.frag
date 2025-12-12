@@ -6,13 +6,11 @@ in vec4 WorldPos;
 in float Type;
 in vec2 UV;
 
-uniform sampler2D ContainerTex;
-uniform sampler2D CornTex;
 uniform vec3 LightPos;
 uniform vec3 LightDir;
 uniform vec3 CamPos;
 
-float GetLight(){
+float GetLight(void){
     float ambi = 0.1;
     vec3 Norm = normalize(WorldNormals.xyz);
     float diff = max(dot(Norm, LightDir), 0.0);
@@ -29,8 +27,4 @@ void main()
     float a = GetLight();
     FragColor = vec4(WorldNormals.xyz * a, 1);
     return;
-    //vec4 ContainerColor = texture(ContainerTex, UV);
-    //vec4 CornColor = texture(CornTex, UV);
-    //vec4 TexColor = UV.x > .5 ? CornColor : ContainerColor;
-    //FragColor = mix(TexColor, Color, .5);
 } 

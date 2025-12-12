@@ -5,6 +5,7 @@
 
 #include "Util/Projector.h"
 
+class Gizmos;
 class Camera;
 
 class Light : public Projector
@@ -14,7 +15,7 @@ public:
 
     Light(glm::vec3 InPosition, glm::vec3 InEuler, glm::vec3 InColor, GLFWwindow* Window, const std::shared_ptr<Camera>& Cam);
 
-    void OnDrawGizmos();
+    void OnDrawGizmos(const std::shared_ptr<Gizmos>& Gizmos);
     void Update(float delta);
 
 private:

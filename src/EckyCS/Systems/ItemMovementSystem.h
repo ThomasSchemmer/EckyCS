@@ -39,7 +39,7 @@ public:
         Cam = Game::GetRenderer()->GetCamera();
     }
 
-    void OnDrawGizmos() override
+    void OnDrawGizmos(const shared_ptr<Gizmos>& Gizmos) override
     {
         if (!Cam)
             return;

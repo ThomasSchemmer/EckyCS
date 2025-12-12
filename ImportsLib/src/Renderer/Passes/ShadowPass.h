@@ -1,30 +1,22 @@
 ﻿#pragma once
 #include "RenderPass.h"
 
+/**
+ * Handler for all shadow generation calculations
+ * Uses variance shadow maps, so we render first into a depth tex
+ * and then blur.
+ * Todo: Make depth SSBO
+ */
 class ShadowPass : public RenderPass
 {
 public:
-    
-    void Create(GLFWwindow* Window) override
-    {
-        Type = RenderPassType::ShadowPass; 
-        Width = 1024;
-        Height = 1024;
-        ClearFlags = GL_DEPTH_BUFFER_BIT;
-        DepthTex = CreateDepthTexture(Width, Height);
-        RenderPass::Create(Window);
-    }
+    void Create(GLFWwindow* Window) override;
+    void OnAfterRender() override;
+    void CleanUp() const override;
 
-    void Use() const override
-    {
-        RenderPass::Use();
-        //glCullFace(GL_FRONT);
-    }
+private:
+    GLuint BlurTexCompute = 0;
+    GLuint TempOut = 0;
 
-    void UnUse() const override
-    {
-        RenderPass::UnUse();
-        //glCullFace(GL_BACK);
-    }
-
+    const wchar_t* BlurTexComputeID = L"BLUR_TEX_COMPUTE_SHADER";
 };

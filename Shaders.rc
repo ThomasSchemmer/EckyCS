@@ -1,5 +1,8 @@
-BASE_VERTEX_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/BaseVertexShader.vert"
-BASE_FRAGMENT_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/BaseFragmentShader.frag"
+BASE_VERTEX_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/BaseVertexShader.vert"
+BASE_FRAGMENT_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/BaseFragmentShader.frag"
+
+DEPTH_VERTEX_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/DepthVertexShader.vert"
+DEPTH_FRAGMENT_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/DepthFragmentShader.frag"
 
 TERRAIN_VERTEX_SHADER  RCDATA  "./ImportsLib/src/Terrain/Shaders/TerrainVertexShader.vert"
 TERRAIN_FRAGMENT_SHADER  RCDATA  "./ImportsLib/src/Terrain/Shaders/TerrainFragmentShader.frag"
@@ -8,3 +11,7 @@ TERRAIN_PAINT_COMPUTE_SHADER  RCDATA  "./ImportsLib/src/Terrain/Shaders/TerrainP
 TERRAIN_SELECT_COMPUTE_SHADER  RCDATA  "./ImportsLib/src/Terrain/Shaders/TerrainSelect.comp"
 
 TERRAIN_CUBIC_SHADER  RCDATA  "./ImportsLib/src/Terrain/Shaders/Cubic.glsl"
+SHADOW_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/Shadow.glsl"
+
+
+BLUR_TEX_COMPUTE_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/BlurTex.comp"

@@ -13,6 +13,7 @@
 *.exp
 *.idb
 *.ipch
+*.tlog
 
 # Temporary files
 *~

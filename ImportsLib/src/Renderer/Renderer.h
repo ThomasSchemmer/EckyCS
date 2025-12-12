@@ -4,10 +4,13 @@
 #include <renderdoc/renderdoc_app.h>
 
 #include "Camera.h"
+#include "Gizmos.h"
 #include "Light.h"
 #include "GLFW/glfw3.h"
 #include "Passes/RenderPass.h"
 
+
+class DepthShader;
 
 namespace TTerrain
 {
@@ -35,6 +38,7 @@ public:
     void CleanUp();
     std::shared_ptr<Camera> GetCamera() const;
     std::shared_ptr<Light> GetLight();
+    std::shared_ptr<Gizmos> GetGizmos();
     RenderPassType GetCurrentRenderPassType() const;
 
     template<typename T>
@@ -58,6 +62,8 @@ private:
     std::shared_ptr<Light> LightPtr;
     std::shared_ptr<TTerrain::TerrainManager> Terrain;
     std::shared_ptr<BaseShader> ShaderPtr;
+    std::shared_ptr<DepthShader> DepthShaderPtr;
+    std::shared_ptr<Gizmos> GizmosPtr;
     std::vector<std::shared_ptr<RenderPass>> RenderPasses;
     std::shared_ptr<RenderPass> CurrentRenderPass;
 

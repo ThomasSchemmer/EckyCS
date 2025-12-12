@@ -31,7 +31,7 @@ namespace TTerrain
         GLsizei AppendCount = 0;
 
         glm::vec3 GlobalWorldPos = glm::vec3(0);
-        glm::vec3 WorldSize = glm::vec3(10, 10, 10);
+        glm::vec3 WorldSize = glm::vec3(100, 10, 100);
 
         /** Owned by the manager! */
         GLuint ComputeProgramMesh;

@@ -26,13 +26,13 @@ namespace TTerrain
         LightPtr = RendererPtr->GetLight();
         Shader = make_shared<TerrainShader>();
         CreateCompute();
-        CreateTerrainAt(glm::vec3(-5, 0, -5));
+        CreateTerrainAt(glm::vec3(0, 0, 0));
     }
 
-    void TerrainManager::Render()
+    void TerrainManager::Render(RenderPassType Type)
     {       
         DispatchCompute();
-        RenderTriangles();
+        RenderTriangles(Type);
         bWasPressingRaise = bIsRaising;
         bWasPressingSelect = bIsSelecting;
     }
@@ -117,9 +117,9 @@ namespace TTerrain
         }
     }
 
-    void TerrainManager::RenderTriangles() const
+    void TerrainManager::RenderTriangles(RenderPassType Type) const
     {
-        Shader->Use();
+        Shader->Use(Type);
         auto Settings = GetStandardSettings();
         for (const auto& TData : Datas)
         {
@@ -129,7 +129,7 @@ namespace TTerrain
         }
     }
     
-    void TerrainManager::OnDrawGizmos() 
+    void TerrainManager::OnDrawGizmos(const shared_ptr<Gizmos>& Gizmos) 
     {
         auto Pos = CamPtr->GetMouseWorldPos();
         ImGui::Begin("TerrainTool");
@@ -166,6 +166,7 @@ namespace TTerrain
 
     void TerrainManager::CleanUp() const
     {
+        Shader->CleanUp();
         for (auto& Data : Datas)
         {
             Data.CleanUp();
@@ -263,7 +264,8 @@ namespace TTerrain
         Settings.GrassQuantize = GrassQuantize;
         Settings.Camera = CamPtr;
         Settings.Light = LightPtr;
-        Settings.ShadowMap = RendererPtr->GetRenderPass<ShadowPass>()->DepthTex;
+        auto SPass = RendererPtr->GetRenderPass<ShadowPass>();
+        Settings.ShadowMap = SPass ? SPass->ColorTex : 0;
         
         // will be filled by the different chunks
         Settings.GlobalWorldPos = glm::vec3(0);

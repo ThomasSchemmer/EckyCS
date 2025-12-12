@@ -1,0 +1,48 @@
+﻿#version 430
+
+#define DISPATCH_SIZE 8
+layout(local_size_x = DISPATCH_SIZE, local_size_y = DISPATCH_SIZE) in;
+
+// todo: make SSBO
+layout (rg32f, binding = 0) uniform image2D Tex;
+layout (rg32f, binding = 1) uniform image2D OutputTex;
+
+uniform ivec2 Axis;
+
+// store loads in group-shared memory, so we only need to query each pixel once!
+const int WorkSize = 8;
+const int Overflow = 2;
+const int Size = WorkSize + Overflow * 2;
+shared vec2 Tile[Size][Size];
+
+void main() {
+    ivec2 Global = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 Local = ivec2(gl_LocalInvocationID.xy);
+
+    int Lx = Local.x + Overflow;
+    int Ly = Local.y + Overflow;
+
+    Tile[Lx][Ly] = imageLoad(Tex, Global).xy;
+    
+    // overflow pixel need to be manually loaded, but also only once
+    if (Local.x < Overflow){
+        Tile[Local.x][Local.y + Overflow] = imageLoad(Tex, Global - ivec2(Overflow, 0)).xy;
+        Tile[Local.x + WorkSize + Overflow][Local.y + Overflow] = imageLoad(Tex, Global + ivec2(WorkSize, 0)).xy;
+    }
+    if (Local.y < Overflow){
+        Tile[Local.x + Overflow][Local.y] = imageLoad(Tex, Global - ivec2(0, Overflow)).xy;
+        Tile[Local.x + Overflow][Local.y + Overflow + WorkSize] = imageLoad(Tex, Global + ivec2(0, WorkSize)).xy;
+    }
+    
+    // wait for every groupthread to finish loading
+    barrier();
+
+    // klingeman linear blur
+    vec2 a = Tile[Lx - 2 * Axis.x][Ly - 2 * Axis.y].xy;
+    vec2 b = Tile[Lx - 1 * Axis.x][Ly - 1 * Axis.y].xy;
+    vec2 c = Tile[Lx + 0 * Axis.x][Ly + 0 * Axis.y].xy;
+    vec2 d = Tile[Lx + 1 * Axis.x][Ly + 1 * Axis.y].xy;
+    vec2 e = Tile[Lx + 2 * Axis.x][Ly + 2 * Axis.y].xy;
+    vec2 Result = (a + 2.0*b + 3.0*c + 2.0*d + e) / 9.0;
+    imageStore(Tex, Global, vec4(Result, 0, 0));
+}

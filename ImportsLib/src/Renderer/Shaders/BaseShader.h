@@ -17,17 +17,15 @@ class BaseShader
     
 public:
     unsigned int Program;
-    unsigned int ContainerTex, CornTex;
-    BaseShader();
-    ~BaseShader();
+    BaseShader() = default;
+    virtual ~BaseShader() = default;
 
-    void Use();
+    virtual void Create();
+    void Use() const;
     void UpdateVars(const shared_ptr<Camera>& Camera, const shared_ptr<Light>& Light) const;
     void CleanUp() const;
 
-private:
-    glm::mat4 Transform;    
-    const wchar_t* VertexShader = L"BASE_VERTEX_SHADER";
-    const wchar_t* FragmentShader = L"BASE_FRAGMENT_SHADER";
-    
+protected:
+    glm::mat4 Transform;
+    void CreateInternal(const wchar_t* VShader, const wchar_t* FShader);
 };

@@ -29,7 +29,7 @@ public:
         Ecs->ForEach<ItemComponent, TransformComponent>(Action);
     }
 
-    void OnDrawGizmos() override
+    void OnDrawGizmos(const shared_ptr<Gizmos>& Gizmos) override
     {        
         ImGui::Begin("ItemRenderSystem");
         ImGui::Text("Entities: %d", TotalCount);

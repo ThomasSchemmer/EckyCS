@@ -11,40 +11,47 @@ TTerrain::TerrainShader::TerrainShader()
 {
     string VertexCode = ShaderHelper::LoadShaderFromResource(VertexShader);
     string FragmentCode = ShaderHelper::LoadShaderFromResource(FragmentShader);
+    string DepthFragmentCode = ShaderHelper::LoadShaderFromResource(DepthFragmentShader);
 
     unsigned int Vertex = ShaderHelper::CompileShader(VertexCode, GL_VERTEX_SHADER);
     unsigned int Fragment = ShaderHelper::CompileShader(FragmentCode, GL_FRAGMENT_SHADER);
+    unsigned int DepthFragment = ShaderHelper::CompileShader(DepthFragmentCode, GL_FRAGMENT_SHADER);
 
     vector IDs = {Vertex, Fragment};
     Program = ShaderHelper::CreateProgram(IDs);
+    vector DepthIDs = {Vertex, DepthFragment};
+    DepthProgram = ShaderHelper::CreateProgram(DepthIDs);
     glDeleteShader(Vertex);
     glDeleteShader(Fragment);
+    glDeleteShader(DepthFragment);
     
     Transform = glm::mat4(1.0f);
 }
 
-void TTerrain::TerrainShader::Use() const
+void TTerrain::TerrainShader::Use(RenderPassType Type)
 {
-    glUseProgram(Program);
+    ActiveProgram = Type == RenderPassType::ShadowPass ?
+        DepthProgram : Program;
+    glUseProgram(ActiveProgram);
 }
 
 void TTerrain::TerrainShader::UpdateVars(const TerrainShaderSettings& Settings) const
 {
     // where should this be placed in world space?
-    ShaderHelper::SetUniform2iv("TexSize", Settings.TexSize, Program);
-    ShaderHelper::SetUniform2iv("WorldSize", Settings.WorldSize, Program);
-    ShaderHelper::SetUniform3fv("GlobalWorldPos", Settings.GlobalWorldPos, Program);
-    ShaderHelper::SetUniformM4("Transform", Transform, Program);
+    ShaderHelper::SetUniform2iv("TexSize", Settings.TexSize, ActiveProgram);
+    ShaderHelper::SetUniform2iv("WorldSize", Settings.WorldSize, ActiveProgram);
+    ShaderHelper::SetUniform3fv("GlobalWorldPos", Settings.GlobalWorldPos, ActiveProgram);
+    ShaderHelper::SetUniformM4("Transform", Transform, ActiveProgram);
 
     // where the user is currently painting
-    ShaderHelper::SetUniform3fv("BrushPos", Settings.BrushPos, Program);
-    ShaderHelper::SetUniform1ui("BrushSize", Settings.BrushSize, Program);
+    ShaderHelper::SetUniform3fv("BrushPos", Settings.BrushPos, ActiveProgram);
+    ShaderHelper::SetUniform1ui("BrushSize", Settings.BrushSize, ActiveProgram);
 
     // procedural texturing info
-    ShaderHelper::SetUniform3fv("DirtColor", Settings.DirtColor, Program);
-    ShaderHelper::SetUniform3fv("GrassColor", Settings.GrassColor, Program);
-    ShaderHelper::SetUniform1f("GrassScale", Settings.GrassScale, Program);
-    ShaderHelper::SetUniform1f("GrassQuantize", Settings.GrassQuantize, Program);
+    ShaderHelper::SetUniform3fv("DirtColor", Settings.DirtColor, ActiveProgram);
+    ShaderHelper::SetUniform3fv("GrassColor", Settings.GrassColor, ActiveProgram);
+    ShaderHelper::SetUniform1f("GrassScale", Settings.GrassScale, ActiveProgram);
+    ShaderHelper::SetUniform1f("GrassQuantize", Settings.GrassQuantize, ActiveProgram);
 
     // shadow pass should be from the lights perspective!
     auto& Projection = Settings.RenderPassType == RenderPassType::ShadowPass ?
@@ -53,19 +60,25 @@ void TTerrain::TerrainShader::UpdateVars(const TerrainShaderSettings& Settings) 
         Settings.Light->View : Settings.Camera->View;
 
     // rendering info, useful for shadows etc
-    ShaderHelper::SetUniformM4("Projection", Projection, Program);
-    ShaderHelper::SetUniformM4("View", View, Program);
-    ShaderHelper::SetUniform3fv("LightDir", Settings.Light->GetForward(), Program);
-    ShaderHelper::SetUniform3fv("LightPos", Settings.Light->Position, Program);
-    ShaderHelper::SetUniform2fv("LightClip", Settings.Light->ClipPlanes, Program);
-    ShaderHelper::SetUniformM4("LightProjection", Settings.Light->Projection, Program);
-    ShaderHelper::SetUniformM4("LightView", Settings.Light->View, Program);
-    ShaderHelper::SetUniformTexture("ShadowMap", Settings.ShadowMap, 0, Program);
+    ShaderHelper::SetUniformM4("Projection", Projection, ActiveProgram);
+    ShaderHelper::SetUniformM4("View", View, ActiveProgram);
+    ShaderHelper::SetUniform3fv("LightDir", Settings.Light->GetForward(), ActiveProgram);
+    ShaderHelper::SetUniform3fv("LightPos", Settings.Light->Position, ActiveProgram);
+    ShaderHelper::SetUniform2fv("LightClip", Settings.Light->ClipPlanes, ActiveProgram);
+    ShaderHelper::SetUniformM4("LightProjection", Settings.Light->Projection, ActiveProgram);
+    ShaderHelper::SetUniformM4("LightView", Settings.Light->View, ActiveProgram);
+    ShaderHelper::SetUniformTexture("ShadowMap", Settings.ShadowMap, 0, ActiveProgram);
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, Settings.VertexBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, Settings.NormalBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, Settings.HeightBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, Settings.SelectionBuffer);
 
+}
+
+void TTerrain::TerrainShader::CleanUp() const
+{
+    glDeleteProgram(Program);
+    glDeleteProgram(DepthProgram);
 }
 

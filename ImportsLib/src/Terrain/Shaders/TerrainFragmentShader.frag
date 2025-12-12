@@ -25,6 +25,12 @@ uniform vec3 LightDir;
 uniform vec3 LightPos;
 uniform vec2 LightClip;
 
+const float BrushBorder = 0.25;
+const float MinBias = 0.0005;
+const float MaxBias = 0.002;
+
+#include "SHADOW_SHADER"
+
 // 0 and 1 are vertex and normal buffer in vertex shader. 2 is count buffer. 3 is height
 layout(std430, binding = 3) buffer HeightBuffer {
     uint Values[];
@@ -33,10 +39,6 @@ layout(std430, binding = 3) buffer HeightBuffer {
 layout(std430, binding = 4) buffer SelectionBuffer {
     uint Entries[];
 } Selection;
-
-const float BrushBorder = 0.25;
-const float MinBias = 0.0005;
-const float MaxBias = 0.002;
 
 vec3 GetBrushColor(void){
     ivec2 id = ivec2(UV.x * TexSize.x, UV.y * TexSize.y);
@@ -67,28 +69,10 @@ float GetLight(void){
     return nl;
 }
 
-float GetShadow(void){
-    vec3 NDC = PosLightClip.xyz / PosLightClip.w;
-    NDC = NDC / 2.0 + 0.5;
-    vec2 UV = NDC.xy;
-    float Depth = texture(ShadowMap, UV).r;
-    float CurrentDepth = NDC.z;
-    float Bias = max(MaxBias * (1.0 - dot(WorldNormals.xyz, LightDir)), MinBias);
-    float Shadow = (CurrentDepth < Depth + Bias) ? 1 : 0;
-    Shadow = NDC.z > 1 ? 0 : Shadow;
-    return Shadow;
-}
 
 
 void main()
 {
-
-    vec3 NDC = PosLightClip.xyz / PosLightClip.w;
-    NDC = NDC / 2.0 + 0.5;
-    FragColor = vec4(NDC.z, 0, 0, 1);
-    return;
-    
-    
     vec3 BrushColor = GetBrushColor();
     float GrassNoise = abs(cubicNoise(WorldPos.xyz * GrassScale));
     GrassNoise += abs(cubicNoise(-WorldPos.xyz * GrassScale * 2)) * 0.5;
@@ -100,9 +84,10 @@ void main()
     float GrassFactor = abs(dot(vec3(0, 1, 0), WorldNormals.xyz));
     vec3 TexColor = GrassFactor * Grass + (1 - GrassFactor) * Dirt;
 
-    float ShadowFactor = GetShadow();
+    float ShadowFactor = GetVarianceShadow();
     float LightFactor = GetLight();
-    TexColor *= LightFactor * ShadowFactor;
+    TexColor *= LightFactor;
+    vec3 Color = mix(vec3(0.01, 0.01, 0.03), TexColor, ShadowFactor);
     
-    FragColor = vec4(BrushColor + TexColor, 1);
+    FragColor = vec4(BrushColor + Color, 1);
 } 

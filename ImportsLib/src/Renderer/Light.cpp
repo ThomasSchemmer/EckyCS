@@ -13,24 +13,10 @@ Light::Light(glm::vec3 InPosition, glm::vec3 InEuler, glm::vec3 InColor, GLFWwin
     Position = InPosition;
     EulerAngles = InEuler;
     Projection = glm::mat4(1.0f);
-    View = glm::mat4(
-        glm::vec4(GetRight(),   0),
-        glm::vec4(GetUp(),      0),
-        glm::vec4(GetForward(), 0),
-        glm::vec4(0,0,0,1)
-    );
-    View = glm::transpose(View);
-
-    // todo: delete
-    Position = glm::vec3(-5, 0, 0);
-    EulerAngles = glm::vec3(glm::radians(45.0f), glm::radians(180.0f), 0);
-    auto Tmp = GetRight();
-    
-    Projection = glm::mat4(1.0f);
     View = glm::lookAt(Position, Position + GetForward(), GetUp());
 }
 
-void Light::OnDrawGizmos()
+void Light::OnDrawGizmos(const shared_ptr<Gizmos>& Gizmos)
 {
     ImGui::Begin("Light");
     ImGui::SliderFloat3("Pos", glm::value_ptr(Position), -5, 5);
@@ -41,34 +27,7 @@ void Light::OnDrawGizmos()
 
 void Light::Update(float delta)
 {
-    auto Screen = GetScreenExtent();
-    auto Size = GetScreenSize();
-    //Position = CameraPtr->GetScreenWorldPos(Size / 2.0f);
-    //ClipPlanes = glm::vec2(-100, 1000);
-    //UpdateProjection(Screen * 2.0f);
-
-    
-    // todo: make frustum calculation correct and adopt clip planes
     CalculateFrustum();
-    
-    /*
-    glm::vec4 origin = View * glm::vec4(0,0,0,1);
-    xyz(origin) /= origin.w;
-    xyz(origin) = xyz(origin) * 0.5f + 0.5f;
-
-    glm::vec2 shadowTexelSize = glm::vec2(1.0f / 1024.0f);
-
-    glm::vec2 snapped(
-        floor(origin.x / shadowTexelSize.x) * shadowTexelSize.x,
-        floor(origin.y / shadowTexelSize.y) * shadowTexelSize.y
-    );
-
-    float dx = snapped.x - origin.x;
-    float dy = snapped.y - origin.y;
-
-    View[3][0] += dx * 2.0f;
-    View[3][1] += dy * 2.0f;
-    */
 }
 
 void Light::CalculateFrustum()
@@ -77,7 +36,7 @@ void Light::CalculateFrustum()
     auto WorldSpacePoints = CameraPtr->GetFrustumPoints();
     vector<glm::vec3> ProjSpacePoints;
     ProjSpacePoints.reserve(WorldSpacePoints.size());
-
+    
     // and transform them into the projected light space
     for (const auto& WSPoint : WorldSpacePoints)
     {
@@ -85,8 +44,7 @@ void Light::CalculateFrustum()
         ProjSpacePoints.push_back(ProjPoint);
     }
 
-    // so that we can build an AABB bounding box
-    
+    // so that we can build an AABB
     auto Min = glm::vec3(FLT_MAX);
     auto Max = glm::vec3(-FLT_MAX);
     for (const auto& ProjPoint : ProjSpacePoints)
@@ -95,14 +53,34 @@ void Light::CalculateFrustum()
         Max = max(Max, ProjPoint);
     }
 
-    //float Pad = .5f;
-    //Min -= glm::vec3(Pad);
-    //Max += glm::vec3(Pad);
+    // since world space and ShadowMap res do not match 1:1 we get fractions
+    // causing varying lookup positions depending on camera movement
+    // this leads to "floating, crawling" shadow edges
+    // Fix: Snap lookup coords to pixels
+    constexpr float ShadowRes = 1024;
+    glm::vec2 TexelSize;
+    TexelSize.x = (Max.x - Min.x) / ShadowRes;
+    TexelSize.y = (Max.y - Min.y) / ShadowRes;
+    
+    glm::vec2 LightPosInTexel = glm::vec2(Min.x, Min.y) / TexelSize;
+    LightPosInTexel.x = floor(LightPosInTexel.x + 0.5f);
+    LightPosInTexel.y = floor(LightPosInTexel.y + 0.5f);
+    glm::vec2 SnappedMin = LightPosInTexel * TexelSize;
+
+    // shift the projection box
+    float dx = SnappedMin.x - Min.x;
+    float dy = SnappedMin.y - Min.y;
+    Min.x += dx;
+    Max.x += dx;
+    Min.y += dy;
+    Max.y += dy;
 
     // and then use that box to get the actual light frustum position & clip planes
     auto LightPosLight = (Min + Max) / 2.0f;
-    Position = xyz(inverse(View) * glm::vec4(LightPosLight, 1));
-    Position = Position - GetForward() * 5.0f;
-    View[3] = glm::vec4(-Position, 1.0f);
+    auto Inv = inverse(View);
+    Position = xyz(Inv * glm::vec4(LightPosLight, 1));
+
+    View = glm::lookAt(Position, Position + GetForward(), GetUp());
     Projection = glm::ortho(Min.x, Max.x, Min.y, Max.y, Min.z, Max.z);
+    ClipPlanes = glm::vec2(Min.z, Max.z);
 }

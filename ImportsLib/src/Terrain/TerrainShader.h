@@ -45,14 +45,17 @@ namespace TTerrain
     public:
         TerrainShader();
         ~TerrainShader() = default;
-        void Use() const;
+        void Use(RenderPassType Type);
         void UpdateVars(const TerrainShaderSettings& Settings) const;
+        void CleanUp() const;
 
     private:
-        unsigned int Program;
+        GLuint Program, DepthProgram;
+        GLuint ActiveProgram = 0;
         glm::mat4 Transform;
    
         const wchar_t* VertexShader = L"TERRAIN_VERTEX_SHADER";
         const wchar_t* FragmentShader = L"TERRAIN_FRAGMENT_SHADER";
+        const wchar_t* DepthFragmentShader = L"DEPTH_FRAGMENT_SHADER";
     };
 }

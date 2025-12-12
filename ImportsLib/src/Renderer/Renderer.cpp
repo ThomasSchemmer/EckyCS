@@ -14,6 +14,8 @@
 #define GLFW_INCLUDE_NONE
 #include "glfw/include/GLFW/glfw3.h"
 #include "Renderer.h"
+
+#include "DepthShader.h"
 #include "../../../ext/imgui/imgui.h"
 #include "../EckyCS/ECS.h"
 #include "../EckyCS/Systems/Rendering/EntityRenderSystem.h"
@@ -28,6 +30,9 @@ using namespace EckyCS;
 void Renderer::Init(GLFWwindow* Window)
 {
     ShaderPtr = make_shared<BaseShader>();
+    ShaderPtr->Create();
+    DepthShaderPtr = make_shared<DepthShader>();
+    DepthShaderPtr->Create();
     Camera = make_shared<class Camera>(Window);
     LightPtr = make_shared<Light>(
         glm::vec3(10),
@@ -37,6 +42,7 @@ void Renderer::Init(GLFWwindow* Window)
         Camera
     );
     Terrain = make_shared<TTerrain::TerrainManager>();
+    GizmosPtr = make_shared<Gizmos>();
 
     InitRenderPasses(Window);
 }
@@ -79,12 +85,19 @@ void Renderer::Render()
     {
         Pass->Use();
         CurrentRenderPass = Pass;
-        
-        Terrain->Render();
-    
-        ShaderPtr->Use();
-        ShaderPtr->UpdateVars(Camera, LightPtr);
 
+        Terrain->Render(Pass->Type);
+        
+        if (Pass->Type == RenderPassType::BasePass)
+        {
+            ShaderPtr->Use();
+            ShaderPtr->UpdateVars(Camera, LightPtr);
+        }else
+        {
+            DepthShaderPtr->Use();
+            DepthShaderPtr->UpdateVars(Camera, LightPtr);
+        }
+        
         for (auto& System : Systems)
         {
             auto RenderSystem = dynamic_pointer_cast<BaseRenderSystem>(System);
@@ -94,17 +107,24 @@ void Renderer::Render()
             RenderSystem->Render();
         }
         
+        if (Pass->Type == RenderPassType::BasePass)
+        {
+            GizmosPtr->Render();
+        }
+
+        Pass->OnAfterRender();
+
         CurrentRenderPass = nullptr;
         Pass->UnUse();
     }
     
     for (auto& System : Systems)
     {        
-        System->OnDrawGizmos();
+        System->OnDrawGizmos(GizmosPtr);
     }
-    Camera->OnDrawGizmos();
-    Terrain->OnDrawGizmos();
-    LightPtr->OnDrawGizmos();
+    Camera->OnDrawGizmos(GizmosPtr);
+    Terrain->OnDrawGizmos(GizmosPtr);
+    LightPtr->OnDrawGizmos(GizmosPtr);
 }
 
 void Renderer::HandleCaptureStart() const
@@ -138,6 +158,7 @@ void Renderer::CleanUp()
 {
     Terrain->CleanUp();
     ShaderPtr->CleanUp();
+    DepthShaderPtr->CleanUp();
     for (auto& Pass : RenderPasses)
     {
         Pass->CleanUp();
@@ -156,6 +177,11 @@ shared_ptr<Camera> Renderer::GetCamera() const
 shared_ptr<Light> Renderer::GetLight()
 {
     return LightPtr;
+}
+
+std::shared_ptr<Gizmos> Renderer::GetGizmos()
+{
+    return GizmosPtr;
 }
 
 RenderPassType Renderer::GetCurrentRenderPassType() const

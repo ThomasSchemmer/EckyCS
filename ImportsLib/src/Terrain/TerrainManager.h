@@ -8,6 +8,8 @@
 #include "TerrainData.h"
 
 
+enum class RenderPassType : uint8_t;
+class Gizmos;
 class Renderer;
 class Light;
 class Camera;
@@ -29,9 +31,9 @@ namespace TTerrain
         TerrainManager();
         ~TerrainManager() = default;
 
-        void Render();
+        void Render(RenderPassType Type);
         void Update(float Delta);
-        void OnDrawGizmos();
+        void OnDrawGizmos(const shared_ptr<Gizmos>& Gizmos);
         void CleanUp() const;
 
     private:
@@ -66,7 +68,7 @@ namespace TTerrain
         void HandleResetting();
         void HandleSelecting() const;
         void HandlePainting();
-        void RenderTriangles() const;
+        void RenderTriangles(RenderPassType Type) const;
         
         void HandleInput();
         void HandleToggle(bool* bIsDoing, bool* bWasDoing, GLint Key) const;
