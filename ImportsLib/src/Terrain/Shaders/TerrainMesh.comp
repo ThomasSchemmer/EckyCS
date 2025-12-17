@@ -1,4 +1,13 @@
 #version 430 
+/** 
+ * Shader that creates a 2D marching cube terrain mesh from a 1d height buffer
+ * Execution order is as follows:
+ * 1) Look at each height point and determine the amount of vertices needed
+ * 2) prefix-sum to get actual write offset
+ * 3) Reserve buffer with appropriate size (CPU)
+ * 4) Write vertices into buffer
+ * 5) Write normals into buffer
+ */
 
 /**
  * Multi-modal Shader either:
@@ -13,21 +22,70 @@
 #define DISPATCH_SIZE 2
 layout(local_size_x = DISPATCH_SIZE, local_size_y = DISPATCH_SIZE) in;
 
+/** 
+ * Contains triangle vertices for all points in the height map
+ * Each point creates 4 quads (consisting of 2 triangles each), with following Order (and order in each quad):
+ *      * ------*------ *    0/3    *---*     1/2     *---*
+ *      |   0   |   1   |    quads: | 0/|     quads:  |\ 0|
+ *      * ------*------ *           | / |             | \ |
+ *      |   2   |   3   |           |/ 1|             |1 \|
+ *      * ------*------ *           *---*             *---*
+ * Note that the triangles are arranged differently for quads 0/3 and 1/2, as the have to build a square in the middle!
+ * Since each quad can have different heights, we might need additional vertical quads, which are added after all regular quads
+ * This leads to different sizes in memory depending on vertical quad amount, see PositionOffsetBuffer
+ **/
 layout(std430, binding = 0) buffer PositionBuffer {
     vec4 Entries[];
-} Positions;
+} Vertices;
 
 layout(std430, binding = 1) buffer NormalBuffer {
     vec4 Entries[];
 } Normals;
 
-layout(std430, binding = 2) buffer CountBuffer {
-    uint Count;
-} Counter;
-
-layout(std430, binding = 3) buffer HeightBuffer {
+layout(std430, binding = 2) buffer HeightBuffer {
     uint Value[];
 } Heights;
+
+/** 
+ * Stores the prefixsummed offset of the first triangle of each height point
+ * This can be different, depending on the amount of vertical slices!
+ * Note: will have just the base amount of triangles in the first iteration
+ */
+layout(std430, binding = 3) buffer VertexOffsetsBuffer {
+    uint Values[];
+} VertexOffsets;
+
+/** 
+ * indices to vertices arranged in a plane
+ * 0--4/8--1
+ * |       |
+ * 5/9-X---6/10
+ * |       |
+ * 2--7/11-3
+ * where x is 12, 13, 14, 15
+ * Index dictates the height lookup in VertexToWorld
+ * Connecting triples into triangles results in the actual mesh part
+ * Note: Will be filled by @TerrainManager
+ */
+layout(std430, binding = 4) readonly buffer VerticalQuadBuffer {
+    int Values[15][24];
+} VerticalQuadLookup;
+
+/** Buffer that contains the actual length of each of the @VerticalQuadLookup entries */
+layout(std430, binding = 5) readonly buffer VerticalQuadLengthBuffer {
+    int Values[15];
+} VerticalQuadLength;
+
+/** Buffer containing the base vertices that every point will have */
+layout(std430, binding = 6) readonly buffer HorizontalQuadBuffer {
+    int Values[24];
+} HorizontalQuadLookup;
+
+/** Small buffer that is used to copy the overall size back to the CPU*/
+layout(std430, binding = 7) buffer CountBuffer {
+    uint Value;
+} Count;
+
 
 uniform ivec2 _TexSize;
 uniform ivec3 _WorldSize;
@@ -40,7 +98,7 @@ uniform uint _Mode;
 const uint VertCount = 6;
 const int VertexMapLength = 28;
 const int VertexLookupLength0 = 15;
-const int VertexLookupLength1 = 48;
+const int VertexLookupLength1 = 24;
 
 
 /**
@@ -55,36 +113,6 @@ const int VertexMap[] =
 };
 
 
-/** 
- * indices to vertices arranged in a plane
- * 0--4/8--1
- * |       |
- * 5/9-X---6/10
- * |       |
- * 2--7/11-3
- * where x is 12, 13, 14, 15
- * Index dictates the height lookup in VertexToWorld
- * Connecting triples into triangles results in the actual mesh part
- * Note: flattened into 1D!
- */
-const int VertexLookup[] =
-{
-    /* 0*/ 0, 1, 2, 1, 3, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* 1*/ 0, 1, 2, 1, 6, 7, 7, 2, 1, 6, 11, 7, 6, 10, 11, 10, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* 2*/ 0, 1, 3, 0, 11, 5, 0, 3, 11, 7, 9, 11, 5, 11, 9, 9, 7, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* 3*/ 0, 1, 5, 1, 6, 5, 5, 10, 9, 6, 10, 5, 9, 10, 2, 2, 10, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* 4*/ 0, 1, 5, 1, 6, 5, 5, 12, 9, 12, 14, 9, 12, 6, 15, 6, 10, 15, 9, 14, 7, 7, 2, 9, 15, 10, 3, 3, 11, 15, 15, 7, 14, 11, 7, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* 5*/ 0, 3, 2, 0, 4, 10, 10, 3, 0, 4, 8, 6, 6, 10, 4, 8, 1, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* 6*/ 0, 4, 7, 7, 2, 0, 4, 8, 11, 11, 7, 4, 8, 1, 3, 3, 11, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* 7*/ 0, 4, 7, 7, 2, 0, 4, 8, 13, 13, 12, 4, 14, 15, 11, 11, 7, 14, 15, 10, 3, 3, 11, 15, 8, 1, 6, 6, 13, 8, 13, 6, 10, 10, 15, 13, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* 8*/ 0, 4, 5, 4, 8, 9, 9, 5, 4, 8, 1, 6, 7, 2, 9, 9, 8, 6, 6, 7, 9, 7, 6, 10, 10, 11, 7, 10, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* 9*/ 0, 4, 5, 4, 8, 9, 9, 5, 4, 8, 1, 6, 8, 6, 7, 7, 9, 8, 9, 7, 2, 10, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /*10*/ 0, 4, 5, 4, 8, 9, 9, 5, 4, 8, 1, 6, 7, 2, 9, 9, 8, 6, 6, 7, 9, 7, 6, 10, 10, 11, 7, 10, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /*11*/ 0, 4, 5, 4, 10, 11, 11, 5, 4, 10, 3, 11, 4, 8, 6, 6, 10, 4, 5, 11, 7, 7, 9, 5, 9, 7, 2, 8, 1, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /*12*/ 8, 1, 3, 3, 11, 8, 4, 8, 13, 13, 12, 4, 14, 15, 11, 11, 7, 14, 0, 4, 12, 12, 5, 0, 9, 14, 7, 7, 2, 9, 5, 12, 14, 14, 9, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /*13*/ 9, 10, 3, 3, 2, 9, 9, 5, 14, 14, 5, 12, 15, 6, 10, 13, 6, 15, 0, 4, 12, 12, 5, 0, 8, 1, 6, 6, 13, 8, 4, 8, 13, 13, 12, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /*14*/ 0, 4, 12, 12, 5, 0, 8, 1, 6, 6, 13, 8, 15, 10, 3, 3, 11, 15, 7, 2, 9, 9, 14, 7, 9, 5, 12, 12, 14, 9, 4, 8, 13, 13, 12, 4, 13, 6, 10, 10, 15, 13, 11, 7, 14, 14, 15, 11
-};
 
 
 /**
@@ -156,47 +184,65 @@ vec3 GetVertex(int Index, int Heights[4])
     return Tmp;
 }
 
-void GenerateTriangles(ivec3 id, int Heights[4], int Start, int End){
-    // read the info from the data struct to fill in triangles
-    for (int i = Start; i < End; i += 3)
+int GetHeightIndexFor(ivec3 id, ivec2 Offset){
+    return clamp(id.z + Offset.y, 0, _TexSize.y - 1) * _TexSize.x + clamp(id.x + Offset.x, 0, _TexSize.x - 1);
+}
+
+int GetHeightForIndex(int Index){
+    return clamp(int(Heights.Value[Index]), 0, MAX_VALUE - 1);
+}
+
+void WriteTriangle(vec3 A, vec3 B, vec3 C, uint Index){
+    // scale back down to 1x1x1
+    A.y = A.y / (MAX_VALUE - 2) * _WorldSize.y;
+    B.y = B.y / (MAX_VALUE - 2) * _WorldSize.y;
+    C.y = C.y / (MAX_VALUE - 2) * _WorldSize.y;
+    A.xz = A.xz / _TexSize * _WorldSize.xz;
+    B.xz = B.xz / _TexSize * _WorldSize.xz;
+    C.xz = C.xz / _TexSize * _WorldSize.xz;
+    A += _WorldPos;
+    B += _WorldPos;
+    C += _WorldPos;
+    
+    Vertices.Entries[Index + 0].xyz = A;
+    Vertices.Entries[Index + 1].xyz = B;
+    Vertices.Entries[Index + 2].xyz = C;
+    Normals.Entries[Index / 3].xyz = normalize(cross(normalize(A - B), normalize(C - B)));
+}
+
+void GenerateTriangles(ivec3 id, int Heights[4], int Combination){
+    // since each point has the base horizontal quads we can just fill them
+    uint Index = GetHeightIndexFor(id, ivec2(0));
+    uint TargetStart = VertexOffsets.Values[Index];
+    
+    for (uint i = 0; i < VertexLookupLength1; i += 3){
+        vec3 A = GetVertex(HorizontalQuadLookup.Values[i + 0], Heights) + id;
+        vec3 B = GetVertex(HorizontalQuadLookup.Values[i + 1], Heights) + id;
+        vec3 C = GetVertex(HorizontalQuadLookup.Values[i + 2], Heights) + id;
+        WriteTriangle(A, B, C, Index + i);
+    }
+    
+    // now we can add the specific vertical quads
+    // we should have enough space in our buffer since we precomputed its size
+    int VerticalLength = VerticalQuadLength.Values[Combination];
+    for (uint i = 0; i < VerticalLength; i += 3)
     {
-        if (VertexLookup[i] == -1)
+        if (VerticalQuadLookup[Combination][i] == -1)
             break;
 
-        vec3 A = GetVertex(VertexLookup[i + 0], Heights) + id;
-        vec3 B = GetVertex(VertexLookup[i + 1], Heights) + id;
-        vec3 C = GetVertex(VertexLookup[i + 2], Heights) + id;
-        // scale back down to 1x1x1
-        A.y = A.y / (MAX_VALUE - 2) * _WorldSize.y;
-        B.y = B.y / (MAX_VALUE - 2) * _WorldSize.y;
-        C.y = C.y / (MAX_VALUE - 2) * _WorldSize.y;
-        A.xz = A.xz / _TexSize * _WorldSize.xz;
-        B.xz = B.xz / _TexSize * _WorldSize.xz;
-        C.xz = C.xz / _TexSize * _WorldSize.xz;
-        A += _WorldPos;
-        B += _WorldPos;
-        C += _WorldPos;
-
-        // each triangle has 3 vertices and only 1 normal
-        uint Index = atomicAdd(Counter.Count, 3);
-        Positions.Entries[Index + 0].xyz = A;
-        Positions.Entries[Index + 1].xyz = B;
-        Positions.Entries[Index + 2].xyz = C;
-        Normals.Entries[Index / 3].xyz = normalize(cross(normalize(A - B), normalize(C - B)));
+        vec3 A = GetVertex(HorizontalQuadLookup.Values[i + 0], Heights) + id;
+        vec3 B = GetVertex(HorizontalQuadLookup.Values[i + 1], Heights) + id;
+        vec3 C = GetVertex(HorizontalQuadLookup.Values[i + 2], Heights) + id;
+        WriteTriangle(A, B, C, Index + i + VertexLookupLength1);
     }
 }
 
-void CountTriangles(ivec3 id, int Heights[4], int Start, int End){
+void CountTriangles(ivec3 id, int Heights[4], int Combination){
     // to have quick lookup we pad the data with -1 for invalid entries
     // this allows for "jump to entry x", since each have the same length.
-    // But: we now need to count how many entries we actually need to avoid a largely empty buffer
-    for (int i = Start; i < End; i += 3)
-    {
-        if (VertexLookup[i] == -1)
-            break;
-
-        atomicAdd(Counter.Count, 3);
-    }
+    // we overcome the "oh now i have to count each entry" by precomputing
+    int Index = GetHeightIndexFor(id, ivec2(0));
+    VertexOffsets[Index] = VertexLookupLength1 + VerticalQuadLength[Combination];
 }
 
 void GenerateHeightMesh(ivec3 id){
@@ -205,15 +251,15 @@ void GenerateHeightMesh(ivec3 id){
     
     // height indicates the type of mesh via lookup table
     // clamped to different height "bands"
-    int Offset0 = clamp(id.z + 1, 0, _TexSize.y - 1) * _TexSize.x + clamp(id.x + 0, 0, _TexSize.x - 1);
-    int Offset1 = clamp(id.z + 1, 0, _TexSize.y - 1) * _TexSize.x + clamp(id.x + 1, 0, _TexSize.x - 1);
-    int Offset2 = clamp(id.z + 0, 0, _TexSize.y - 1) * _TexSize.x + clamp(id.x + 0, 0, _TexSize.x - 1);
-    int Offset3 = clamp(id.z + 0, 0, _TexSize.y - 1) * _TexSize.x + clamp(id.x + 1, 0, _TexSize.x - 1);
+    int Index0 = GetHeightIndexFor(id, ivec2(0, 1));
+    int Index1 = GetHeightIndexFor(id, ivec2(1, 1));
+    int Index2 = GetHeightIndexFor(id, ivec2(0, 0));
+    int Index3 = GetHeightIndexFor(id, ivec2(1, 0));
     
-    int Height0 = clamp(int(Heights.Value[Offset0]), 0, MAX_VALUE - 1);
-    int Height1 = clamp(int(Heights.Value[Offset1]), 0, MAX_VALUE - 1);
-    int Height2 = clamp(int(Heights.Value[Offset2]), 0, MAX_VALUE - 1);
-    int Height3 = clamp(int(Heights.Value[Offset3]), 0, MAX_VALUE - 1);
+    int Height0 = GetHeightForIndex(Index0);
+    int Height1 = GetHeightForIndex(Index1);
+    int Height2 = GetHeightForIndex(Index2);
+    int Height3 = GetHeightForIndex(Index3);
         
     int Heights[4] = { Height0, Height1, Height2, Height3 };
     int HeightID = GetHeightID(Heights);
@@ -225,12 +271,10 @@ void GenerateHeightMesh(ivec3 id){
         return;
 
     // lookup the blueprint for the structure
-    int Start = LookupID * VertexLookupLength1;
-    int End = (LookupID + 1) * VertexLookupLength1;
     if (_Mode == MODE_COUNT_TRIANGLES){
-        CountTriangles(id, Heights, Start, End);
+        CountTriangles(id, Heights, LookupID);
     }else if (_Mode == MODE_GENERATE_TRIANGLES){
-        GenerateTriangles(id, Heights, Start, End);
+        GenerateTriangles(id, Heights, LookupID);
     }
 }
 

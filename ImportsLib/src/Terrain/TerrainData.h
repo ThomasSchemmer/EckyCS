@@ -42,12 +42,16 @@ namespace TTerrain
         GLuint ComputeProgramMesh;
         GLuint ComputeProgramPaint;
         GLuint ComputeProgramSelect;
+        GLuint VerticalQuadBuffer;
+        GLuint VerticalQuadLengthBuffer;
+        GLuint HorizontalQuadBuffer;
         
         GLuint VertexBuffer;
         GLuint NormalBuffer;
-        GLuint CountBuffer;
         GLuint HeightBuffer;
+        GLuint VertexOffsetsBuffer;
         GLuint SelectionBuffer;
+        GLuint CountBuffer;
         static unsigned int TexSize;
 
         GrassData Grass;

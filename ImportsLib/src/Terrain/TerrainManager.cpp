@@ -183,6 +183,10 @@ namespace TTerrain
         glDeleteProgram(ComputeProgramPaint);
         glDeleteProgram(ComputeProgramSelect);
         glDeleteProgram(ComputeProgramGrass);
+
+        glDeleteBuffers(1, &VerticalQuadBuffer);
+        glDeleteBuffers(1, &VerticalQuadLengthBuffer);
+        glDeleteBuffers(1, &HorizontalQuadBuffer);
     }
 
     void TerrainManager::HandleToggle(bool* bIsDoing, bool* bWasDoing, GLint Key) const
@@ -240,6 +244,18 @@ namespace TTerrain
         ComputeProgramPaint = ShaderHelper::CreateComputeProgram({ComputeShaderPaint});
         ComputeProgramSelect = ShaderHelper::CreateComputeProgram({ComputeShaderSelect});
         ComputeProgramGrass = ShaderHelper::CreateComputeProgram({ComputeShaderGrass});
+
+        glGenBuffers(1, &VerticalQuadBuffer);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, VerticalQuadBuffer);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(int) * QuadIndexCount0 * QuadIndexCount1, VerticalQuadLookup, GL_STATIC_DRAW);
+        
+        glGenBuffers(1, &VerticalQuadLengthBuffer);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, VerticalQuadLengthBuffer);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(int) * QuadIndexCount0, VerticalQuadLengthLookup, GL_STATIC_DRAW);
+        
+        glGenBuffers(1, &HorizontalQuadBuffer);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, HorizontalQuadBuffer);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(int) * QuadIndexCount1, HorizontalQuadLookup, GL_STATIC_DRAW);
     }
 
     void TerrainManager::UpdateComputeVars(GLuint Program) const

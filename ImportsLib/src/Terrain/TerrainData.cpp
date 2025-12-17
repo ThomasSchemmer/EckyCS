@@ -4,11 +4,11 @@
 #include "TerrainManager.h"
 #include "TerrainShader.h"
 #include "../Util/ShaderHelper.h"
-
+//TODO: integratee the updated mesh.comp shader to make height calculation easy through lookup
 using namespace Util;
 namespace TTerrain
 {
-    unsigned int TerrainData::TexSize = 32;
+    unsigned int TerrainData::TexSize = 2;
     
     void TerrainData::RenderTriangles(RenderPassType Type) const
     {
@@ -20,6 +20,7 @@ namespace TTerrain
 
     TerrainData::TerrainData(glm::vec3 WorldPos, const std::shared_ptr<TerrainManager>& Manager) :
         GlobalWorldPos(WorldPos), ComputeProgramMesh(Manager->ComputeProgramMesh), ComputeProgramPaint(Manager->ComputeProgramPaint), ComputeProgramSelect(Manager->ComputeProgramSelect),
+        VerticalQuadBuffer(Manager->VerticalQuadBuffer), VerticalQuadLengthBuffer(Manager->VerticalQuadLengthBuffer), HorizontalQuadBuffer(Manager->HorizontalQuadBuffer),
         Grass(Manager)
     {
         CreateCompute();
@@ -56,8 +57,12 @@ namespace TTerrain
         ShaderHelper::ResetBufferCounter(CountBuffer);
         
         // calculate how many vertices we will have
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, CountBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, HeightBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, HeightBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, VertexOffsetsBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, VerticalQuadBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, VerticalQuadLengthBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, HorizontalQuadBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, CountBuffer);
         Dispatch((GLuint)TerrainComputeMode::CountTriangles, ComputeProgramMesh);
         AppendCount = ShaderHelper::ReadBufferCount(CountBuffer);
 
@@ -92,9 +97,10 @@ namespace TTerrain
         Grass.CleanUp();
         glDeleteBuffers(1, &VertexBuffer);
         glDeleteBuffers(1, &NormalBuffer);
-        glDeleteBuffers(1, &CountBuffer);
         glDeleteBuffers(1, &HeightBuffer);
         glDeleteBuffers(1, &SelectionBuffer);
+        glDeleteBuffers(1, &VertexOffsetsBuffer);
+        glDeleteBuffers(1, &CountBuffer);
     }
 
     void TerrainData::Dispatch(GLuint Mode, GLuint Target)
@@ -105,20 +111,22 @@ namespace TTerrain
     }
 
     void TerrainData::CreateCompute()
-    {
-        // we only need to read the required size, then allocate the actual buffers later
-        glGenBuffers(1, &CountBuffer);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, CountBuffer);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int), nullptr, GL_DYNAMIC_COPY);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, CountBuffer);
-    
+    {    
         // both Height and Selection are configurable fixed size
         glGenBuffers(1, &HeightBuffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, HeightBuffer); 
-        glBufferStorage(GL_SHADER_STORAGE_BUFFER, GetHeightBufferByteSize(), nullptr, GL_DYNAMIC_STORAGE_BIT);
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, GetHeightBufferByteSize(), nullptr, GL_DYNAMIC_COPY);
         glGenBuffers(1, &SelectionBuffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, SelectionBuffer); 
-        glBufferStorage(GL_SHADER_STORAGE_BUFFER, GetHeightBufferByteSize(), nullptr, GL_DYNAMIC_STORAGE_BIT);
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, GetHeightBufferByteSize(), nullptr, GL_DYNAMIC_COPY);
+
+        glGenBuffers(1, &VertexOffsetsBuffer);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, VertexOffsetsBuffer); 
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, GetHeightBufferByteSize(), nullptr, GL_DYNAMIC_COPY);
+
+        glGenBuffers(1, &CountBuffer);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, CountBuffer); 
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int), nullptr, GL_DYNAMIC_READ);
 
         DispatchResetHeight();
     }
