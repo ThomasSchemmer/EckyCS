@@ -18,27 +18,27 @@ namespace GAS
     GameplayAbilityComponent::~GameplayAbilityComponent()
     {
         TemplatedDelegate<GameplayAbilitySystem>::RunAfterServiceInit([this](const shared_ptr<GameplayAbilitySystem>& System)
-        {
-            System->DeRegister(shared_from_this(), Type);
-        },
-        GameServiceType::INVALID,
-        GameServiceType::GameplayAbilitySystem
+            {
+                System->DeRegister(shared_from_this(), Type);
+            },
+            GameServiceType::INVALID,
+            GameServiceType::GameplayAbilitySystem
         );
     }
 
     void GameplayAbilityComponent::Init()
     {
         TemplatedDelegate<GameplayAbilitySystem>::RunAfterServiceInit([this](const shared_ptr<GameplayAbilitySystem>& System)
-        {
-            Attributes->Initialize();
-            bIsInitialized = true;
-            HandleDelayedEffects();
-            HandleOnStartAbilities();
+            {
+                Attributes->Initialize();
+                bIsInitialized = true;
+                HandleDelayedEffects();
+                HandleOnStartAbilities();
 
-            System->Register(shared_from_this(), Type);
-        },
-        GameServiceType::INVALID,
-        GameServiceType::GameplayAbilitySystem
+                System->Register(shared_from_this(), Type);
+            },
+            GameServiceType::INVALID,
+            GameServiceType::GameplayAbilitySystem
         );
     }
 

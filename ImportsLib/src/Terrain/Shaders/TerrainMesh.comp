@@ -243,9 +243,6 @@ void GenerateTex(ivec3 id){
 }
 
 void main() {
-    if (gl_GlobalInvocationID.x >= _TexSize.x * DISPATCH_SIZE || gl_GlobalInvocationID.y >= _TexSize.y * DISPATCH_SIZE)
-        return;
-    
     ivec3 id = ivec3(gl_GlobalInvocationID.x, 0, gl_GlobalInvocationID.y);
     
     GenerateTex(id);

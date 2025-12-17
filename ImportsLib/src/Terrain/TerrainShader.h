@@ -27,7 +27,7 @@ namespace TTerrain
         GLuint VertexBuffer, NormalBuffer, HeightBuffer, SelectionBuffer;
         glm::vec3 BrushPos;
         unsigned int BrushSize;
-        glm::ivec2 TexSize, WorldSize;
+        glm::ivec2 TexSize;
         
         glm::vec3 GrassColor, DirtColor;
         float GrassScale, GrassQuantize;
@@ -57,5 +57,6 @@ namespace TTerrain
         const wchar_t* VertexShader = L"TERRAIN_VERTEX_SHADER";
         const wchar_t* FragmentShader = L"TERRAIN_FRAGMENT_SHADER";
         const wchar_t* DepthFragmentShader = L"DEPTH_FRAGMENT_SHADER";
+
     };
 }

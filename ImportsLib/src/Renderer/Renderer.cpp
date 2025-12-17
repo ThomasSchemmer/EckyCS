@@ -4,11 +4,6 @@
 #include <fstream>
 #include <iostream>
 #include "BaseShader.h"
-#define WIN32_LEAN_AND_MEAN
-// mask windows byte def, otherwise it overrides std::byte
-#define byte win_byte_override
-#include <Windows.h>
-#undef byte
 
 #include <glew/include/GL/glew.h>
 #define GLFW_INCLUDE_NONE
@@ -41,18 +36,9 @@ void Renderer::Init(GLFWwindow* Window)
         Window,
         Camera
     );
-    Terrain = make_shared<TTerrain::TerrainManager>();
     GizmosPtr = make_shared<Gizmos>();
 
     InitRenderPasses(Window);
-}
-
-
-void Renderer::InitRenderDoc()
-{
-#ifdef _WIN32
-    LoadRenderDocWindows();
-#endif
 }
 
 void Renderer::InitRenderPasses(GLFWwindow* Window)
@@ -69,7 +55,6 @@ void Renderer::Update(float Delta) const
 {
     Camera->Update(Delta);
     LightPtr->Update(Delta);
-    Terrain->Update(Delta);
 }
 
 void Renderer::Render()
@@ -86,24 +71,22 @@ void Renderer::Render()
         Pass->Use();
         CurrentRenderPass = Pass;
 
-        Terrain->Render(Pass->Type);
+        // terrain has its own shaders, so do it before the global ones
+        Game::Instance->TerrainPtr->Render(Pass->Type);
+
+        auto CurrentShader = GetShaderForCurrentPass();
+        if (!CurrentShader)
+            continue;
         
-        if (Pass->Type == RenderPassType::BasePass)
-        {
-            ShaderPtr->Use();
-            ShaderPtr->UpdateVars(Camera, LightPtr);
-        }else
-        {
-            DepthShaderPtr->Use();
-            DepthShaderPtr->UpdateVars(Camera, LightPtr);
-        }
+        CurrentShader->Use();
+        CurrentShader->UpdateVars(Camera, LightPtr);
         
         for (auto& System : Systems)
         {
             auto RenderSystem = dynamic_pointer_cast<BaseRenderSystem>(System);
-            if (!RenderSystem)
+            if (!RenderSystem || !RenderSystem->SupportsRenderPass(Pass->Type))
                 continue;
-        
+            
             RenderSystem->Render();
         }
         
@@ -123,40 +106,13 @@ void Renderer::Render()
         System->OnDrawGizmos(GizmosPtr);
     }
     Camera->OnDrawGizmos(GizmosPtr);
-    Terrain->OnDrawGizmos(GizmosPtr);
     LightPtr->OnDrawGizmos(GizmosPtr);
+    Game::Instance->TerrainPtr->OnDrawGizmos(GizmosPtr);
 }
 
-void Renderer::HandleCaptureStart() const
-{
-    if(!RDocAPI)
-        return;
-    
-    ImGui::Begin("RenderDoc");
-    if (ImGui::Button("Capture") || Camera->GetKey(GLFW_KEY_F11) == GLFW_PRESS)
-    {
-        RDocAPI->StartFrameCapture(nullptr, nullptr);
-    }
-    ImGui::End();
-}
-
-void Renderer::HandleCaptureStop() const
-{
-    if (!RDocAPI || !RDocAPI->IsFrameCapturing())
-        return;
-
-    RDocAPI->EndFrameCapture(nullptr, nullptr);
-
-    char pathBuffer[4096];
-    auto Num = RDocAPI->GetNumCaptures();
-    RDocAPI->GetCapture(Num - 1, pathBuffer, nullptr, nullptr);
-    
-    RDocAPI->LaunchReplayUI(1, pathBuffer);
-}
 
 void Renderer::CleanUp()
 {
-    Terrain->CleanUp();
     ShaderPtr->CleanUp();
     DepthShaderPtr->CleanUp();
     for (auto& Pass : RenderPasses)
@@ -164,9 +120,6 @@ void Renderer::CleanUp()
         Pass->CleanUp();
     }
     RenderPasses.clear();
-#ifdef _WIN32
-    UnloadRenderDocWindows();
-#endif
 }
 
 shared_ptr<Camera> Renderer::GetCamera() const
@@ -184,37 +137,23 @@ std::shared_ptr<Gizmos> Renderer::GetGizmos()
     return GizmosPtr;
 }
 
+std::shared_ptr<BaseShader> Renderer::GetShaderForCurrentPass() const
+{
+    if (!CurrentRenderPass)
+        return nullptr;
+    
+    if (CurrentRenderPass->Type == RenderPassType::BasePass)
+        return ShaderPtr;
+
+    if (CurrentRenderPass->Type == RenderPassType::ShadowPass)
+        return DepthShaderPtr;
+
+    return nullptr;
+}
+
 RenderPassType Renderer::GetCurrentRenderPassType() const
 {
     return CurrentRenderPass ? CurrentRenderPass->Type : RenderPassType::Invalid;
 }
-
-#ifdef _WIN32
-void Renderer::LoadRenderDocWindows()
-{
-    if(HMODULE RDC = LoadLibraryA(RenderDocPath))
-    {
-        auto RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)GetProcAddress(RDC, "RENDERDOC_GetAPI");
-        int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void **)&RDocAPI);
-        if (ret != 1)
-        {
-            throw std::runtime_error("ERROR::RENDERER::FAILED_LOADING_RENDERDOC\n");
-        }
-    }
-}
-
-void Renderer::UnloadRenderDocWindows() const
-{
-    if (RDocAPI == nullptr)
-        return;
-
-    if (HMODULE RDC = GetModuleHandleA(RenderDocPath)) {
-        RDocAPI->Shutdown();
-        if (FreeLibrary(RDC)) {
-            RDC = nullptr;
-        } 
-    }
-}
-#endif
 
 

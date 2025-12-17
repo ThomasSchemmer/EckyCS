@@ -5,6 +5,8 @@
 
 #include "GameService.h"
 #include <glew/include/GL/glew.h>
+
+#include "../Terrain/TerrainManager.h"
 #include "GLFW/glfw3.h"
 
 class Renderer;
@@ -51,8 +53,9 @@ namespace GameImports {
 		static unique_ptr<Game> Instance;
 		static float DeltaTime, DeltaFixedTime;
 		shared_ptr<Renderer> RendererPtr;
+		shared_ptr<TTerrain::TerrainManager> TerrainPtr;
 
-		Game(const function<float()>& TF) : TimeFunction(TF) {}
+		Game(const function<float()>& TF);
 		virtual ~Game();
 
 		/** Starts the initialization of the whole game - should be run before any frames*/
@@ -114,6 +117,7 @@ namespace GameImports {
 		static void RemoveServiceDelegate(int DelegateID);
 		static void MarkAsReadyFor(int DelegateID, GameServiceType ServiceType);
 		static void RegisterCallback(const shared_ptr<GameService>& A, const shared_ptr<GameService>& B);
+		
 	protected:
 		void RemoveCallback(GameServiceType A, GameServiceType B);
 		bool CheckForAnyLoopBetween(const shared_ptr<GameService>& A, const shared_ptr<GameService>& B, vector<GameServiceType>& Chain);

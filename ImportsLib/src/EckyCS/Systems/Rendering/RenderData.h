@@ -1,18 +1,24 @@
 ﻿#pragma once
 
 #include <glew/include/GL/glew.h>
-
 #include "../../Components/ComponentGroupIdentifier.h"
+#include "../../Components/Base/TransformComponent.h"
 #include "../../Util/TypeInfo.h"
 
 namespace EckyCS
 {
-    class TypeInfo;
-    struct TransformComponent;
+    class GeometryProvider;
 }
 
 namespace EckyCS
 {
+    /**
+    * Abstract helper class to manage data flow from the CPU to GPU
+     * RenderData that has to explicitly copied to the GPU every frame
+     * Used to integrate Entities into the Rendering Pipeline
+     * Copies all Components specified by the targeted Entity type, but
+     * has to use Ptr/lookup for non-standard ones
+     */
     class RenderData
     {
     public:
@@ -20,7 +26,10 @@ namespace EckyCS
 
         RenderData() = default;
         virtual ~RenderData() = default;
-        virtual void Create(size_t count);
+        virtual void Create(size_t count, const shared_ptr<GeometryProvider>& Provider);
+        
+        void Render() const;
+
         
         template <typename... Components>
         requires AllContainedIn<tuple<TransformComponent>, tuple<Components...>>
@@ -54,76 +63,18 @@ namespace EckyCS
             }
         }
         
-        void Render() const;
-        
     protected:
-        unsigned int VAO;
-        // holds triangle vertices for now, but will contain mesh data later - shared for all
-        unsigned int VerticesBuffer;
-        unsigned int OffsetBuffer;
-        unsigned int IDBuffer;
+        GLuint VAO;
 
+        shared_ptr<GeometryProvider> DataProvider;
         
-        float CubeVertices[288] = {
-            // vec3 pos, vec2 uv, vec3 normal
-            // --- Front face (Z = +0.5) ---
-            -0.5f,-0.5f, 0.5f, 0.0f, 0.0f, 0, 0, 1,
-             0.5f,-0.5f, 0.5f, 1.0f, 0.0f, 0, 0, 1,
-             0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0, 0, 1,
-
-             0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0, 0, 1,
-            -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0, 0, 1,
-            -0.5f,-0.5f, 0.5f, 0.0f, 0.0f, 0, 0, 1,
-
-            // --- Back face (Z = -0.5) ---
-            -0.5f,-0.5f,-0.5f, 1.0f, 0.0f, 0, 0, -1,
-            -0.5f, 0.5f,-0.5f, 1.0f, 1.0f, 0, 0, -1,
-             0.5f, 0.5f,-0.5f, 0.0f, 1.0f, 0, 0, -1,
-
-             0.5f, 0.5f,-0.5f, 0.0f, 1.0f, 0, 0, -1,
-             0.5f,-0.5f,-0.5f, 0.0f, 0.0f, 0, 0, -1,
-            -0.5f,-0.5f,-0.5f, 1.0f, 0.0f, 0, 0, -1,
-
-            // --- Left face (X = -0.5) ---
-            -0.5f,-0.5f,-0.5f, 0.0f, 0.0f, -1, 0, 0,
-            -0.5f,-0.5f, 0.5f, 1.0f, 0.0f, -1, 0, 0,
-            -0.5f, 0.5f, 0.5f, 1.0f, 1.0f, -1, 0, 0,
-
-            -0.5f, 0.5f, 0.5f, 1.0f, 1.0f, -1, 0, 0,
-            -0.5f, 0.5f,-0.5f, 0.0f, 1.0f, -1, 0, 0,
-            -0.5f,-0.5f,-0.5f, 0.0f, 0.0f, -1, 0, 0,
-
-            // --- Right face (X = +0.5) ---
-             0.5f,-0.5f,-0.5f, 1.0f, 0.0f, 1, 0, 0,
-             0.5f, 0.5f,-0.5f, 1.0f, 1.0f, 1, 0, 0,
-             0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1, 0, 0,
-
-             0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1, 0, 0,
-             0.5f,-0.5f, 0.5f, 0.0f, 0.0f, 1, 0, 0,
-             0.5f,-0.5f,-0.5f, 1.0f, 0.0f, 1, 0, 0,
-
-            // --- Top face (Y = +0.5) ---
-            -0.5f, 0.5f,-0.5f, 0.0f, 1.0f, 0, 1, 0,
-            -0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0, 1, 0,
-             0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0, 1, 0,
-
-             0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0, 1, 0,
-             0.5f, 0.5f,-0.5f, 1.0f, 1.0f, 0, 1, 0,
-            -0.5f, 0.5f,-0.5f, 0.0f, 1.0f, 0, 1, 0,
-
-            // --- Bottom face (Y = -0.5) ---
-            -0.5f,-0.5f,-0.5f, 0.0f, 0.0f, 0, -1, 0, 
-             0.5f,-0.5f,-0.5f, 1.0f, 0.0f, 0, -1, 0, 
-             0.5f,-0.5f, 0.5f, 1.0f, 1.0f, 0, -1, 0, 
--
-             0.5f,-0.5f, 0.5f, 1.0f, 1.0f, 0, -1, 0, 
-            -0.5f,-0.5f, 0.5f, 0.0f, 1.0f, 0, -1, 0, 
-            -0.5f,-0.5f,-0.5f, 0.0f, 0.0f, 0, -1, 0, 
-        };
-
         // stores GL-ID, size of component and index of type in View
         map<TypeInfo, tuple<int, size_t, int>> ParamLookup;
-        // ?CullingDataBuffer
+        
+        // holds triangle vertices for now, but will contain mesh data later - shared for all
+        GLuint VerticesBuffer = 0;
+        GLuint OffsetBuffer = 0;
+        GLuint IDBuffer = 0;
 
     };
 }

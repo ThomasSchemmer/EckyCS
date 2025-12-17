@@ -1,0 +1,58 @@
+#version 430 
+
+#define MODE_COUNT_TRIANGLES 0
+#define MODE_GENERATE_TRIANGLES 1
+
+#define DISPATCH_SIZE 8
+layout(local_size_x = DISPATCH_SIZE, local_size_y = DISPATCH_SIZE) in;
+
+
+layout(std430, binding = 0) buffer PositionBuffer {
+    vec4 Entries[];
+} Positions;
+
+layout(std430, binding = 1) buffer CountBuffer {
+    uint Count;
+} Counter;
+
+layout(std430, binding = 2) buffer HeightBuffer {
+    uint Value[];
+} Heights;
+
+// 0 = calc overall size, 1 = actually compute vertices
+uniform uint _Mode;
+uniform ivec2 _TargetSize;
+uniform ivec3 _WorldSize;
+uniform vec3 _GlobalWorldPos;
+uniform ivec2 _HeightSize;
+
+void GenerateGrassPositions(ivec3 id){
+    // map 100x100 index to 32x32 index
+    vec2 Scale = vec2(float(_HeightSize.x) / _TargetSize.x, float(_HeightSize.y) / _TargetSize.y);
+    ivec2 HeightPos = ivec2(id.x * Scale.x, id.z * Scale.y);
+    int HeightIndex = HeightPos.y * _HeightSize.x + HeightPos.x;
+    float TargetHeight = int(Heights.Value[HeightIndex]) * 1.25;
+    //Todo: check if we not are above water/dirt etc!
+    // TODO: position is super imprecise around cliffs! 
+    //todo: offset position randomly to hide grid
+
+    uint Index = atomicAdd(Counter.Count, 1);
+    if (_Mode == MODE_COUNT_TRIANGLES)
+        return;
+    
+    vec3 WorldPosition;
+    WorldPosition.x = id.x + _GlobalWorldPos.x;
+    WorldPosition.y = TargetHeight;
+    WorldPosition.z = id.z + _GlobalWorldPos.z;
+    Positions.Entries[Index].xyz = WorldPosition;
+}
+
+
+void main() {
+    ivec3 id = ivec3(gl_GlobalInvocationID.x, 0, gl_GlobalInvocationID.y);
+    //since we have a dispatch groupsize of 8, we can potentially read out of bounds
+    if (id.x >= _TargetSize.x || id.z >= _TargetSize.y)
+        return;
+    
+    GenerateGrassPositions(id);
+}

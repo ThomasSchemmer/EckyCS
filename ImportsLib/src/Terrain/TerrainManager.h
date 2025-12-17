@@ -6,7 +6,14 @@
 #include <memory>
 #include <glm/vec4.hpp>
 #include "TerrainData.h"
+#include "../EckyCS/Systems/Rendering/SpriteGeometryProvider.h"
+#include "Grass/GrassData.h"
 
+
+namespace EckyCS
+{
+    class GrassRenderSystem;
+}
 
 enum class RenderPassType : uint8_t;
 class Gizmos;
@@ -16,21 +23,29 @@ class Camera;
 
 namespace TTerrain
 {
+    class GrassShader;
     using namespace std;
     class TerrainShaderSettings;
     class TerrainShader;
 
     /**
      * Provides access for all thing related to the terrain
-     * Can paint a height map via UI
-     * Translates this into a triangle blob
+     * Terrain information is divided into chunk, basically a 2d array
+     * of @TerrainData, which is then passed into the different shaders
+     * There are compute shaders for painting/selecting/creating the terrain
+     * as well as display shaders both for the terrain itself and the grass
      */
-    class TerrainManager
+    class TerrainManager : public enable_shared_from_this<TerrainManager>
     {
+        /** For easy buffer access */
+        friend class TerrainData;
+        friend class GrassData;
+        
     public:
-        TerrainManager();
+        TerrainManager() = default;
         ~TerrainManager() = default;
 
+        void Init();
         void Render(RenderPassType Type);
         void Update(float Delta);
         void OnDrawGizmos(const shared_ptr<Gizmos>& Gizmos);
@@ -38,11 +53,14 @@ namespace TTerrain
 
     private:
         //todo: this is kinda inefficient, better to have one big buffer instead of clustering
-        vector<TerrainData> Datas;
+        vector<TerrainData> TerrainDatas;
+        
         shared_ptr<Camera> CamPtr;
         shared_ptr<Light> LightPtr;
-        shared_ptr<TerrainShader> Shader;
+        shared_ptr<TerrainShader> TerrainShader;
+        shared_ptr<GrassShader> GrassShader;
         shared_ptr<Renderer> RendererPtr;
+        shared_ptr<EckyCS::SpriteGeometryProvider> GeometryProvider;
 
         bool bIsEditing = false;
         bool bIsSelecting = false;
@@ -63,6 +81,7 @@ namespace TTerrain
         GLuint ComputeProgramMesh;
         GLuint ComputeProgramPaint;
         GLuint ComputeProgramSelect;
+        GLuint ComputeProgramGrass;
 
         void DispatchCompute();
         void HandleResetting();
@@ -87,6 +106,8 @@ namespace TTerrain
         const wchar_t* ComputeShaderMesh = L"TERRAIN_MESH_COMPUTE_SHADER";
         const wchar_t* ComputeShaderPaint = L"TERRAIN_PAINT_COMPUTE_SHADER";
         const wchar_t* ComputeShaderSelect = L"TERRAIN_SELECT_COMPUTE_SHADER";
+        
+        const wchar_t* ComputeShaderGrass = L"TERRAIN_GRASS_COMPUTE_SHADER";
 
     };
 }

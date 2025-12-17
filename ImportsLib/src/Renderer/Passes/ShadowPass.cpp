@@ -15,7 +15,7 @@ void ShadowPass::Create(GLFWwindow* Window)
     RenderPass::Create(Window);
     TempOut = CreateColorTexture(Width, Height, GL_LINEAR);
     
-    BlurTexCompute = ShaderHelper::CreateProgram({BlurTexComputeID});
+    BlurTexCompute = ShaderHelper::CreateComputeProgram({BlurTexComputeID});
 }
 
 

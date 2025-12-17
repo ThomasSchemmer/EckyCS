@@ -41,3 +41,12 @@ float cubicNoise(vec3 at) {
         sampleY(vec3(at.xy, floored + 2.0)),
         fract(at.z));
 }
+
+float GetGrassNoise(vec4 WorldPos, float GrassScale, float GrassQuantize){
+    float GrassNoise = abs(cubicNoise(WorldPos.xyz * GrassScale));
+    GrassNoise += abs(cubicNoise(-WorldPos.xyz * GrassScale * 2)) * 0.5;
+    GrassNoise += 0.2;
+    GrassNoise = int(GrassNoise * GrassQuantize) / GrassQuantize;
+    GrassNoise = clamp(GrassNoise, 0, 1);
+    return GrassNoise; 
+}

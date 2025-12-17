@@ -1,14 +1,12 @@
 ﻿#pragma once
 #include <memory>
 #include <glew/include/GL/glew.h>
-#include <renderdoc/renderdoc_app.h>
 
 #include "Camera.h"
 #include "Gizmos.h"
 #include "Light.h"
 #include "GLFW/glfw3.h"
 #include "Passes/RenderPass.h"
-
 
 class DepthShader;
 
@@ -30,15 +28,13 @@ public:
     Renderer() = default;
     ~Renderer() = default;
     void Init(GLFWwindow* Window);
-    void InitRenderDoc();
     void Update(float Delta) const;
     void Render();
-    void HandleCaptureStart() const;
-    void HandleCaptureStop() const;
     void CleanUp();
     std::shared_ptr<Camera> GetCamera() const;
     std::shared_ptr<Light> GetLight();
     std::shared_ptr<Gizmos> GetGizmos();
+    std::shared_ptr<BaseShader> GetShaderForCurrentPass() const;
     RenderPassType GetCurrentRenderPassType() const;
 
     template<typename T>
@@ -57,10 +53,8 @@ public:
     }
 
 private:
-    RENDERDOC_API_1_1_2* RDocAPI = nullptr;
     std::shared_ptr<Camera> Camera;
     std::shared_ptr<Light> LightPtr;
-    std::shared_ptr<TTerrain::TerrainManager> Terrain;
     std::shared_ptr<BaseShader> ShaderPtr;
     std::shared_ptr<DepthShader> DepthShaderPtr;
     std::shared_ptr<Gizmos> GizmosPtr;
@@ -69,10 +63,4 @@ private:
 
     void InitRenderPasses(GLFWwindow* Window);
     
-#ifdef _WIN32
-    void LoadRenderDocWindows();
-    void UnloadRenderDocWindows() const;
-#endif
-
-    char RenderDocPath[42] = "./ImportsLib/ext/renderdoc/renderdoc.dll";
 };

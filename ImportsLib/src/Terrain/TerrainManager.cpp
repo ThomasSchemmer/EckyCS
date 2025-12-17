@@ -12,6 +12,8 @@
 #include "TerrainShader.h"
 #include "../Renderer/Renderer.h"
 #include "../Renderer/Passes/ShadowPass.h"
+#include "Grass/GrassData.h"
+#include "Grass/GrassShader.h"
 
 using namespace std;
 using namespace Util;
@@ -19,15 +21,20 @@ using namespace GameImports;
 
 namespace TTerrain
 {
-    TerrainManager::TerrainManager()
+
+    void TerrainManager::Init()
     {
         RendererPtr = Game::Instance->RendererPtr;
         CamPtr = RendererPtr->GetCamera();
         LightPtr = RendererPtr->GetLight();
-        Shader = make_shared<TerrainShader>();
+        TerrainShader = make_shared<class TerrainShader>();
+        GrassShader = make_shared<class GrassShader>();
+        GeometryProvider = make_shared<EckyCS::SpriteGeometryProvider>();
+        
         CreateCompute();
-        CreateTerrainAt(glm::vec3(0, 0, 0));
+        CreateTerrainAt(glm::vec3(0.0f));
     }
+
 
     void TerrainManager::Render(RenderPassType Type)
     {       
@@ -57,7 +64,7 @@ namespace TTerrain
         if (bIsRaising || !bWasPressingRaise)
             return;
 
-        for (auto& Data : Datas){
+        for (auto& Data : TerrainDatas){
             glUseProgram(ComputeProgramPaint);
             ShaderHelper::SetUniform3fv("_BrushPos", RaiseStartWorldPos, ComputeProgramPaint);
             UpdateComputeVars(ComputeProgramPaint);
@@ -81,7 +88,7 @@ namespace TTerrain
             UpdateComputeVars(ComputeProgramSelect);
             ShaderHelper::SetUniform3fv("_BrushPos", CamPtr->GetMouseWorldPos(), ComputeProgramSelect);
             ShaderHelper::SetUniform3fv("_StartWorldPos", SelectStartWorldPos, ComputeProgramSelect);
-            for (const auto& Data : Datas)
+            for (const auto& Data : TerrainDatas)
             {
                 Data.UpdateComputeVars(ComputeProgramSelect);
                 Data.DispatchSelect((GLuint)TerrainSelectionMode::Additive);
@@ -94,7 +101,7 @@ namespace TTerrain
             glUseProgram(ComputeProgramSelect);
             UpdateComputeVars(ComputeProgramSelect);
             ShaderHelper::SetUniform3fv("_StartWorldPos", SelectStartWorldPos, ComputeProgramSelect);
-            for (const auto& Data : Datas)
+            for (const auto& Data : TerrainDatas)
             {
                 Data.UpdateComputeVars(ComputeProgramSelect);
                 Data.DispatchSelect((GLuint)TerrainSelectionMode::Clear);
@@ -109,7 +116,7 @@ namespace TTerrain
 
         glUseProgram(ComputeProgramMesh);
         UpdateComputeVars(ComputeProgramMesh);
-        for (auto& Data : Datas)
+        for (auto& Data : TerrainDatas)
         {
             Data.UpdateComputeVars(ComputeProgramMesh);
             Data.DispatchResetHeight();
@@ -119,13 +126,13 @@ namespace TTerrain
 
     void TerrainManager::RenderTriangles(RenderPassType Type) const
     {
-        Shader->Use(Type);
+        TerrainShader->Use(Type);
         auto Settings = GetStandardSettings();
-        for (const auto& TData : Datas)
+        for (const auto& TData : TerrainDatas)
         {
             TData.ApplyToSettings(Settings);
-            Shader->UpdateVars(Settings);
-            TData.RenderTriangles();
+            TerrainShader->UpdateVars(Settings);
+            TData.RenderTriangles(Type);
         }
     }
     
@@ -166,14 +173,16 @@ namespace TTerrain
 
     void TerrainManager::CleanUp() const
     {
-        Shader->CleanUp();
-        for (auto& Data : Datas)
+        TerrainShader->CleanUp();
+        GrassShader->CleanUp();
+        for (auto& Data : TerrainDatas)
         {
             Data.CleanUp();
         }
         glDeleteProgram(ComputeProgramMesh);
         glDeleteProgram(ComputeProgramPaint);
         glDeleteProgram(ComputeProgramSelect);
+        glDeleteProgram(ComputeProgramGrass);
     }
 
     void TerrainManager::HandleToggle(bool* bIsDoing, bool* bWasDoing, GLint Key) const
@@ -200,10 +209,10 @@ namespace TTerrain
 
     void TerrainManager::CreateTerrainAt(glm::vec3 WorldPos)
     {
-        auto& Tmp = Datas.emplace_back(WorldPos, ComputeProgramMesh, ComputeProgramPaint, ComputeProgramSelect);
         glUseProgram(ComputeProgramMesh);
         UpdateComputeVars(ComputeProgramMesh);
-        Tmp.DispatchGenerate();
+        auto& TmpTerrain = TerrainDatas.emplace_back(WorldPos, shared_from_this());
+        TmpTerrain.DispatchGenerate();
     }
 
     void TerrainManager::HandleInput()
@@ -227,9 +236,10 @@ namespace TTerrain
 
     void TerrainManager::CreateCompute()
     {
-        ComputeProgramMesh = ShaderHelper::CreateProgram({ComputeShaderMesh});
-        ComputeProgramPaint = ShaderHelper::CreateProgram({ComputeShaderPaint});
-        ComputeProgramSelect = ShaderHelper::CreateProgram({ComputeShaderSelect});
+        ComputeProgramMesh = ShaderHelper::CreateComputeProgram({ComputeShaderMesh});
+        ComputeProgramPaint = ShaderHelper::CreateComputeProgram({ComputeShaderPaint});
+        ComputeProgramSelect = ShaderHelper::CreateComputeProgram({ComputeShaderSelect});
+        ComputeProgramGrass = ShaderHelper::CreateComputeProgram({ComputeShaderGrass});
     }
 
     void TerrainManager::UpdateComputeVars(GLuint Program) const
@@ -244,7 +254,7 @@ namespace TTerrain
     GLsizei TerrainManager::GetTotalAppendCount() const
     {
         GLsizei TotalAppendCount = 0;
-        for (auto& Data : Datas)
+        for (auto& Data : TerrainDatas)
         {
             TotalAppendCount += Data.AppendCount;
         }
@@ -253,6 +263,7 @@ namespace TTerrain
 
     TerrainShaderSettings TerrainManager::GetStandardSettings() const
     {
+        // todo: this gets called / created a lot, streamline!
         static TerrainShaderSettings Settings;
         Settings.RenderPassType = RendererPtr->GetCurrentRenderPassType();
         Settings.BrushPos = CamPtr->GetMouseWorldPos();
@@ -273,22 +284,21 @@ namespace TTerrain
         Settings.NormalBuffer = 0;
         Settings.HeightBuffer = 0;
         Settings.SelectionBuffer = 0;
-        Settings.WorldSize = glm::vec3(0);
         
         return Settings;
     }
 
     void TerrainManager::SaveData() const
     {
-        size_t DataCount = Datas.size();
-        size_t BufferSize = TerrainData::GetHeightBufferSize();
+        size_t DataCount = TerrainDatas.size();
+        size_t BufferSize = TerrainData::GetHeightBufferByteSize();
 
         // we can calculate all sizes from the count
         std::ofstream file("output.bin", std::ios::binary);
         file.write(reinterpret_cast<char*>(&DataCount), sizeof(size_t));
         
         // write WorldPos and Height data for each terrain chunk
-        for (auto& TData : Datas)
+        for (auto& TData : TerrainDatas)
         {
             file.write(reinterpret_cast<const char*>(&TData.GlobalWorldPos.x), sizeof(glm::vec3));
             std::vector<uint32_t> Data(BufferSize / sizeof(uint32_t));
@@ -302,7 +312,7 @@ namespace TTerrain
 
     void TerrainManager::LoadData()
     {
-        Datas.clear();
+        TerrainDatas.clear();
 
         // basically the reverse of @SaveData()
         std::ifstream File("output.bin", std::ios::binary);
@@ -324,7 +334,7 @@ namespace TTerrain
             glm::vec3 WorldPos;
             File.read(reinterpret_cast<char*>(&WorldPos), sizeof(glm::vec3));
             File.read(reinterpret_cast<char*>(Data.data()), DataPerChunk);
-            auto& TerrainData = Datas.emplace_back(WorldPos, ComputeProgramMesh, ComputeProgramPaint, ComputeProgramSelect);
+            auto& TerrainData = TerrainDatas.emplace_back(WorldPos, shared_from_this());
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, TerrainData.HeightBuffer);
             glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, DataPerChunk, Data.data());
         }
@@ -332,7 +342,7 @@ namespace TTerrain
         
         glUseProgram(ComputeProgramMesh);
         UpdateComputeVars(ComputeProgramMesh);
-        for (auto& TData : Datas)
+        for (auto& TData : TerrainDatas)
         {
             TData.DispatchGenerate();
         }

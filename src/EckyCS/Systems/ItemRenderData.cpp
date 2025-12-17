@@ -2,11 +2,12 @@
 
 #include "../ItemEntity.h"
 #include "../Components/ItemComponent.h"
+#include "EckyCS/Systems/Rendering/SpriteGeometryProvider.h"
 #include "EckyCS/Util/TypeInfo.h"
 
-void ItemRenderData::Create(size_t InCount)
+void ItemRenderData::Create(size_t InCount, const shared_ptr<GeometryProvider>& Provider)
 {
-    RenderData::Create(InCount);
+    RenderData::Create(InCount, Provider);
     
     glGenBuffers(1, &ItemBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, ItemBuffer);

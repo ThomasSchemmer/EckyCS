@@ -1,4 +1,8 @@
 ﻿
+const float MinBias = 0.0005;
+const float MaxBias = 0.002;
+const vec3 ShadowColor = vec3(0.01, 0.01, 0.03);
+
 float LinearStep(float Value, float Low, float High){
     return clamp((Value - Low) / (High - Low), 0, 1);
 }
@@ -24,6 +28,7 @@ float GetVarianceShadow(void){
 }
 
 float GetShadow(void){
+    // check if in the ShadowMap the depth is lower than the current one -> we are in shadow
     vec3 NDC = PosLightClip.xyz / PosLightClip.w;
     NDC = NDC / 2.0 + 0.5;
     vec2 UV = NDC.xy;

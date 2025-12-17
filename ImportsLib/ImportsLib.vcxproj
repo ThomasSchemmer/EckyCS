@@ -285,6 +285,8 @@
     <ClCompile Include="src\Renderer\Shaders\DepthShader.cpp" />
     <ClCompile Include="src\Renderer\Util\Projector.cpp" />
     <ClCompile Include="src\Renderer\Util\Transform.cpp" />
+    <ClCompile Include="src\Terrain\Grass\GrassData.cpp" />
+    <ClCompile Include="src\Terrain\Grass\GrassShader.cpp" />
     <ClCompile Include="src\Terrain\TerrainData.cpp" />
     <ClCompile Include="src\Terrain\TerrainManager.cpp" />
     <ClCompile Include="src\Terrain\TerrainShader.cpp" />
@@ -316,8 +318,10 @@
     <ClInclude Include="src\EckyCS\SparseSet\ISparseSet.h" />
     <ClInclude Include="src\EckyCS\SparseSet\SparseSet.h" />
     <ClInclude Include="src\EckyCS\SparseSet\SparseSetPage.h" />
+    <ClInclude Include="src\EckyCS\Systems\Rendering\GeometryProvider.h" />
     <ClInclude Include="src\EckyCS\Systems\Rendering\RenderData.h" />
     <ClInclude Include="src\EckyCS\Systems\Rendering\EntityRenderSystem.h" />
+    <ClInclude Include="src\EckyCS\Systems\Rendering\SpriteGeometryProvider.h" />
     <ClInclude Include="src\EckyCS\Systems\System.h" />
     <ClInclude Include="src\EckyCS\Util\BitVector.h" />
     <ClInclude Include="src\EckyCS\Util\ComponentAllocator.h" />
@@ -355,6 +359,8 @@
     <ClInclude Include="src\Renderer\Util\Projector.h" />
     <ClInclude Include="src\Renderer\Util\Transform.h" />
     <ClInclude Include="src\Renderer\Util\Utils.h" />
+    <ClInclude Include="src\Terrain\Grass\GrassData.h" />
+    <ClInclude Include="src\Terrain\Grass\GrassShader.h" />
     <ClInclude Include="src\Terrain\TerrainData.h" />
     <ClInclude Include="src\Terrain\TerrainManager.h" />
     <ClInclude Include="src\Terrain\TerrainShader.h" />
@@ -367,12 +373,16 @@
     <Content Include="src\Renderer\Shaders\glsl\DepthFragmentShader.frag" />
     <Content Include="src\Renderer\Shaders\glsl\DepthVertexShader.vert" />
     <Content Include="src\Renderer\Shaders\glsl\Shadow.glsl" />
+    <Content Include="src\Terrain\Grass\GrassFragmentShader.frag" />
+    <Content Include="src\Terrain\Grass\GrassGeneration.comp" />
+    <Content Include="src\Terrain\Grass\GrassVertexShader.vert" />
     <Content Include="src\Terrain\Shaders\Cubic.glsl" />
     <Content Include="src\Terrain\Shaders\TerrainFragmentShader.frag" />
     <Content Include="src\Terrain\Shaders\TerrainMesh.comp" />
     <Content Include="src\Terrain\Shaders\TerrainPaint.comp" />
     <Content Include="src\Terrain\Shaders\TerrainSelect.comp" />
     <Content Include="src\Terrain\Shaders\TerrainVertexShader.vert" />
+    <Content Include="Textures\leaf.png" />
     <EmbeddedResource Include="src\Renderer\Shaders\glsl\BaseFragmentShader.frag" />
     <EmbeddedResource Include="src\Renderer\Shaders\glsl\BaseVertexShader.vert" />
   </ItemGroup>

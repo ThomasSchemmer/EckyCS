@@ -1,5 +1,7 @@
 ﻿#include "TerrainData.h"
 #include <windows.h>
+
+#include "TerrainManager.h"
 #include "TerrainShader.h"
 #include "../Util/ShaderHelper.h"
 
@@ -8,15 +10,17 @@ namespace TTerrain
 {
     unsigned int TerrainData::TexSize = 32;
     
-    void TerrainData::RenderTriangles() const
+    void TerrainData::RenderTriangles(RenderPassType Type) const
     {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, VertexBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, NormalBuffer);
         glDrawArrays(GL_TRIANGLES, 0, AppendCount);
+        Grass.Render(Type);
     }
 
-    TerrainData::TerrainData(glm::vec3 WorldPos, GLuint PMesh, GLuint PPaint, GLuint PSelect) :
-        GlobalWorldPos(WorldPos), ComputeProgramMesh(PMesh), ComputeProgramPaint(PPaint), ComputeProgramSelect(PSelect)
+    TerrainData::TerrainData(glm::vec3 WorldPos, const std::shared_ptr<TerrainManager>& Manager) :
+        GlobalWorldPos(WorldPos), ComputeProgramMesh(Manager->ComputeProgramMesh), ComputeProgramPaint(Manager->ComputeProgramPaint), ComputeProgramSelect(Manager->ComputeProgramSelect),
+        Grass(Manager)
     {
         CreateCompute();
         // actual DispatchGenerate() is called from the manager, after settings uniforms!
@@ -79,10 +83,13 @@ namespace TTerrain
         // The count is now the actual amount of triangles to render
         AppendCount = ShaderHelper::ReadBufferCount(CountBuffer);
 
+        // now we can trigger the grass creation
+        Grass.DispatchGenerate(*this);
     }
 
     void TerrainData::CleanUp() const
     {
+        Grass.CleanUp();
         glDeleteBuffers(1, &VertexBuffer);
         glDeleteBuffers(1, &NormalBuffer);
         glDeleteBuffers(1, &CountBuffer);
@@ -108,10 +115,10 @@ namespace TTerrain
         // both Height and Selection are configurable fixed size
         glGenBuffers(1, &HeightBuffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, HeightBuffer); 
-        glBufferStorage(GL_SHADER_STORAGE_BUFFER, GetHeightBufferSize(), nullptr, GL_DYNAMIC_STORAGE_BIT);
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, GetHeightBufferByteSize(), nullptr, GL_DYNAMIC_STORAGE_BIT);
         glGenBuffers(1, &SelectionBuffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, SelectionBuffer); 
-        glBufferStorage(GL_SHADER_STORAGE_BUFFER, GetHeightBufferSize(), nullptr, GL_DYNAMIC_STORAGE_BIT);
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, GetHeightBufferByteSize(), nullptr, GL_DYNAMIC_STORAGE_BIT);
 
         DispatchResetHeight();
     }
@@ -123,7 +130,6 @@ namespace TTerrain
         Settings.NormalBuffer = NormalBuffer;
         Settings.HeightBuffer = HeightBuffer;
         Settings.SelectionBuffer = SelectionBuffer;
-        Settings.WorldSize = glm::ivec2(WorldSize.x, WorldSize.z);
     }
 
     void TerrainData::UpdateComputeVars(GLuint Program) const
@@ -134,6 +140,11 @@ namespace TTerrain
 
     unsigned int TerrainData::GetHeightBufferSize()
     {
-        return sizeof(unsigned int) * TexSize * TexSize;
+        return TexSize * TexSize;
+    }
+
+    unsigned int TerrainData::GetHeightBufferByteSize()
+    {
+        return sizeof(unsigned int) * GetHeightBufferSize();
     }
 }

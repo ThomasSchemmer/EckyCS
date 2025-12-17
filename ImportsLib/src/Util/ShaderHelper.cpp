@@ -1,6 +1,8 @@
 ﻿#include "ShaderHelper.h"
 
 #define STB_IMAGE_IMPLEMENTATION
+#include <codecvt>
+
 #include "./stb/stb_image.h"
 
 #include <windows.h>
@@ -20,19 +22,33 @@ namespace Util
         return result;
     }
 
+    string ShaderHelper::ToString(const wchar_t* wchar)
+    {
+        std::wstring ws(wchar);
+        std::string s_str;
+        s_str.reserve(ws.length());
+        ranges::transform(ws, std::back_inserter(s_str),
+                          [](wchar_t c) { return static_cast<char>(c); });
+        return s_str;
+    }
+
     string ShaderHelper::LoadShaderFromResource(const wchar_t* Name)
     {
-        HRSRC rc = FindResourceW(nullptr, Name, RT_RCDATA);
+        return LoadResourceIncludes(ResourceToString(Name));
+    }
+    
+    string ShaderHelper::ResourceToString(const wchar_t* ResourcePath)
+    {
+        HRSRC rc = FindResourceW(nullptr, ResourcePath, RT_RCDATA);
         if (!rc) {
-            wcerr << "ERROR::SHADER::FILE_MISSING: " << Name << "\n";
+            wcerr << "ERROR::SHADER::FILE_MISSING: " << ResourcePath << "\n";
             return "";
         }
 
         HGLOBAL h = LoadResource(nullptr, rc);
         DWORD size = SizeofResource(nullptr, rc);
         const char* data = static_cast<const char*>(LockResource(h));
-        
-        return LoadResourceIncludes(string(data, size));
+        return string(data, size);
     }
 
     string ShaderHelper::LoadResourceIncludes(const string& Code)
@@ -146,6 +162,33 @@ namespace Util
             cerr << "ERROR::SHADER::TEX_FILE_MISSING: " << FilePath << "\n";
         }
 
+        unsigned int ID = CreateTextureInternal(Width, Height, Data, Format);
+        stbi_image_free(Data);
+        return ID;
+    }
+
+    unsigned int ShaderHelper::CreateTexture(const wchar_t* FilePath, GLint Format)
+    {
+        auto StringPath = ToString(FilePath);
+        auto FileContent = ResourceToString(FilePath);
+        int Width, Height, CountChannels;
+        unsigned char* Data = stbi_load_from_memory(
+            reinterpret_cast<const unsigned char*>(FileContent.c_str()), 
+        static_cast<int>(FileContent.length()),    
+            &Width, &Height, &CountChannels, 0
+        );
+        if (!Data)
+        {
+            cerr << "ERROR::SHADER::TEX_FILE_MISSING: " << StringPath << "\n";
+        }
+
+        unsigned int ID = CreateTextureInternal(Width, Height, Data, Format);
+        stbi_image_free(Data);
+        return ID;
+    }
+
+    unsigned int ShaderHelper::CreateTextureInternal(int Width, int Height, const unsigned char* Data, GLint Format)
+    {
         unsigned int ID;
         glGenTextures(1, &ID);
         glBindTexture(GL_TEXTURE_2D, ID);
@@ -153,8 +196,7 @@ namespace Util
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexImage2D(GL_TEXTURE_2D, 0, Format, Width, Height, 0, Format, GL_UNSIGNED_BYTE, Data);
         glGenerateMipmap(GL_TEXTURE_2D);
-        stbi_image_free(Data);
-        return ID;
+        return ID; 
     }
 
     void ShaderHelper::SetUniform1f(const string& UniformName, float Value, unsigned int Program) 
@@ -231,7 +273,7 @@ namespace Util
         return Tmp;
     }
 
-    unsigned int ShaderHelper::CreateProgram(const vector<const wchar_t*>& Resources)
+    unsigned int ShaderHelper::CreateComputeProgram(const vector<const wchar_t*>& Resources)
     {
         vector<unsigned int> IDs;
         for (auto& Resource : Resources)

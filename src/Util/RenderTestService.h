@@ -34,11 +34,6 @@ public:
     void StartServiceInternal () override
     {
         //LoadVoxelBlocks(25);
-        
-        ComponentGroupIdentifier GroupID;
-        ItemComponent Comp;
-        TransformComponent Transform;
-        EntityGenerator::TryCreate<Plant>(OUT GroupID, OUT ID, Comp, Transform);
     }
 
     void LoadVoxel(int GroupTarget)

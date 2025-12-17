@@ -8,6 +8,7 @@
 #include "../Renderer/Renderer.h"
 #include "../Player/PlayerController.h"
 
+using namespace TTerrain;
 using namespace Player;
 
 namespace GameImports {
@@ -15,6 +16,12 @@ namespace GameImports {
 	unique_ptr<Game> Game::Instance = nullptr;
 	float Game::DeltaTime = 0;
 	float Game::DeltaFixedTime = 0;
+
+	Game::Game(const function<float()>& TF): TimeFunction(TF)
+	{
+		RendererPtr = make_shared<Renderer>();
+		TerrainPtr = make_shared<TerrainManager>();
+	}
 
 	Game::~Game()
 	{
@@ -35,8 +42,6 @@ namespace GameImports {
 	void Game::Init(GLFWwindow* Window)
 	{
 		State = GameState::InGame;
-		RendererPtr->Init(Window);
-
 		WindowPtr = Window;
 		
 		for (auto& Service: Services)
@@ -48,6 +53,9 @@ namespace GameImports {
 		{
 			Service->StartService();
 		}
+		
+		RendererPtr->Init(Window);
+		TerrainPtr->Init();
 	}
 
 	void Game::Update()
@@ -159,4 +167,5 @@ namespace GameImports {
 		return false;
 	}
 
+	
 }

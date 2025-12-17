@@ -1,8 +1,6 @@
 #include "main.h"
 
 #include <iostream>
-#include <glew/include/GL/glew.h>
-#include "GLFW/include/GLFW/glfw3.h"
 
 #include "HGame.h"
 #include "../ext/imgui/imgui.h"
@@ -12,6 +10,14 @@
 #include "../ext/imgui/backends/imgui_impl_opengl3.h"
 #include "GameService/Game.h"
 #include "Renderer/Renderer.h"
+
+#define WIN32_LEAN_AND_MEAN
+// mask windows byte def, otherwise it overrides std::byte
+#define byte win_byte_override
+#include <Windows.h>
+
+#include "renderdoc/renderdoc_app.h"
+#undef byte
 
 
 using namespace GameImports;
@@ -66,23 +72,22 @@ namespace
         }
         std::cerr << std::endl;
     }
-
-	GLFWwindow* Window;
 		
 	void error_callback(int error, const char* description)
 	{
 		fprintf(stderr, "Error: %s\n", description);
 	}
+	
 
-	void InitRenderDoc(shared_ptr<Renderer>& Ptr)
-	{
-		Ptr = make_shared<Renderer>();
-		Ptr->InitRenderDoc();
-	}
+	void HandleCaptureStart();
+	void HandleCaptureStop();
+	void LoadRenderDocWindows();
+	void UnloadRenderDocWindows();
 
-	void InitWindow(shared_ptr<Renderer>& Ptr) {
-		
-		InitRenderDoc(Ptr);
+	void InitWindow() {
+#ifdef _WIN32
+		LoadRenderDocWindows();
+#endif
 		if (!glfwInit())
 			return;
 		
@@ -112,7 +117,7 @@ namespace
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_BACK);
-		glDisable(GL_DEBUG_OUTPUT);
+		//glDisable(GL_DEBUG_OUTPUT);
 		//glDebugMessageCallback(GLDebugMessageCallback, nullptr);
 	}
 
@@ -128,15 +133,16 @@ namespace
 	}
 
 	void Update() {
-		Game::Instance->Update();
-		Game::GetRenderer()->Update(Game::DeltaTime);
+		auto& Instance = Game::Instance;
+		Instance->Update();
+		Instance->RendererPtr->Update(Game::DeltaTime);
+		Instance->TerrainPtr->Update(Game::DeltaTime);
 	}
 
 	void Render() {
 
 		auto Renderer = Game::GetRenderer();
-		Renderer->HandleCaptureStart();
-		
+		HandleCaptureStart();
 		
 		glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -146,7 +152,7 @@ namespace
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		
-		Renderer->HandleCaptureStop();
+		HandleCaptureStop();
 		glfwSwapBuffers(Window);
 	}
 
@@ -158,17 +164,16 @@ namespace
 		// see e.g. @Renderer
 	}
 
-	void InitWorld(shared_ptr<Renderer>& Ptr)
+	void InitWorld()
 	{
 		Game::Instance = make_unique<HGame>([]() -> float{return static_cast<float>(glfwGetTime());});
-		Game::Instance->RendererPtr = Ptr;
-		Game::Instance->Services.push_back(make_shared<PlayerService>());
 
 		Game::Instance->Init(Window);
 	}
 
 	void DestroyWorld()
 	{
+		Game::Instance->TerrainPtr->CleanUp();
 		Game::Instance->RendererPtr->CleanUp();
 		Game::Instance->RendererPtr.reset();
 		Game::Instance.reset();
@@ -181,9 +186,72 @@ namespace
 		
 		glfwDestroyWindow(Window);
 		DestroyWorld();
+		
+#ifdef _WIN32
+		UnloadRenderDocWindows();
+#endif
 		glfwTerminate();
 	}
+	
+	/***************** RENDERDOC INCLUDE *******************************/
+#ifdef _WIN32
 
+	char RenderDocPath[42] = "./ImportsLib/ext/renderdoc/renderdoc.dll";
+	void LoadRenderDocWindows()
+	{
+		if(HMODULE RDC = LoadLibraryA(RenderDocPath))
+		{
+			auto RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)GetProcAddress(RDC, "RENDERDOC_GetAPI");
+			int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void **)&RDocAPI);
+			if (ret != 1)
+			{
+				throw std::runtime_error("ERROR::RENDERER::FAILED_LOADING_RENDERDOC\n");
+			}
+		}
+	}
+
+	void UnloadRenderDocWindows()
+	{
+		if (RDocAPI == nullptr)
+			return;
+
+		if (HMODULE RDC = GetModuleHandleA(RenderDocPath)) {
+			RDocAPI->Shutdown();
+			if (FreeLibrary(RDC)) {
+				RDC = nullptr;
+			} 
+		}
+	}
+#endif
+
+
+	void HandleCaptureStart() 
+	{
+		if(!RDocAPI)
+			return;
+    
+		ImGui::Begin("RenderDoc");
+		if (ImGui::Button("Capture") || glfwGetKey(Window, GLFW_KEY_F11) == GLFW_PRESS)
+		{
+			RDocAPI->StartFrameCapture(nullptr, nullptr);
+		}
+		ImGui::End();
+	}
+
+	void HandleCaptureStop()
+	{
+		if (!RDocAPI || !RDocAPI->IsFrameCapturing())
+			return;
+
+		RDocAPI->EndFrameCapture(nullptr, nullptr);
+
+		char pathBuffer[4096];
+		auto Num = RDocAPI->GetNumCaptures();
+		RDocAPI->GetCapture(Num - 1, pathBuffer, nullptr, nullptr);
+    
+		RDocAPI->LaunchReplayUI(1, pathBuffer);
+	}
+	
 	
 }
 
@@ -191,16 +259,14 @@ int main()
 {
 	cout << "Starting glfw" << "\n";
 
-	shared_ptr<Renderer> Ptr;
-	InitWindow(Ptr);
+	InitWindow();
 	if (!Window) {
 		glfwTerminate();
 		return -1;
 	}
 
 	InitImGUI();
-	InitWorld(Ptr);
-	Ptr.reset();
+	InitWorld();
 		
 
 	while (!glfwWindowShouldClose(Window))

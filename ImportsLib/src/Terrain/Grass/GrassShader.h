@@ -1,0 +1,43 @@
+﻿#pragma once
+
+#include <memory>
+#include <glew/include/GL/glew.h>
+#include <glm/glm.hpp>
+
+
+class Camera;
+
+namespace TTerrain
+{
+    class TerrainShaderSettings;
+
+    struct GrassShaderSettings
+    {
+        GLuint VertexBuffer;
+        GLuint PositionBuffer;
+        
+        std::shared_ptr<Camera> Camera;
+    };
+    
+    class GrassShader
+    {
+    public:
+    
+        GrassShader();
+        ~GrassShader() = default;
+        void Use() const;
+        void UpdateVars(const GrassShaderSettings& Settings, const TerrainShaderSettings& TerrainSettings) const;
+        void CleanUp() const;
+
+    private:
+        GLuint VAO;
+        GLuint GrassTex;
+        GLuint GrassProgram;
+        glm::mat4 Transform;
+
+        
+        const wchar_t* GrassVertexShader = L"TERRAIN_GRASS_VERTEX_SHADER";
+        const wchar_t* GrassFragmentShader = L"TERRAIN_GRASS_FRAGMENT_SHADER";
+        const wchar_t* GrassTexLocation = L"TERRAIN_GRASS_TEX_LOCATION";
+    };
+}

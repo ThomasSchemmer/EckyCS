@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <map>
 
+#include "GeometryProvider.h"
 #include "RenderData.h"
 #include "../System.h"
 #include "../../Util/EckyCSHeader.h"
@@ -8,29 +9,40 @@
 
 namespace EckyCS
 {
+    class ExplicitRenderData;
     class RenderData;
     class ComponentGroupIdentifier;
 
+    /**
+     * Mini class that acts as a public header for the actual
+     * templated render class. Useful, since we can't store templated ptrs!
+     */
     class BaseRenderSystem : public System
     {
     public:
         virtual void Render() const {}
+        virtual bool SupportsRenderPass(RenderPassType Type) const = 0;
     };
     
-    template <typename EntityType, typename RenderDataType>
+    template <typename EntityType, typename RenderDataType, typename GeometryProviderType>
     requires HasRequiredComponents<EntityType> &&
-    is_base_of_v<RenderData, RenderDataType>
+        is_base_of_v<RenderData, RenderDataType> &&
+        is_base_of_v<GeometryProvider, GeometryProviderType>
+    /**
+     * Handles registering and rendering RenderData, which in turn
+     * describe how Entities should be rendered
+     */
     class EntityRenderSystem : public BaseRenderSystem
     {
-    private:
+    protected:
         map<ComponentGroupIdentifier, RenderDataType> Datas;
 
+    public:
         // results in a tuple<CompA, CompB, ...>
         using RequiredTuple = typename EntityType::RequiredComponents;
         // results in View<CompA, CompB, ...>
         using RequiredView = typename UnpackTuple<RequiredTuple>::template apply<View>;
         
-    public:
         bool Register(ComponentGroupIdentifier GroupID, size_t Count, RequiredView& Data)
         {
             if (Datas.contains(GroupID) && Datas[GroupID].Count < Count)
@@ -39,11 +51,16 @@ namespace EckyCS
             }
             if (!Datas.contains(GroupID))
             {
+                auto ProviderPtr = make_shared<GeometryProviderType>();
                 Datas[GroupID] = RenderDataType();
-                Datas[GroupID].Create(Count);
+                Datas[GroupID].Create(Count, ProviderPtr);
             }
 
-            Datas[GroupID].UpdateBuffers(GroupID, Count, Data);
+            if constexpr (std::is_base_of_v<ExplicitRenderData, RenderDataType>)
+            {
+                static_cast<ExplicitRenderData*>(&Datas[GroupID])->UpdateBuffers(GroupID, Count, Data);
+            }
+            
             return true;
         }
 

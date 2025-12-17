@@ -3,6 +3,11 @@
 #include <GL/glew.h>
 #include <gl\gl.h>
 
+#include "Grass/GrassData.h"
+
+
+enum class RenderPassType : uint8_t;
+
 namespace TTerrain
 {
     
@@ -45,7 +50,9 @@ namespace TTerrain
         GLuint SelectionBuffer;
         static unsigned int TexSize;
 
-        TerrainData(glm::vec3 WorldPos, GLuint PMesh, GLuint PPaint, GLuint PSelect);
+        GrassData Grass;
+
+        TerrainData(glm::vec3 WorldPos, const std::shared_ptr<TerrainManager>& Manager);
         ~TerrainData() = default;
         void DispatchSelect(GLuint Mode) const;
         void DispatchPaint() const;
@@ -54,12 +61,13 @@ namespace TTerrain
         void CleanUp() const;
         static void Dispatch(GLuint Mode, GLuint Target);
         
-        void RenderTriangles() const;
+        void RenderTriangles(RenderPassType Type) const;
         
         void CreateCompute();
         void ApplyToSettings(TerrainShaderSettings& Settings) const;
         void UpdateComputeVars(GLuint Program) const;
         
         static unsigned int GetHeightBufferSize();
+        static unsigned int GetHeightBufferByteSize();
     };
 }

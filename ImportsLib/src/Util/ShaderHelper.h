@@ -25,9 +25,10 @@ namespace Util
 
         static unsigned int CompileShader(const string& Code, GLenum Type);
 
-        static unsigned int CreateProgram(const vector<const wchar_t*>& Resources);
+        static unsigned int CreateComputeProgram(const vector<const wchar_t*>& Resources);
         static unsigned int CreateProgram(const vector<unsigned int>& ShaderIDs);
         static unsigned int CreateTexture(const string& FilePath, GLint Format);
+        static unsigned int CreateTexture(const wchar_t* FilePath, GLint Format);
 
         static void SetUniform1f(const string& UniformName, float Value, unsigned int Program);
         static void SetUniform1i(const string& UniformName, int Value, unsigned int Program);
@@ -43,7 +44,11 @@ namespace Util
         static GLsizei ReadBufferCount(GLuint Buffer);
 
     private:
+        static unsigned int CreateTextureInternal(int Width, int Height, const unsigned char* Data, GLint Format);
+        
+        static string ResourceToString(const wchar_t* ResourcePath);
         static wstring ToWString(const string& str);
+        static string ToString(const wchar_t* wchar);
 
     };
 }

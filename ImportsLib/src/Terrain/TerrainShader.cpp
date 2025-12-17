@@ -39,7 +39,6 @@ void TTerrain::TerrainShader::UpdateVars(const TerrainShaderSettings& Settings) 
 {
     // where should this be placed in world space?
     ShaderHelper::SetUniform2iv("TexSize", Settings.TexSize, ActiveProgram);
-    ShaderHelper::SetUniform2iv("WorldSize", Settings.WorldSize, ActiveProgram);
     ShaderHelper::SetUniform3fv("GlobalWorldPos", Settings.GlobalWorldPos, ActiveProgram);
     ShaderHelper::SetUniformM4("Transform", Transform, ActiveProgram);
 

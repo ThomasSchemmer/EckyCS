@@ -4,14 +4,20 @@ BASE_FRAGMENT_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/BaseFragme
 DEPTH_VERTEX_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/DepthVertexShader.vert"
 DEPTH_FRAGMENT_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/DepthFragmentShader.frag"
 
-TERRAIN_VERTEX_SHADER  RCDATA  "./ImportsLib/src/Terrain/Shaders/TerrainVertexShader.vert"
-TERRAIN_FRAGMENT_SHADER  RCDATA  "./ImportsLib/src/Terrain/Shaders/TerrainFragmentShader.frag"
-TERRAIN_MESH_COMPUTE_SHADER  RCDATA  "./ImportsLib/src/Terrain/Shaders/TerrainMesh.comp"
-TERRAIN_PAINT_COMPUTE_SHADER  RCDATA  "./ImportsLib/src/Terrain/Shaders/TerrainPaint.comp"
-TERRAIN_SELECT_COMPUTE_SHADER  RCDATA  "./ImportsLib/src/Terrain/Shaders/TerrainSelect.comp"
+TERRAIN_VERTEX_SHADER  RCDATA           "./ImportsLib/src/Terrain/Shaders/TerrainVertexShader.vert"
+TERRAIN_FRAGMENT_SHADER  RCDATA         "./ImportsLib/src/Terrain/Shaders/TerrainFragmentShader.frag"
+TERRAIN_MESH_COMPUTE_SHADER  RCDATA     "./ImportsLib/src/Terrain/Shaders/TerrainMesh.comp"
+TERRAIN_PAINT_COMPUTE_SHADER  RCDATA    "./ImportsLib/src/Terrain/Shaders/TerrainPaint.comp"
+TERRAIN_SELECT_COMPUTE_SHADER  RCDATA   "./ImportsLib/src/Terrain/Shaders/TerrainSelect.comp"
+TERRAIN_GRASS_VERTEX_SHADER RCDATA      "./ImportsLib/src/Terrain/Grass/GrassVertexShader.vert"
+TERRAIN_GRASS_FRAGMENT_SHADER RCDATA    "./ImportsLib/src/Terrain/Grass/GrassFragmentShader.frag"
+TERRAIN_GRASS_COMPUTE_SHADER RCDATA     "./ImportsLib/src/Terrain/Grass/GrassGeneration.comp"
+TERRAIN_GRASS_TEX_LOCATION RCDATA       "./ImportsLib/Textures/leaf.png";
+TERRAIN_CUBIC_SHADER  RCDATA            "./ImportsLib/src/Terrain/Shaders/Cubic.glsl"
 
-TERRAIN_CUBIC_SHADER  RCDATA  "./ImportsLib/src/Terrain/Shaders/Cubic.glsl"
+
 SHADOW_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/Shadow.glsl"
 
-
 BLUR_TEX_COMPUTE_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/BlurTex.comp"
+
+
