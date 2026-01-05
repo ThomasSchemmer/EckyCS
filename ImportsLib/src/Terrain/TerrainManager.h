@@ -92,7 +92,7 @@ namespace TTerrain
         void HandleResetting();
         void HandleSelecting() const;
         void HandlePainting();
-        void RenderTriangles(RenderPassType Type) const;
+        void RenderTriangles(RenderPassType Type);
         
         void HandleInput();
         void HandleToggle(bool* bIsDoing, bool* bWasDoing, GLint Key) const;

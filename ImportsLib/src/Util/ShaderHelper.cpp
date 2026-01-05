@@ -47,8 +47,16 @@ namespace Util
 
         HGLOBAL h = LoadResource(nullptr, rc);
         DWORD size = SizeofResource(nullptr, rc);
-        const char* data = static_cast<const char*>(LockResource(h));
-        return string(data, size);
+        const unsigned char* Data = static_cast<const unsigned char*>(LockResource(h));
+        
+        // Strip UTF-8 BOM if present
+        size_t offset = 0;
+        if (size >= 3 && Data[0] == 0xEF && Data[1] == 0xBB && Data[2] == 0xBF) {
+            offset = 3;
+        }
+
+        return std::string(reinterpret_cast<const char*>(Data + offset),
+                           size - offset);
     }
 
     string ShaderHelper::LoadResourceIncludes(const string& Code)
@@ -115,6 +123,17 @@ namespace Util
         glShaderSource(ID, 1, &SourceCode, nullptr);
         glCompileShader(ID);
         glGetShaderiv(ID, GL_COMPILE_STATUS, &Success);
+        GLint status = GL_FALSE;
+        glGetShaderiv(ID, GL_COMPILE_STATUS, &status);
+
+        GLint logLen = 0;
+        glGetShaderiv(ID, GL_INFO_LOG_LENGTH, &logLen);
+
+        if (logLen > 0) {
+            std::vector<char> log(logLen);
+            glGetShaderInfoLog(ID, logLen, nullptr, log.data());
+            std::cerr << log.data() << std::endl;
+        }
         if (!Success)
         {
             char InfoLog[512];
@@ -266,11 +285,10 @@ namespace Util
 
     GLsizei ShaderHelper::ReadBufferCount(GLuint Buffer)
     {
+        GLsizei value = 0;
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, Buffer);
-        auto Ptr = static_cast<GLsizei*>(glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLsizei), GL_MAP_READ_BIT));
-        GLsizei Tmp = *Ptr;
-        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-        return Tmp;
+        glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLuint), &value);
+        return value;
     }
 
     unsigned int ShaderHelper::CreateComputeProgram(const vector<const wchar_t*>& Resources)

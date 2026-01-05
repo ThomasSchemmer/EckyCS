@@ -1,8 +1,10 @@
 ﻿#pragma once
 #include <memory>
 #include <string>
-#include <glew/include/GL/glew.h>
-#include <glm/glm.hpp>
+
+#include <GL/glew.h>
+
+#include "glm/matrix.hpp"
 
 class Light;
 class Camera;

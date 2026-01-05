@@ -16,6 +16,7 @@ namespace TTerrain
         CountTriangles = 0,
         GenerateTriangles = 1,
         ResetHeight = 2,
+        PrefixSumOffsets = 3
     };
 
     enum class TerrainSelectionMode : uint8_t

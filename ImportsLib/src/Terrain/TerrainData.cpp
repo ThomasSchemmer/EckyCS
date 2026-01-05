@@ -56,7 +56,7 @@ namespace TTerrain
         UpdateComputeVars(ComputeProgramMesh);
         ShaderHelper::ResetBufferCounter(CountBuffer);
         
-        // calculate how many vertices we will have
+        // calculate how many vertices we will have per triangle
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, HeightBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, VertexOffsetsBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, VerticalQuadBuffer);
@@ -64,8 +64,12 @@ namespace TTerrain
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, HorizontalQuadBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, CountBuffer);
         Dispatch((GLuint)TerrainComputeMode::CountTriangles, ComputeProgramMesh);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        // now count them all together
+        Dispatch((GLuint)TerrainComputeMode::PrefixSumOffsets, ComputeProgramMesh);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         AppendCount = ShaderHelper::ReadBufferCount(CountBuffer);
-
+                
         // delete old and allocate the exact amount for the buffers
         // can't overwrite/change with BufferStorage!
         if (VertexBuffer != 0) glDeleteBuffers(1, &VertexBuffer);
@@ -85,11 +89,20 @@ namespace TTerrain
         // actually compute the vertices & normals
         Dispatch((GLuint)TerrainComputeMode::GenerateTriangles, ComputeProgramMesh);
         
-        // The count is now the actual amount of triangles to render
-        AppendCount = ShaderHelper::ReadBufferCount(CountBuffer);
-
         // now we can trigger the grass creation
         Grass.DispatchGenerate(*this);
+        
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, VertexBuffer);
+        size_t ByteCount = sizeof(glm::vec3) * AppendCount;
+        void* ptr = glMapBufferRange(
+            GL_SHADER_STORAGE_BUFFER, // target
+            0,                        // offset (start of range to map)
+            ByteCount,        // length (size of range to map)
+            GL_MAP_READ_BIT           // access flags
+        );
+        std::vector<glm::vec3> data_from_gpu(AppendCount);
+        memcpy(data_from_gpu.data(), ptr, ByteCount);
+        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
     }
 
     void TerrainData::CleanUp() const
@@ -115,18 +128,18 @@ namespace TTerrain
         // both Height and Selection are configurable fixed size
         glGenBuffers(1, &HeightBuffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, HeightBuffer); 
-        glBufferStorage(GL_SHADER_STORAGE_BUFFER, GetHeightBufferByteSize(), nullptr, GL_DYNAMIC_COPY);
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, GetHeightBufferByteSize(), nullptr, GL_MAP_READ_BIT | GL_DYNAMIC_STORAGE_BIT);
         glGenBuffers(1, &SelectionBuffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, SelectionBuffer); 
-        glBufferStorage(GL_SHADER_STORAGE_BUFFER, GetHeightBufferByteSize(), nullptr, GL_DYNAMIC_COPY);
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, GetHeightBufferByteSize(), nullptr, GL_MAP_READ_BIT | GL_DYNAMIC_STORAGE_BIT);
 
         glGenBuffers(1, &VertexOffsetsBuffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, VertexOffsetsBuffer); 
-        glBufferStorage(GL_SHADER_STORAGE_BUFFER, GetHeightBufferByteSize(), nullptr, GL_DYNAMIC_COPY);
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, GetHeightBufferByteSize(), nullptr, GL_MAP_READ_BIT | GL_DYNAMIC_STORAGE_BIT);
 
         glGenBuffers(1, &CountBuffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, CountBuffer); 
-        glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int), nullptr, GL_DYNAMIC_READ);
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int), nullptr, GL_MAP_READ_BIT | GL_DYNAMIC_STORAGE_BIT);
 
         DispatchResetHeight();
     }

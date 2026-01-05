@@ -143,7 +143,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>GLEW_STATIC;_DEBUG;_CONSOLE;WIN32_LEAN_AND_MEAN;NOGDI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)ImportsLib\ext;$(SolutionDir)ext\;$(SolutionDir)ImportsLib\ext\glew\include;$(SolutionDir)ImportsLib\ext\glfw\include;$(SolutionDir)ImportsLib\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)ImportsLib\ext;$(SolutionDir)ext\;$(SolutionDir)ImportsLib\ext\glew\include;$(SolutionDir)ImportsLib\ext\glfw\include;$(SolutionDir)ImportsLib\src\Renderer\Shaders;$(SolutionDir)ImportsLib\src\Terrain\Shaders;$(SolutionDir)ImportsLib\ext\glew;$(SolutionDir)ImportsLib\ext\glfw;$(SolutionDir)ImportsLib\src</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>

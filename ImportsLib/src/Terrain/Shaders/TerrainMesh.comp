@@ -17,6 +17,7 @@
 #define MODE_COUNT_TRIANGLES 0
 #define MODE_GENERATE_TRIANGLES 1
 #define MODE_RESET_HEIGHT 2
+#define MODE_PREFIXSUM_OFFSET 3
 #define MAX_VALUE 10
 
 #define DISPATCH_SIZE 2
@@ -227,7 +228,7 @@ void GenerateTriangles(ivec3 id, int Heights[4], int Combination){
     int VerticalLength = VerticalQuadLength.Values[Combination];
     for (uint i = 0; i < VerticalLength; i += 3)
     {
-        if (VerticalQuadLookup[Combination][i] == -1)
+        if (VerticalQuadLookup.Values[Combination][i] == -1)
             break;
 
         vec3 A = GetVertex(HorizontalQuadLookup.Values[i + 0], Heights) + id;
@@ -242,7 +243,7 @@ void CountTriangles(ivec3 id, int Heights[4], int Combination){
     // this allows for "jump to entry x", since each have the same length.
     // we overcome the "oh now i have to count each entry" by precomputing
     int Index = GetHeightIndexFor(id, ivec2(0));
-    VertexOffsets[Index] = VertexLookupLength1 + VerticalQuadLength[Combination];
+    VertexOffsets.Values[Index] = VertexLookupLength1 + VerticalQuadLength.Values[Combination];
 }
 
 void GenerateHeightMesh(ivec3 id){
@@ -286,9 +287,26 @@ void GenerateTex(ivec3 id){
     Heights.Value[GlobalIndex] = 0;
 }
 
+// this is not really efficient and is only used as we dont want to transmit the data between GPU/CPU
+// TODO: make parallel
+void PrefixSumOffset(ivec3 id){
+    if (_Mode != MODE_PREFIXSUM_OFFSET)
+        return;
+    
+    if (id.x != 0 || id.y != 0 || id.z != 0)
+        return;
+    
+    uint Max = (_TexSize.x - 1) * (_TexSize.y - 1);
+    for (uint i = 1; i < Max; i++){
+        VertexOffsets.Values[i] = VertexOffsets.Values[i] + VertexOffsets.Values[i - 1];
+    }
+    Count.Value = VertexOffsets.Values[Max - 1];
+}
+
 void main() {
     ivec3 id = ivec3(gl_GlobalInvocationID.x, 0, gl_GlobalInvocationID.y);
-    
+
     GenerateTex(id);
+    PrefixSumOffset(id);
     GenerateHeightMesh(id);
 }

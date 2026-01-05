@@ -16,9 +16,15 @@
 #define byte win_byte_override
 #include <Windows.h>
 
+#include "GL/wglew.h"
 #include "renderdoc/renderdoc_app.h"
 #undef byte
 
+
+extern "C" {
+	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+	__declspec(dllexport) int NvOptimusEnablement = 1;
+}
 
 using namespace GameImports;
 namespace
@@ -96,6 +102,7 @@ namespace
 		// configure borderless maximized window
 		GLFWmonitor* Monitor = glfwGetPrimaryMonitor();
 		const GLFWvidmode* Mode = glfwGetVideoMode(Monitor);
+		glfwDefaultWindowHints();
 		glfwWindowHint(GLFW_DECORATED, GLFW_FALSE); 
 
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -108,10 +115,11 @@ namespace
 		if (!Window)
 			return;
 		
+		
 		glfwSetWindowPos(Window, 0, 0);
 		glfwMakeContextCurrent(Window);
 		glfwSwapInterval(0); 
-
+		
 		glewInit();
 		
 		glEnable(GL_DEPTH_TEST);

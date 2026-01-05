@@ -124,11 +124,11 @@ namespace TTerrain
         }
     }
 
-    void TerrainManager::RenderTriangles(RenderPassType Type) const
+    void TerrainManager::RenderTriangles(RenderPassType Type)
     {
         TerrainShader->Use(Type);
         auto Settings = GetStandardSettings();
-        for (const auto& TData : TerrainDatas)
+        for (auto& TData : TerrainDatas)
         {
             TData.ApplyToSettings(Settings);
             TerrainShader->UpdateVars(Settings);

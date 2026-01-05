@@ -1,6 +1,4 @@
 #version 430
-
-
 layout(std430, binding = 0) buffer PositionBuffer {
     vec4 Entries[];
 } Positions;
