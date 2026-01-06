@@ -71,6 +71,8 @@ namespace TTerrain
         void CreateCompute();
         void ApplyToSettings(TerrainShaderSettings& Settings) const;
         void UpdateComputeVars(GLuint Program) const;
+
+        std::shared_ptr<TerrainManager> Manager;
         
         static unsigned int GetHeightBufferSize();
         static unsigned int GetHeightBufferByteSize();

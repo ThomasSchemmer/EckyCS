@@ -10,6 +10,7 @@ in vec4 WorldPos;
 in vec4 WorldNormals;
 in vec2 UV;
 in vec4 PosLightClip;
+in vec3 BariCoords;
 
 uniform vec3 BrushPos;
 uniform uint BrushSize;
@@ -24,6 +25,7 @@ uniform float GrassQuantize;
 uniform vec3 LightDir;
 uniform vec3 LightPos;
 uniform vec2 LightClip;
+uniform int ShowWireFrame;
 
 const float BrushBorder = 0.25;
 
@@ -82,5 +84,13 @@ void main()
     float ShadowFactor = GetVarianceShadow();
     vec3 Color = mix(ShadowColor, TexColor, ShadowFactor);
     
-    FragColor = vec4(BrushColor + Color, 1);
+    float BariThreshold = 0.01f;
+    int IsBari = int(
+        ((BariCoords.x < BariThreshold) ||
+        (BariCoords.y < BariThreshold) ||
+        (BariCoords.z < BariThreshold)) &&
+        ShowWireFrame > 0
+    ); 
+    vec3 BariColor = IsBari > 0 ? vec3(0, 0, 0) : Color; 
+    FragColor = vec4(BrushColor + BariColor, 1);
 } 

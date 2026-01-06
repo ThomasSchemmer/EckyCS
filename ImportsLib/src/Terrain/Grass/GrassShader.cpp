@@ -20,6 +20,7 @@ TTerrain::GrassShader::GrassShader()
     
     vector IDs = {Vertex, Fragment};
     GrassProgram = ShaderHelper::CreateProgram(IDs);
+    glObjectLabel(GL_PROGRAM, GrassProgram, -1, "GrassShaderProgram");
     glDeleteShader(Vertex);
     glDeleteShader(Fragment);
     

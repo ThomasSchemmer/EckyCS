@@ -31,6 +31,7 @@ namespace TTerrain
         
         glm::vec3 GrassColor, DirtColor;
         float GrassScale, GrassQuantize;
+        bool bShowWireFrame;
         GLuint ShadowMap;
         
         shared_ptr<Camera> Camera;
@@ -49,8 +50,10 @@ namespace TTerrain
         void UpdateVars(const TerrainShaderSettings& Settings) const;
         void CleanUp() const;
 
+        GLuint Program;
+
     private:
-        GLuint Program, DepthProgram;
+        GLuint DepthProgram;
         GLuint ActiveProgram = 0;
         glm::mat4 Transform;
    

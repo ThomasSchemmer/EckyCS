@@ -16,11 +16,13 @@ void ShadowPass::Create(GLFWwindow* Window)
     TempOut = CreateColorTexture(Width, Height, GL_LINEAR);
     
     BlurTexCompute = ShaderHelper::CreateComputeProgram({BlurTexComputeID});
+    glObjectLabel(GL_PROGRAM, BlurTexCompute, -1, "BlurTexCompute");
 }
 
 
 void ShadowPass::OnAfterRender()
 {
+    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, BlurTexCompute, -1, "DispatchShadowBlur");
     glUseProgram(BlurTexCompute);
     glBindImageTexture(0, ColorTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RG32F);
     glBindImageTexture(1, TempOut, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RG32F);
@@ -29,6 +31,7 @@ void ShadowPass::OnAfterRender()
     ShaderHelper::SetUniform2iv("Axis", glm::ivec2(0, 1), BlurTexCompute);
     glDispatchCompute(Width / 8, Height / 8, 1);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    glPopDebugGroup();
 }
 
 void ShadowPass::CleanUp() const

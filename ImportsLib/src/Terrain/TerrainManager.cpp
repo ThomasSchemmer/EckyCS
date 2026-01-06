@@ -22,6 +22,48 @@ using namespace GameImports;
 namespace TTerrain
 {
 
+    int TerrainManager::VerticalQuadLengthLookup[QuadIndexCount0] = {
+        0, 6, 6, 12, 18, 6, 12, 12, 12, 6, 18, 18, 12, 18, 24
+    };
+    
+    int TerrainManager::HorizontalQuadLookup[QuadIndexCount0][QuadIndexCount1] = {
+        /* Vertices:  0   |    1    |    2   |    3    |    4    |    5   |     6     |     7    */
+        /*  0 */{0, 5, 4, 4, 5, 12, 8, 6, 1, 6, 8, 13, 9, 7, 14, 7, 9, 2, 15, 11, 10, 10, 11, 3},
+        /*  1 */{0, 5, 4, 4, 5, 12, 8, 6, 1, 6, 8, 13, 9, 7, 14, 7, 9, 2, 12, 7, 6, 10, 11, 3},
+        /*  2 */{0, 5, 4, 4, 5, 12, 8, 6, 1, 6, 8, 13, 5, 11, 13, 7, 9, 2, 15, 11, 10, 10, 11, 3},
+        /*  3 */{0, 5, 4, 4, 5, 12, 8, 6, 1, 6, 8, 13, 9, 7, 14, 7, 9, 2, 15, 11, 10, 10, 11, 3},
+        /*  4 */{0, 5, 4, 4, 5, 12, 8, 6, 1, 6, 8, 13, 9, 7, 14, 7, 9, 2, 15, 11, 10, 10, 11, 3},
+        /*  5 */{0, 5, 4, 8, 9, 15, 8, 6, 1, 6, 8, 13, 9, 7, 14, 7, 9, 2, 15, 11, 10, 10, 11, 3},
+        /*  6 */{0, 5, 4, 8, 9, 14, 8, 6, 1, 6, 8, 14, 9, 7, 14, 7, 9, 2, 14, 7, 6, 10, 11, 3},
+        /*  7 */{0, 5, 4, 8, 9, 13, 8, 6, 1, 6, 8, 13, 9, 7, 14, 7, 9, 2, 14, 7, 6, 10, 11, 3},
+        /*  8 */{0, 5, 4, 4, 5, 12, 8, 6, 1, 6, 8, 13, 9, 7, 14, 7, 9, 2, 15, 11, 10, 10, 11, 3},
+        /*  9 */{0, 5, 4, 4, 5, 12, 8, 6, 1, 10, 4, 14, 9, 7, 14, 7, 9, 2, 15, 11, 10, 10, 11, 3},
+        /* 10 */{0, 5, 4, 4, 5, 12, 8, 6, 1, 6, 8, 13, 9, 7, 14, 7, 9, 2, 15, 11, 10, 10, 11, 3},
+        /* 11 */{0, 5, 4, 4, 5, 12, 8, 6, 1, 6, 8, 13, 9, 7, 14, 7, 9, 2, 15, 11, 10, 10, 11, 3},
+        /* 12 */{0, 5, 4, 4, 5, 12, 8, 6, 1, 10, 4, 12, 5, 11, 12, 7, 9, 2, 12, 11, 10, 10, 11, 3},
+        /* 13 */{0, 5, 4, 4, 5, 12, 8, 6, 1, 6, 8, 13, 9, 7, 14, 7, 9, 2, 15, 11, 10, 10, 11, 3},
+        /* 14 */{0, 5, 4, 4, 5, 12, 8, 6, 1, 6, 8, 13, 9, 7, 14, 7, 9, 2, 15, 11, 10, 10, 11, 3},
+    };
+    
+    int TerrainManager::VerticalQuadLookup[QuadIndexCount0][QuadIndexCount1] = {
+        /* 0*/ {- 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
+        /* 1*/ {6, 10, 11, 11, 7, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
+        /* 2*/ {5, 9, 11, 9, 11, 7, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
+        /* 3*/ {5, 9, 14, 14, 12, 5, 13, 15, 10, 10, 6, 13, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
+        /* 4*/ {5, 9, 14, 14, 12, 5, 13, 15, 10, 10, 6, 13, 14, 15, 11, 11, 7, 14, - 1, - 1, - 1, - 1, - 1, - 1},
+        /* 5*/ {4, 8, 9, 9, 5, 4, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
+        /* 6*/ {4, 8, 9, 9, 5, 4, 6, 10, 11, 11, 7, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
+        /* 7*/ {4, 8, 9, 9, 5, 4, 6, 10, 11, 11, 7, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
+        /* 8*/ {4, 8, 13, 13, 12, 4, 14, 15, 11, 11, 7, 14, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
+        /* 9*/ {4, 8, 10, 8, 10, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
+        /*10*/ {4, 8, 13, 13, 12, 4, 14, 15, 11, 11, 7, 14, 13, 15, 10, 10, 6, 13, - 1, - 1, - 1, - 1, - 1, - 1},
+        /*11*/ {4, 8, 13, 13, 12, 4, 14, 15, 11, 11, 7, 14, 5, 9, 14, 14, 12, 5, - 1, - 1, - 1, - 1, - 1, - 1},
+        /*12*/ {5, 9, 11, 9, 11, 7, 4, 8, 10, 8, 10, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
+        /*13*/ {5, 9, 14, 14, 12, 5, 13, 15, 10, 10, 6, 13, 4, 8, 13, 13, 12, 4, - 1, - 1, - 1, - 1, - 1, - 1},
+        /*14*/ {5, 9, 14, 14, 12, 5, 13, 15, 10, 10, 6, 13, 4, 8, 13, 13, 12, 4, 14, 15, 11, 11, 7, 14},
+    };
+
+    
     void TerrainManager::Init()
     {
         RendererPtr = Game::Instance->RendererPtr;
@@ -37,7 +79,7 @@ namespace TTerrain
 
 
     void TerrainManager::Render(RenderPassType Type)
-    {       
+    {
         DispatchCompute();
         RenderTriangles(Type);
         bWasPressingRaise = bIsRaising;
@@ -64,6 +106,8 @@ namespace TTerrain
         if (bIsRaising || !bWasPressingRaise)
             return;
 
+        
+        glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, ComputeProgramPaint, -1, "DispatchPaint");
         for (auto& Data : TerrainDatas){
             glUseProgram(ComputeProgramPaint);
             ShaderHelper::SetUniform3fv("_BrushPos", RaiseStartWorldPos, ComputeProgramPaint);
@@ -78,12 +122,14 @@ namespace TTerrain
             UpdateComputeVars(ComputeProgramSelect);
             Data.DispatchSelect((GLuint)TerrainSelectionMode::Clear);
         }
+        glPopDebugGroup();
     }
 
     void TerrainManager::HandleSelecting() const
     {
         if (bIsSelecting)
         {
+            glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, ComputeProgramSelect, -1, "DispatchSelect");
             glUseProgram(ComputeProgramSelect);
             UpdateComputeVars(ComputeProgramSelect);
             ShaderHelper::SetUniform3fv("_BrushPos", CamPtr->GetMouseWorldPos(), ComputeProgramSelect);
@@ -93,11 +139,13 @@ namespace TTerrain
                 Data.UpdateComputeVars(ComputeProgramSelect);
                 Data.DispatchSelect((GLuint)TerrainSelectionMode::Additive);
             }
+            glPopDebugGroup();
         }
         
         // resets the selection once we let go of shift
         if (!bIsSelecting && bWasPressingSelect)
         {
+            glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, ComputeProgramSelect, -1, "DispatchDeSelect");
             glUseProgram(ComputeProgramSelect);
             UpdateComputeVars(ComputeProgramSelect);
             ShaderHelper::SetUniform3fv("_StartWorldPos", SelectStartWorldPos, ComputeProgramSelect);
@@ -106,6 +154,7 @@ namespace TTerrain
                 Data.UpdateComputeVars(ComputeProgramSelect);
                 Data.DispatchSelect((GLuint)TerrainSelectionMode::Clear);
             }
+            glPopDebugGroup();
         }
     }
 
@@ -114,6 +163,7 @@ namespace TTerrain
         if (!bIsResetting)
             return;
 
+        glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, ComputeProgramMesh, -1, "DispatchReset");
         glUseProgram(ComputeProgramMesh);
         UpdateComputeVars(ComputeProgramMesh);
         for (auto& Data : TerrainDatas)
@@ -122,10 +172,12 @@ namespace TTerrain
             Data.DispatchResetHeight();
             Data.DispatchGenerate();
         }
+        glPopDebugGroup();
     }
 
     void TerrainManager::RenderTriangles(RenderPassType Type)
     {
+        glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, TerrainShader->Program, -1, "RenderTerrain");
         TerrainShader->Use(Type);
         auto Settings = GetStandardSettings();
         for (auto& TData : TerrainDatas)
@@ -134,6 +186,7 @@ namespace TTerrain
             TerrainShader->UpdateVars(Settings);
             TData.RenderTriangles(Type);
         }
+        glPopDebugGroup();
     }
     
     void TerrainManager::OnDrawGizmos(const shared_ptr<Gizmos>& Gizmos) 
@@ -163,6 +216,10 @@ namespace TTerrain
             ImGui::ColorPicker3("Grass", glm::value_ptr(GrassColor), ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoOptions);
             ImGui::SliderFloat("Scale: ", &GrassScale, 0, 0.25);
             ImGui::SliderFloat("Quantize: ", &GrassQuantize, 2, 10);
+            
+            ImGui::Spacing();
+            ImGui::Checkbox("Grass", &bRenderGrass);
+            ImGui::Checkbox("WireFrame", &bShowWireframe);
         
             ImGui::Spacing();
             if (ImGui::Button("Save")) SaveData();
@@ -244,6 +301,10 @@ namespace TTerrain
         ComputeProgramPaint = ShaderHelper::CreateComputeProgram({ComputeShaderPaint});
         ComputeProgramSelect = ShaderHelper::CreateComputeProgram({ComputeShaderSelect});
         ComputeProgramGrass = ShaderHelper::CreateComputeProgram({ComputeShaderGrass});
+        glObjectLabel(GL_PROGRAM, ComputeProgramMesh, -1, "ComputeProgramMesh");
+        glObjectLabel(GL_PROGRAM, ComputeProgramPaint, -1, "ComputeProgramPaint");
+        glObjectLabel(GL_PROGRAM, ComputeProgramSelect, -1, "ComputeProgramSelect");
+        glObjectLabel(GL_PROGRAM, ComputeProgramGrass, -1, "ComputeProgramGrass");
 
         glGenBuffers(1, &VerticalQuadBuffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, VerticalQuadBuffer);
@@ -255,7 +316,7 @@ namespace TTerrain
         
         glGenBuffers(1, &HorizontalQuadBuffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, HorizontalQuadBuffer);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(int) * QuadIndexCount1, HorizontalQuadLookup, GL_STATIC_DRAW);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(int) * QuadIndexCount0 * QuadIndexCount1, HorizontalQuadLookup, GL_STATIC_DRAW);
     }
 
     void TerrainManager::UpdateComputeVars(GLuint Program) const
@@ -265,6 +326,8 @@ namespace TTerrain
         ShaderHelper::SetUniform1ui("_BrushSize", BrushSize, Program);
         ShaderHelper::SetUniform1i("_BrushStrength", BrushStrength * Dir, Program);
         ShaderHelper::SetUniform1ui("_HasSelection", bIsSelecting, Program);
+        ShaderHelper::SetUniform1i("VertexLookupLength0", QuadIndexCount0, Program);
+        ShaderHelper::SetUniform1i("VertexLookupLength1", QuadIndexCount1, Program);
     }
 
     GLsizei TerrainManager::GetTotalAppendCount() const
@@ -289,6 +352,7 @@ namespace TTerrain
         Settings.GrassColor = GrassColor;
         Settings.GrassScale = GrassScale;
         Settings.GrassQuantize = GrassQuantize;
+        Settings.bShowWireFrame = bShowWireframe;
         Settings.Camera = CamPtr;
         Settings.Light = LightPtr;
         auto SPass = RendererPtr->GetRenderPass<ShadowPass>();

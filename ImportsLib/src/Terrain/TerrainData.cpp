@@ -8,20 +8,23 @@
 using namespace Util;
 namespace TTerrain
 {
-    unsigned int TerrainData::TexSize = 2;
+    unsigned int TerrainData::TexSize = 32;
     
     void TerrainData::RenderTriangles(RenderPassType Type) const
     {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, VertexBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, NormalBuffer);
         glDrawArrays(GL_TRIANGLES, 0, AppendCount);
-        Grass.Render(Type);
+        if (Manager->bRenderGrass)
+        {
+            Grass.Render(Type);
+        }
     }
 
     TerrainData::TerrainData(glm::vec3 WorldPos, const std::shared_ptr<TerrainManager>& Manager) :
         GlobalWorldPos(WorldPos), ComputeProgramMesh(Manager->ComputeProgramMesh), ComputeProgramPaint(Manager->ComputeProgramPaint), ComputeProgramSelect(Manager->ComputeProgramSelect),
         VerticalQuadBuffer(Manager->VerticalQuadBuffer), VerticalQuadLengthBuffer(Manager->VerticalQuadLengthBuffer), HorizontalQuadBuffer(Manager->HorizontalQuadBuffer),
-        Grass(Manager)
+        Grass(Manager), Manager(Manager)
     {
         CreateCompute();
         // actual DispatchGenerate() is called from the manager, after settings uniforms!

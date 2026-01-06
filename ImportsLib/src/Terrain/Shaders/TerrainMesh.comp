@@ -77,9 +77,12 @@ layout(std430, binding = 5) readonly buffer VerticalQuadLengthBuffer {
     int Values[15];
 } VerticalQuadLength;
 
-/** Buffer containing the base vertices that every point will have */
+/** 
+ * Buffer containing the base vertices that every point will have
+ * Same indexing as VerticalQuadLookup, though each vertex row is way more similar
+ */
 layout(std430, binding = 6) readonly buffer HorizontalQuadBuffer {
-    int Values[24];
+    int Values[15][24];
 } HorizontalQuadLookup;
 
 /** Small buffer that is used to copy the overall size back to the CPU*/
@@ -92,25 +95,27 @@ uniform ivec2 _TexSize;
 uniform ivec3 _WorldSize;
 uniform vec3 _WorldPos;
 uniform vec3 _BrushPos;
+uniform int VertexLookupLength0;
+uniform int VertexLookupLength1;
 
 // 0 = calc overall size, 1 = actually compute vertices
 uniform uint _Mode;
 
 const uint VertCount = 6;
 const int VertexMapLength = 28;
-const int VertexLookupLength0 = 15;
-const int VertexLookupLength1 = 24;
 
 
 /**
 * Maps the height number into the corresponding VertexLookup, see
 * https://www.boristhebrave.com/2021/12/29/2d-marching-cubes-with-multiple-colors/
+* Note: this is not the exact same ordering, as we count our vertices in a different order
+* Some pairs are swapped
 */
 const int VertexMap[] =
 {
     // index and resulting mapping (-1 => no matching combination)
     //0, 1,  2,  3, 4, 5, 6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27
-      0, 1, -1, -1, 2, 3, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1,  5,  6,  7, -1,  8,  9, 10, -1, 11, 12, 13, 14
+      0, 1, -1, -1, 2, 3, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1,  9,  8, 10, -1,  6,  5,  7, -1, 12, 11, 13, 14
 };
 
 
@@ -123,20 +128,20 @@ const int VertexMap[] =
  */
 const float VertexToWorld[48] = {
     // regular points
-    0.0, 1.0, 0.0,
-    1.0, 1.0, 1.0,
-    0.0, 0.0, 2.0,
-    1.0, 0.0, 3.0,
-    // in between, first 
-    0.5, 1.0, 0.0,
+    0.0, 0.0, 0.0,
+    1.0, 0.0, 1.0,
+    0.0, 1.0, 2.0,
+    1.0, 1.0, 3.0,
+    // in between, first (height is dependent on "lower" vertex)
+    0.5, 0.0, 0.0,
     0.0, 0.5, 0.0,
     1.0, 0.5, 1.0,
-    0.5, 0.0, 2.0,
-    // in between, last
-    0.5, 1.0, 1.0,
+    0.5, 1.0, 2.0,
+    // in between, last (height is dependent on "higher" vertex)
+    0.5, 0.0, 1.0,
     0.0, 0.5, 2.0,
     1.0, 0.5, 3.0,
-    0.5, 0.0, 3.0,
+    0.5, 1.0, 3.0,
     // center for vertex 0, 1, 2, 3
     0.5, 0.5, 0.0,
     0.5, 0.5, 1.0,
@@ -176,7 +181,8 @@ int GetHeightID(int Heights[4]){
 /** Uses height interpolation to calculate the resulting WorldPos*/
 vec3 GetVertex(int Index, int Heights[4])
 {
-    int Start = Index * 3;
+    // points into a collection of vec3
+    int Start = Index * 3; 
     vec3 Tmp = vec3(
         VertexToWorld[Start],
         Heights[int(VertexToWorld[Start + 2])],
@@ -194,7 +200,7 @@ int GetHeightForIndex(int Index){
 }
 
 void WriteTriangle(vec3 A, vec3 B, vec3 C, uint Index){
-    // scale back down to 1x1x1
+    // scale back down to 1x1x1, then move to appropriate world space
     A.y = A.y / (MAX_VALUE - 2) * _WorldSize.y;
     B.y = B.y / (MAX_VALUE - 2) * _WorldSize.y;
     C.y = C.y / (MAX_VALUE - 2) * _WorldSize.y;
@@ -212,15 +218,16 @@ void WriteTriangle(vec3 A, vec3 B, vec3 C, uint Index){
 }
 
 void GenerateTriangles(ivec3 id, int Heights[4], int Combination){
-    // since each point has the base horizontal quads we can just fill them
+    // since each point has the base horizontal quads we can just fill them,
+    // based on the precomputed count (offset by one)
     uint Index = GetHeightIndexFor(id, ivec2(0));
-    uint TargetStart = VertexOffsets.Values[Index];
+    uint TargetStart = Index == 0 ? 0 : VertexOffsets.Values[Index - 1];
     
     for (uint i = 0; i < VertexLookupLength1; i += 3){
-        vec3 A = GetVertex(HorizontalQuadLookup.Values[i + 0], Heights) + id;
-        vec3 B = GetVertex(HorizontalQuadLookup.Values[i + 1], Heights) + id;
-        vec3 C = GetVertex(HorizontalQuadLookup.Values[i + 2], Heights) + id;
-        WriteTriangle(A, B, C, Index + i);
+        vec3 A = GetVertex(HorizontalQuadLookup.Values[Combination][i + 0], Heights) + id;
+        vec3 B = GetVertex(HorizontalQuadLookup.Values[Combination][i + 1], Heights) + id;
+        vec3 C = GetVertex(HorizontalQuadLookup.Values[Combination][i + 2], Heights) + id;
+        WriteTriangle(A, B, C, TargetStart + i);
     }
     
     // now we can add the specific vertical quads
@@ -231,10 +238,12 @@ void GenerateTriangles(ivec3 id, int Heights[4], int Combination){
         if (VerticalQuadLookup.Values[Combination][i] == -1)
             break;
 
-        vec3 A = GetVertex(HorizontalQuadLookup.Values[i + 0], Heights) + id;
-        vec3 B = GetVertex(HorizontalQuadLookup.Values[i + 1], Heights) + id;
-        vec3 C = GetVertex(HorizontalQuadLookup.Values[i + 2], Heights) + id;
-        WriteTriangle(A, B, C, Index + i + VertexLookupLength1);
+        vec3 A = GetVertex(VerticalQuadLookup.Values[Combination][i + 0], Heights) + id;
+        vec3 B = GetVertex(VerticalQuadLookup.Values[Combination][i + 1], Heights) + id;
+        vec3 C = GetVertex(VerticalQuadLookup.Values[Combination][i + 2], Heights) + id;
+        // draw twice to avoid backface culling depending on height
+        WriteTriangle(A, B, C, TargetStart + VertexLookupLength1 + i * 2 + 0);
+        WriteTriangle(A, C, B, TargetStart + VertexLookupLength1 + i * 2 + 3);
     }
 }
 
@@ -242,8 +251,9 @@ void CountTriangles(ivec3 id, int Heights[4], int Combination){
     // to have quick lookup we pad the data with -1 for invalid entries
     // this allows for "jump to entry x", since each have the same length.
     // we overcome the "oh now i have to count each entry" by precomputing
+    // note: we need to render vertical once twice to avoid backfacee culling
     int Index = GetHeightIndexFor(id, ivec2(0));
-    VertexOffsets.Values[Index] = VertexLookupLength1 + VerticalQuadLength.Values[Combination];
+    VertexOffsets.Values[Index] = VertexLookupLength1 + VerticalQuadLength.Values[Combination] * 2;
 }
 
 void GenerateHeightMesh(ivec3 id){
@@ -252,10 +262,10 @@ void GenerateHeightMesh(ivec3 id){
     
     // height indicates the type of mesh via lookup table
     // clamped to different height "bands"
-    int Index0 = GetHeightIndexFor(id, ivec2(0, 1));
-    int Index1 = GetHeightIndexFor(id, ivec2(1, 1));
-    int Index2 = GetHeightIndexFor(id, ivec2(0, 0));
-    int Index3 = GetHeightIndexFor(id, ivec2(1, 0));
+    int Index0 = GetHeightIndexFor(id, ivec2(0, 0));
+    int Index1 = GetHeightIndexFor(id, ivec2(1, 0));
+    int Index2 = GetHeightIndexFor(id, ivec2(0, 1));
+    int Index3 = GetHeightIndexFor(id, ivec2(1, 1));
     
     int Height0 = GetHeightForIndex(Index0);
     int Height1 = GetHeightForIndex(Index1);
@@ -285,6 +295,7 @@ void GenerateTex(ivec3 id){
 
     uint GlobalIndex = id.z * _TexSize.x + id.x;
     Heights.Value[GlobalIndex] = 0;
+    Heights.Value[0] = 5;
 }
 
 // this is not really efficient and is only used as we dont want to transmit the data between GPU/CPU
@@ -296,7 +307,7 @@ void PrefixSumOffset(ivec3 id){
     if (id.x != 0 || id.y != 0 || id.z != 0)
         return;
     
-    uint Max = (_TexSize.x - 1) * (_TexSize.y - 1);
+    uint Max = _TexSize.x * _TexSize.y;
     for (uint i = 1; i < Max; i++){
         VertexOffsets.Values[i] = VertexOffsets.Values[i] + VertexOffsets.Values[i - 1];
     }

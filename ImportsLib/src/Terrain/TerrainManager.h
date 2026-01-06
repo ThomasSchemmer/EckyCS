@@ -78,6 +78,8 @@ namespace TTerrain
         glm::vec3 GrassColor = glm::vec3(0.21, 0.94, 0.28);
         glm::vec3 DirtColor = glm::vec3(0.87, 0.75, 0.63);
         float GrassScale = 0.015f, GrassQuantize = 7;
+        bool bRenderGrass = true;
+        bool bShowWireframe = false;
         
         GLuint ComputeProgramMesh;
         GLuint ComputeProgramPaint;
@@ -117,34 +119,24 @@ namespace TTerrain
         static constexpr int QuadIndexCount0 = 15;
         static constexpr int QuadIndexCount1 = 24;
 
-        /** Quad lookup-table that will be shared with the .comp via ssbo */
-        static constexpr int VerticalQuadLookup[QuadIndexCount0][QuadIndexCount1] = {
-            /* 0*/ {- 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-            /* 1*/ {6, 10, 11, 11, 7, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-            /* 2*/ {5, 9, 11, 11, 7, 5, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-            /* 3*/ {5, 9, 14, 14, 12, 5, 13, 15, 10, 10, 6, 13, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-            /* 4*/ {5, 9, 14, 14, 12, 5, 13, 15, 10, 10, 6, 13, 14, 15, 11, 11, 7, 14, - 1, - 1, - 1, - 1, - 1, - 1},
-            /* 5*/ {4, 8, 9, 9, 5, 4, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-            /* 6*/ {4, 8, 9, 9, 5, 4, 6, 10, 11, 11, 7, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-            /* 7*/ {4, 8, 9, 9, 5, 4, 6, 10, 11, 11, 7, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-            /* 8*/ {4, 8, 13, 13, 12, 4, 14, 15, 11, 11, 7, 14, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-            /* 9*/ {4, 8, 10, 10, 6, 4, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-            /*10*/ {4, 8, 13, 13, 12, 4, 14, 15, 11, 11, 7, 14, 13, 15, 10, 10, 6, 13, - 1, - 1, - 1, - 1, - 1, - 1},
-            /*11*/ {4, 8, 13, 13, 12, 4, 14, 15, 11, 11, 7, 14, 5, 9, 14, 14, 12, 5, - 1, - 1, - 1, - 1, - 1, - 1},
-            /*12*/ {5, 9, 11, 11, 7, 5, 4, 8, 10, 10, 6, 4, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-            /*13*/ {5, 9, 14, 14, 12, 5, 13, 15, 10, 10, 6, 13, 4, 8, 13, 13, 12, 4, - 1, - 1, - 1, - 1, - 1, - 1},
-            /*14*/ {5, 9, 14, 14, 12, 5, 13, 15, 10, 10, 6, 13, 4, 8, 13, 13, 12, 4, 14, 15, 11, 11, 7, 14},
-        };
+        
+        /**
+         * These are the four base quadrants everyone has - but they differ in y-position
+         * The general order is still the same for all to allow for easy height calculation in-between vertices
+         * See shader for more info
+         * Quad lookup-table that will be shared with the .comp via ssbo
+         */
+        static int HorizontalQuadLookup[QuadIndexCount0][QuadIndexCount1];
+
+        /**
+         * Contains the vertical slices/walls for each of the different height combinations
+         * Each has a variable length and is only filled with -1 for easy access - the shader for more info
+         * Quad lookup-table that will be shared with the .comp via ssbo
+         */
+        static int VerticalQuadLookup[QuadIndexCount0][QuadIndexCount1];
         
         /** Actual length of the vertical buffers */
-        static constexpr int VerticalQuadLengthLookup[QuadIndexCount0] = {
-            0, 6, 6, 12, 18, 6, 12, 12, 12, 6, 18, 18, 12, 18, 24
-        };
-
-        /** these are the four base quadrants everyone has */
-        static constexpr int HorizontalQuadLookup[QuadIndexCount1] = {
-            0, 4, 5, 4, 12, 5, 8, 1, 6, 6, 13, 7, 9, 14, 7, 7, 2, 5, 15, 10, 11, 10, 3, 11
-        };
+        static int VerticalQuadLengthLookup[QuadIndexCount0];
 
     };
 }

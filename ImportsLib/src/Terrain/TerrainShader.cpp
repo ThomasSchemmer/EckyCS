@@ -19,8 +19,12 @@ TTerrain::TerrainShader::TerrainShader()
 
     vector IDs = {Vertex, Fragment};
     Program = ShaderHelper::CreateProgram(IDs);
+    glObjectLabel(GL_PROGRAM, Program, -1, "TerrainShaderProgram");
+    
     vector DepthIDs = {Vertex, DepthFragment};
     DepthProgram = ShaderHelper::CreateProgram(DepthIDs);
+    glObjectLabel(GL_PROGRAM, DepthProgram, -1, "TerrainDepthShader");
+    
     glDeleteShader(Vertex);
     glDeleteShader(Fragment);
     glDeleteShader(DepthFragment);
@@ -51,6 +55,7 @@ void TTerrain::TerrainShader::UpdateVars(const TerrainShaderSettings& Settings) 
     ShaderHelper::SetUniform3fv("GrassColor", Settings.GrassColor, ActiveProgram);
     ShaderHelper::SetUniform1f("GrassScale", Settings.GrassScale, ActiveProgram);
     ShaderHelper::SetUniform1f("GrassQuantize", Settings.GrassQuantize, ActiveProgram);
+    ShaderHelper::SetUniform1i("ShowWireFrame", Settings.bShowWireFrame ? 1 : 0, ActiveProgram);
 
     // shadow pass should be from the lights perspective!
     auto& Projection = Settings.RenderPassType == RenderPassType::ShadowPass ?

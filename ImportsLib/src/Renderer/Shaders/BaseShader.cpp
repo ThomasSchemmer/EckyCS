@@ -27,6 +27,7 @@ void BaseShader::CreateInternal(const wchar_t* VShader, const wchar_t* FShader)
 
     vector IDs = {Vertex, Fragment};
     Program = ShaderHelper::CreateProgram(IDs);
+    glObjectLabel(GL_PROGRAM, Program, -1, "BaseShaderProgram");
     glDeleteShader(Vertex);
     glDeleteShader(Fragment);
 
