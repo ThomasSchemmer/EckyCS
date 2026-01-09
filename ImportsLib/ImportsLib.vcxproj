@@ -214,6 +214,7 @@
     <ClCompile Include="src\Terrain\Grass\GrassData.cpp" />
     <ClCompile Include="src\Terrain\Grass\GrassShader.cpp" />
     <ClCompile Include="src\Terrain\TerrainData.cpp" />
+    <ClCompile Include="src\Terrain\TerrainHelper.cpp" />
     <ClCompile Include="src\Terrain\TerrainManager.cpp" />
     <ClCompile Include="src\Terrain\TerrainShader.cpp" />
     <ClCompile Include="src\Util\ShaderHelper.cpp" />
@@ -724,6 +725,7 @@
     <ClInclude Include="src\Terrain\Grass\GrassData.h" />
     <ClInclude Include="src\Terrain\Grass\GrassShader.h" />
     <ClInclude Include="src\Terrain\TerrainData.h" />
+    <ClInclude Include="src\Terrain\TerrainHelper.h" />
     <ClInclude Include="src\Terrain\TerrainManager.h" />
     <ClInclude Include="src\Terrain\TerrainShader.h" />
     <ClInclude Include="src\Util\ActionMap.h" />

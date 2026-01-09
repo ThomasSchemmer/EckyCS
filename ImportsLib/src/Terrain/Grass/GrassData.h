@@ -49,8 +49,8 @@ namespace TTerrain
         GLuint GrassCompute = 0;
         GLuint GrassShaderProgram = 0;
 
-        glm::ivec2 TargetSize = glm::ivec2(100);
-        unsigned int DispatchCount = 8;
+        glm::ivec2 TargetCount = glm::ivec2(100);
+        unsigned int GroupCount = 8;
 
         std::shared_ptr<GrassShader> GrassShader;
         std::shared_ptr<TerrainManager> Manager;

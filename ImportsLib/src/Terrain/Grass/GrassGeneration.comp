@@ -1,5 +1,11 @@
 #version 430 
 
+/**
+ * Shader that computes the position of each grass billboard
+ * Uses the actual terrain triangle positions that are closest and 
+ * interpolates from there
+ */
+
 #define MODE_COUNT_TRIANGLES 0
 #define MODE_GENERATE_TRIANGLES 1
 
@@ -15,23 +21,136 @@ layout(std430, binding = 1) buffer CountBuffer {
     uint Count;
 } Counter;
 
-layout(std430, binding = 2) buffer HeightBuffer {
-    uint Value[];
-} Heights;
+/** Contains the ordered terrain triangles, see TerrainMesh.comp */
+layout(std430, binding = 2) buffer VerticesBuffer {
+    vec4 Entries[];
+} Vertices;
+
+layout(std430, binding = 3) buffer VertexOffsetsBuffer {
+    uint Values[];
+} VertexOffsets;
 
 // 0 = calc overall size, 1 = actually compute vertices
 uniform uint _Mode;
-uniform ivec2 _TargetSize;
+uniform ivec2 _TargetCount;
 uniform ivec3 _WorldSize;
 uniform vec3 _GlobalWorldPos;
-uniform ivec2 _HeightSize;
+uniform ivec2 _TexSize;
+uniform uint _GroupCount;
 
-void GenerateGrassPositions(ivec3 id){
-    // map 100x100 index to 32x32 index
-    vec2 Scale = vec2(float(_HeightSize.x) / _TargetSize.x, float(_HeightSize.y) / _TargetSize.y);
-    ivec2 HeightPos = ivec2(id.x * Scale.x, id.z * Scale.y);
-    int HeightIndex = HeightPos.y * _HeightSize.x + HeightPos.x;
-    float TargetHeight = int(Heights.Value[HeightIndex]) * 1.25;
+const uint VertexCount = 24;
+
+int GetQuadIndexFor(vec3 id, ivec2 Offset){
+    float ClampedID =
+        clamp(floor(id.z + float(Offset.y)), 0.0f, _TexSize.y - 1) * _TexSize.x +
+        clamp(floor(id.x + float(Offset.x)), 0.0f, _TexSize.x - 1);
+    return int(ClampedID);
+}
+
+vec2 hash2(vec2 p)
+{
+    uvec2 q = floatBitsToUint(p);
+    q *= uvec2(1597334677u, 3812015801u);
+    q ^= q >> 16;
+    return vec2(q) * (1.0 / 4294967296.0);
+}
+
+float GetSideOfTriangle(int IndexInQuad, int StartVertex, vec3 WorldPos)
+{
+    vec3 Min03 = IndexInQuad == 0 ? Vertices.Entries[StartVertex +  0].xyz : Vertices.Entries[StartVertex + 18].xyz;
+    vec3 Max03 = IndexInQuad == 0 ? Vertices.Entries[StartVertex +  5].xyz : Vertices.Entries[StartVertex + 23].xyz;
+    vec3 Min12 = IndexInQuad == 1 ? Vertices.Entries[StartVertex +  8].xyz : Vertices.Entries[StartVertex + 14].xyz;
+    vec3 Max12 = IndexInQuad == 1 ? Vertices.Entries[StartVertex + 11].xyz : Vertices.Entries[StartVertex + 17].xyz;
+    vec3 Min = IndexInQuad == 0 || IndexInQuad == 3 ? Min03 : Min12;
+    vec3 Max = IndexInQuad == 0 || IndexInQuad == 3 ? Max03 : Max12;
+    
+    // calculate the divider line
+    vec2 A = vec2(Max.x, Min.z);
+    vec2 B = vec2(Min.x, Max.z);
+    vec2 AB = B - A;
+    AB = vec2(AB.y, -AB.x);
+    vec2 APos = vec2(WorldPos.x, WorldPos.z) - A;
+    float d = dot(AB, APos);
+    // now we can check which side we are on
+    float Side = sign(d);
+    return Side;
+}
+
+vec3 GetBaricentricCoordinates(vec3 WorldPos, vec4 VertA, vec4 VertB, vec4 VertC)
+{
+    //  get the baricentric coordinates
+    vec3 VecAB = (VertB - VertA).xyz;
+    vec3 VecAC = (VertC - VertA).xyz;
+    vec3 VecAP = WorldPos - VertA.xyz;
+    float d00 = dot(VecAB, VecAB);
+    float d01 = dot(VecAB, VecAC);
+    float d11 = dot(VecAC, VecAC);
+    float d20 = dot(VecAP, VecAB);
+    float d21 = dot(VecAP, VecAC);
+    float Denom = d00 * d11 - d01 * d01;
+    float beta = (d11 * d20 - d01 * d21) / Denom;
+    float gamma = (d00 * d21 - d01 * d20) / Denom;
+    float alpha = 1 - beta - gamma;
+    return vec3(alpha, beta, gamma);
+}
+
+float GetHeightFromWorldPos(vec3 WorldPos){
+    // use the world pos to lookup which quad its supposed to reference
+    vec2 Scale = vec2(float(_TexSize) / _WorldSize.x, float(_TexSize) / _WorldSize.z);
+    vec3 ScaledWorldPos = vec3(WorldPos.x * Scale.x, 0, WorldPos.z * Scale.y);
+    int QuadIndex = GetQuadIndexFor(ScaledWorldPos, ivec2(0));
+    ivec2 QuadXY = ivec2(QuadIndex % _TexSize.x, QuadIndex / _TexSize.y);
+    
+    // since all terrain quadrants have the standard quad at their base, we need to check for offset
+    vec2 WorldSizePerQuad = vec2(_WorldSize.x, _WorldSize.z) / vec2(_TexSize);
+    vec2 WorldPosOfQuad;
+    WorldPosOfQuad.x = WorldSizePerQuad.x * float(QuadXY.x);
+    WorldPosOfQuad.y = WorldSizePerQuad.y * float(QuadXY.y);
+    
+    vec2 WorldPosInQuad = vec2(WorldPos.x, WorldPos.z) - WorldPosOfQuad;
+    vec2 WorldPosInQuadPerc = WorldPosInQuad / WorldSizePerQuad;
+    
+    // for more info on the layout see @TerrainMesh.comp
+    // we try to find the quad first, then need to check which triangle of that quad we are in
+    int StartVertex = QuadIndex == 0 ? 0 : int(VertexOffsets.Values[QuadIndex - 1]);
+    int IndexInQuad = (WorldPosInQuadPerc.x > .5 ? 1 : 0) + (WorldPosInQuadPerc.y > .5 ? 2 : 0);
+    
+    // unfortunately the order of the triangle in a quadpart is one of two, depending on triangle index
+    // so offset from the start depending on which one we are looking at (each quadpart has 2 triangles aka 6 vertices)
+    // for that we need to check on which side of the divider line we are on
+    float Side = GetSideOfTriangle(IndexInQuad, StartVertex, WorldPos);
+    
+    // but we still need to invert the order for quads 1 and 2, as they are flipped!
+    int TriangleStart = StartVertex + IndexInQuad * 6;
+    int SideOffset = (IndexInQuad == 1 || IndexInQuad == 2) ? 3 : 0;
+    SideOffset = (Side > 0 ? 3 - SideOffset : SideOffset);
+    TriangleStart += SideOffset;
+    
+    // get the actual triangle positions
+    vec4 VertA = Vertices.Entries[TriangleStart + 0];
+    vec4 VertB = Vertices.Entries[TriangleStart + 1];
+    vec4 VertC = Vertices.Entries[TriangleStart + 2];
+    
+    vec3 BariCoords = GetBaricentricCoordinates(WorldPos, VertA, VertB, VertC);
+    
+    // and now we can use that to interpolate the height
+    return BariCoords.x * VertA.y + BariCoords.y * VertB.y + BariCoords.z * VertC.y;
+}
+
+void GenerateGrassPosition(vec3 Pos){
+    // break grid structure with randomness
+    uvec2 cell = uvec2(Pos.xz);
+    cell ^= cell.yx * 1664525u;
+    vec2 Offset = hash2(vec2(cell)) - .5;
+    Pos.xz += Offset;
+
+    vec2 Scale = vec2(_WorldSize.xz) / vec2(_TargetCount);
+    vec3 WorldPos = vec3(Pos.x * Scale.x, 0, Pos.z * Scale.y);
+    float Height = GetHeightFromWorldPos(WorldPos);
+    
+    if (Pos.x < 0 || Pos.z < 0)
+        return;
+
     //Todo: check if we not are above water/dirt etc!
     // TODO: position is super imprecise around cliffs! 
     //todo: offset position randomly to hide grid
@@ -39,20 +158,42 @@ void GenerateGrassPositions(ivec3 id){
     uint Index = atomicAdd(Counter.Count, 1);
     if (_Mode == MODE_COUNT_TRIANGLES)
         return;
+
+    Positions.Entries[Index].xz = WorldPos.xz;
+    Positions.Entries[Index].y = Height;
+}
+
+void GenerateGrassPositions(ivec3 id){
+
+    int TotalThreadCount = int(_GroupCount * DISPATCH_SIZE);
+    ivec2 CountPerThread = ivec2(_TargetCount / float(TotalThreadCount));
+    ivec2 LeftOverCount = _TargetCount - CountPerThread * TotalThreadCount;
     
-    vec3 WorldPosition;
-    WorldPosition.x = id.x + _GlobalWorldPos.x;
-    WorldPosition.y = TargetHeight;
-    WorldPosition.z = id.z + _GlobalWorldPos.z;
-    Positions.Entries[Index].xyz = WorldPosition;
+    for (int x = 0; x < CountPerThread.x; x++){
+        for (int y = 0; y < CountPerThread.y; y++){
+            vec3 Pos = vec3(id.x * CountPerThread.x + x, 0, id.z * CountPerThread.y + y);
+            GenerateGrassPosition(Pos);
+        }
+    }
+
+    ivec2 Offset = TotalThreadCount * CountPerThread;
+    if (id.x < LeftOverCount.x){
+        vec3 Pos = vec3(id) + vec3(Offset.x, 0, 0);
+        GenerateGrassPosition(Pos);
+    }
+    if (id.z < LeftOverCount.y){
+        vec3 Pos = vec3(id) + vec3(0, 0, Offset.y);
+        GenerateGrassPosition(Pos);
+    }
+    if (id.x < LeftOverCount.x && id.z < LeftOverCount.y){
+        vec3 Pos = vec3(id) + vec3(Offset.x, 0, Offset.y);
+        GenerateGrassPosition(Pos);
+    }
 }
 
 
 void main() {
     ivec3 id = ivec3(gl_GlobalInvocationID.x, 0, gl_GlobalInvocationID.y);
-    //since we have a dispatch groupsize of 8, we can potentially read out of bounds
-    if (id.x >= _TargetSize.x || id.z >= _TargetSize.y)
-        return;
     
     GenerateGrassPositions(id);
 }

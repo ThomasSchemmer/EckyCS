@@ -2,12 +2,14 @@
 
 #include "GrassShader.h"
 #include "../TerrainData.h"
+#include "../TerrainHelper.h"
 #include "../TerrainManager.h"
 #include "../../GameService/Game.h"
 #include "../../Renderer/Renderer.h"
 #include "../../Renderer/Passes/RenderPass.h"
 #include "../../Util/ShaderHelper.h"
 #include "../TerrainShader.h"
+#include "imgui/imgui.h"
 
 namespace EckyCS
 {
@@ -43,19 +45,22 @@ namespace TTerrain
 
     void GrassData::DispatchGenerate(const TerrainData& Data)
     {
+        TerrainHelper::GetHeightFromWorldPos(glm::vec3(5, 0, 5), Data.VertexBuffer, Data.VertexOffsetsBuffer, Data.WorldSize);
         glUseProgram(GrassCompute);
         ShaderHelper::ResetBufferCounter(CountBuffer);
 
         ShaderHelper::SetUniform1ui("_Mode", 0, GrassCompute);
-        ShaderHelper::SetUniform2iv("_HeightSize", glm::vec2(TerrainData::TexSize), GrassCompute);
-        ShaderHelper::SetUniform2iv("_TargetSize", TargetSize, GrassCompute);
+        ShaderHelper::SetUniform2iv("_TexSize", glm::vec2(TerrainData::TexSize), GrassCompute);
+        ShaderHelper::SetUniform2iv("_TargetCount", TargetCount, GrassCompute);
         ShaderHelper::SetUniform3iv("_WorldSize", Data.WorldSize, GrassCompute);
         ShaderHelper::SetUniform3fv("_GlobalWorldPos", Data.GlobalWorldPos, GrassCompute);
+        ShaderHelper::SetUniform1ui("_GroupCount", GroupCount, GrassCompute);
     
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, CountBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, Data.HeightBuffer);
-        glDispatchCompute(ceil((float)TargetSize.x / (float)DispatchCount), ceil((float)TargetSize.y / (float)DispatchCount), 1);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, Data.VertexBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, Data.VertexOffsetsBuffer);
+        glDispatchCompute(GroupCount, GroupCount, 1);
         AppendCount = ShaderHelper::ReadBufferCount(CountBuffer);
 
         if (PositionBuffer != 0) glDeleteBuffers(1, &PositionBuffer);
@@ -66,7 +71,7 @@ namespace TTerrain
         ShaderHelper::ResetBufferCounter(CountBuffer);
         ShaderHelper::SetUniform1ui("_Mode", 1, GrassCompute);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, PositionBuffer);
-        glDispatchCompute(ceil((float)TargetSize.x / (float)DispatchCount), ceil((float)TargetSize.y / (float)DispatchCount), 1);
+        glDispatchCompute(GroupCount, GroupCount, 1);
         AppendCount = ShaderHelper::ReadBufferCount(CountBuffer);
     }
 
@@ -77,7 +82,7 @@ namespace TTerrain
         glDeleteBuffers(1, &VertexBuffer);
         glDeleteVertexArrays(1, &VAO);
     }
-
+    
     void GrassData::Render(RenderPassType Type) const
     {
         if (Type != RenderPassType::BasePass)

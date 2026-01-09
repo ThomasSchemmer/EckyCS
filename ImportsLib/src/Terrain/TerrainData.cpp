@@ -10,13 +10,14 @@ namespace TTerrain
 {
     unsigned int TerrainData::TexSize = 32;
     
-    void TerrainData::RenderTriangles(RenderPassType Type) const
+    void TerrainData::RenderTriangles(RenderPassType Type) 
     {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, VertexBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, NormalBuffer);
         glDrawArrays(GL_TRIANGLES, 0, AppendCount);
         if (Manager->bRenderGrass)
         {
+            Grass.DispatchGenerate(*this);
             Grass.Render(Type);
         }
     }
