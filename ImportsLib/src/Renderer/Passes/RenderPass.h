@@ -10,6 +10,16 @@ enum class RenderPassType : uint8_t
     ShadowPass = 2,
 };
 
+inline const char* ToString(RenderPassType type)
+{
+    switch(type)
+    {
+    case RenderPassType::BasePass:      return "Base";
+    case RenderPassType::ShadowPass:    return "Shadow";
+    default:                            return "INVALID";
+    }
+}
+
 /**
  * A collection of graphic calls, usually with a distinct target
  * e.g.: render all shadows

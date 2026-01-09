@@ -4,20 +4,20 @@
 #include "TerrainManager.h"
 #include "TerrainShader.h"
 #include "../Util/ShaderHelper.h"
-//TODO: integratee the updated mesh.comp shader to make height calculation easy through lookup
+
 using namespace Util;
 namespace TTerrain
 {
     unsigned int TerrainData::TexSize = 32;
     
-    void TerrainData::RenderTriangles(RenderPassType Type) 
+    void TerrainData::RenderTriangles(RenderPassType Type) const
     {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, VertexBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, NormalBuffer);
         glDrawArrays(GL_TRIANGLES, 0, AppendCount);
         if (Manager->bRenderGrass)
         {
-            Grass.DispatchGenerate(*this);
+           // GPU_PROFILE(GameImports::Game::GetGpuFrame(), "Grass", legit::Colors::greenSea);
             Grass.Render(Type);
         }
     }

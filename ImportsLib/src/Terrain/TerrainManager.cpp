@@ -14,6 +14,7 @@
 #include "../Renderer/Passes/ShadowPass.h"
 #include "Grass/GrassData.h"
 #include "Grass/GrassShader.h"
+#include "LegitProfiler/GPUProfiler.h"
 
 using namespace std;
 using namespace Util;
@@ -80,6 +81,7 @@ namespace TTerrain
 
     void TerrainManager::Render(RenderPassType Type)
     {
+        GPU_PROFILE(Game::GetGpuFrame(), "Terrain::Render", legit::Colors::alizarin);
         DispatchCompute();
         RenderTriangles(Type);
         bWasPressingRaise = bIsRaising;

@@ -66,7 +66,7 @@ namespace TTerrain
         void CleanUp() const;
         static void Dispatch(GLuint Mode, GLuint Target);
         
-        void RenderTriangles(RenderPassType Type);
+        void RenderTriangles(RenderPassType Type) const;
         
         void CreateCompute();
         void ApplyToSettings(TerrainShaderSettings& Settings) const;

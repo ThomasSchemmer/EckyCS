@@ -68,6 +68,9 @@ void Renderer::Render()
     
     for (auto& Pass : RenderPasses)
     {
+        auto TypeStr = std::string("Render::")+ToString(Pass->Type);
+        CPU_PROFILE(Game::CpuProfilerFrame, TypeStr.c_str(), legit::Colors::pumpkin);
+        GPU_PROFILE(Game::GetGpuFrame(), TypeStr.c_str(), legit::Colors::pumpkin);
         Pass->Use();
         CurrentRenderPass = Pass;
 
@@ -87,6 +90,7 @@ void Renderer::Render()
             if (!RenderSystem || !RenderSystem->SupportsRenderPass(Pass->Type))
                 continue;
             
+            GPU_PROFILE(Game::GetGpuFrame(), "RenderSystem", legit::Colors::silver);   
             RenderSystem->Render();
         }
         

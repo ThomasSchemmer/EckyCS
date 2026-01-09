@@ -8,6 +8,9 @@
 
 #include "../Terrain/TerrainManager.h"
 #include "GLFW/glfw3.h"
+#include "LegitProfiler/CPUProfiler.h"
+#include "LegitProfiler/GPUProfiler.h"
+#include "LegitProfiler/ImGuiProfilerRenderer.h"
 
 class Renderer;
 
@@ -54,6 +57,17 @@ namespace GameImports {
 		static float DeltaTime, DeltaFixedTime;
 		shared_ptr<Renderer> RendererPtr;
 		shared_ptr<TTerrain::TerrainManager> TerrainPtr;
+
+		// profiler stuff, should probably be only debug
+		static legit::CpuProfilerFrame CpuProfilerFrame;
+		//ring buffer
+		static std::vector<legit::GpuProfilerFrame> GpuProfilerFrames;
+		static int GpuFrameIndex;
+		static constexpr int GpuFrameCount = 3;
+		static ImGuiUtils::ProfilersWindow ProfilerWindow;
+		static legit::GpuProfilerFrame& GetGpuFrame(int Index = GpuFrameIndex);
+		static legit::GpuProfilerFrame& GetLastGpuFrame();
+		static void GpuFrameNext();
 
 		Game(const function<float()>& TF);
 		virtual ~Game();

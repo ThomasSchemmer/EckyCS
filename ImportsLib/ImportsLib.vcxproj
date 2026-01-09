@@ -115,6 +115,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)ImportsLib\ext;$(SolutionDir)ext\;$(SolutionDir)ImportsLib\ext\glew\include;$(SolutionDir)ImportsLib\ext\glfw\include;$(SolutionDir)ImportsLib\src\Renderer\Shaders;$(SolutionDir)ImportsLib\src\Terrain\Shaders;$(SolutionDir)ImportsLib\ext\glew;$(SolutionDir)ImportsLib\ext\glfw</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -667,6 +668,10 @@
     <ClInclude Include="ext\imgui\imstb_rectpack.h" />
     <ClInclude Include="ext\imgui\imstb_textedit.h" />
     <ClInclude Include="ext\imgui\imstb_truetype.h" />
+    <ClInclude Include="ext\LegitProfiler\CPUProfiler.h" />
+    <ClInclude Include="ext\LegitProfiler\GPUProfiler.h" />
+    <ClInclude Include="ext\LegitProfiler\ImGuiProfilerRenderer.h" />
+    <ClInclude Include="ext\LegitProfiler\ProfilerTask.h" />
     <ClInclude Include="ext\renderdoc\renderdoc_app.h" />
     <ClInclude Include="ext\stb\stb_image.h" />
     <ClInclude Include="src\EckyCS\Components\Base\TransformComponent.h" />
@@ -734,6 +739,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="ext\glm\CMakeLists.txt" />
+    <Content Include="ext\LegitProfiler\LICENSE.txt" />
     <Content Include="src\Renderer\Shaders\glsl\BlurTex.comp" />
     <Content Include="src\Renderer\Shaders\glsl\DepthFragmentShader.frag" />
     <Content Include="src\Renderer\Shaders\glsl\DepthVertexShader.vert" />

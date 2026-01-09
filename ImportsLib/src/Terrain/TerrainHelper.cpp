@@ -16,9 +16,11 @@ namespace TTerrain
     
     int TerrainHelper::GetQuadIndexFor(vec3 id, ivec2 Offset){
         auto TexSize = vec2(TerrainData::TexSize);
+        float X = std::floor(id.z + (float)Offset.y);
+        float Z = std::floor(id.x + (float)Offset.x);
         float ClampedID =
-            clamp(floor(id.z + (float)Offset.y), 0.0f, TexSize.y - 1) * TexSize.x +
-            clamp(floor(id.x + (float)Offset.x), 0.0f, TexSize.x - 1);
+            glm::clamp(X, 0.0f, TexSize.y - 1) * TexSize.x +
+            glm::clamp(Z, 0.0f, TexSize.x - 1);
         return (int)ClampedID;
     }
 

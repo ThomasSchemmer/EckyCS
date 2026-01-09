@@ -13,14 +13,35 @@ using namespace Player;
 
 namespace GameImports {
 
+	legit::CpuProfilerFrame Game::CpuProfilerFrame;
+	std::vector<legit::GpuProfilerFrame> Game::GpuProfilerFrames;
+	int Game::GpuFrameIndex = 0;
+	ImGuiUtils::ProfilersWindow Game::ProfilerWindow;
 	unique_ptr<Game> Game::Instance = nullptr;
 	float Game::DeltaTime = 0;
 	float Game::DeltaFixedTime = 0;
+
+	legit::GpuProfilerFrame& Game::GetGpuFrame(int Index)
+	{
+		return GpuProfilerFrames[Index];
+	}
+
+	legit::GpuProfilerFrame& Game::GetLastGpuFrame()
+	{
+		int Previous = (GpuFrameIndex - 1 + GpuFrameCount) % GpuFrameCount;
+		return GpuProfilerFrames[Previous];
+	}
+
+	void Game::GpuFrameNext()
+	{
+		GpuFrameIndex = (GpuFrameIndex + 1) % GpuFrameCount;
+	}
 
 	Game::Game(const function<float()>& TF): TimeFunction(TF)
 	{
 		RendererPtr = make_shared<Renderer>();
 		TerrainPtr = make_shared<TerrainManager>();
+		Game::GpuProfilerFrames.resize(GpuFrameCount);
 	}
 
 	Game::~Game()
