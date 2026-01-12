@@ -28,7 +28,7 @@ namespace legit
             legit::ProfilerTask t{};
             t.name = name;
             t.startTime = float(start - frameStart);
-            t.endTime   = float(end   - frameStart);
+            t.endTime   = float(end - frameStart);
             t.color = color;
             tasks.push_back(t);
         }

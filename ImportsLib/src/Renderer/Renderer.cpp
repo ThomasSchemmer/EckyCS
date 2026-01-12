@@ -59,8 +59,6 @@ void Renderer::Update(float Delta) const
 
 void Renderer::Render()
 {
-    GL_CHECK_ERROR();
-
     auto ServicePtr = Game::GetService(GameServiceType::EntityComponentSystem);
     auto Ecs = reinterpret_pointer_cast<ECS>(ServicePtr);
     vector<shared_ptr<System>> Systems;
@@ -71,6 +69,7 @@ void Renderer::Render()
         auto TypeStr = std::string("Render::")+ToString(Pass->Type);
         CPU_PROFILE(Game::CpuProfilerFrame, TypeStr.c_str(), legit::Colors::pumpkin);
         GPU_PROFILE(Game::GetGpuFrame(), TypeStr.c_str(), legit::Colors::pumpkin);
+        
         Pass->Use();
         CurrentRenderPass = Pass;
 
@@ -96,6 +95,7 @@ void Renderer::Render()
         
         if (Pass->Type == RenderPassType::BasePass)
         {
+            GPU_PROFILE(Game::GetGpuFrame(), "RenderGizmos", legit::Colors::silver);
             GizmosPtr->Render();
         }
 

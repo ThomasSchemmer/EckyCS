@@ -156,44 +156,34 @@ namespace
 		}
 	}
 
-	void ResolveGpuQueries(legit::GpuProfilerFrame& frame)
-	{
-		for (auto& task : frame.tasks)
-		{
-			GLuint64 startTime = 0, endTime = 0;
-			glGetQueryObjectui64v(GLuint(task.startTime), GL_QUERY_RESULT, &startTime);
-			glGetQueryObjectui64v(GLuint(task.endTime),   GL_QUERY_RESULT, &endTime);
-
-			task.startTime = double(startTime) * 1e-9f; // convert ns → seconds
-			task.endTime   = double(endTime)   * 1e-9f;
-		}
-	}
-
 	void Render() {
 		{
-			CPU_PROFILE(Game::CpuProfilerFrame, "Render", legit::Colors::alizarin);
-			auto Renderer = Game::GetRenderer();
+			GPU_PROFILE(Game::GetGpuFrame(), "Clear", legit::Colors::peterRiver);
 			HandleCaptureStart();
 		
 			glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
+		}
+		{
+			CPU_PROFILE(Game::CpuProfilerFrame, "Render", legit::Colors::alizarin);
+			auto Renderer = Game::GetRenderer();
 			Renderer->Render();
 		}
 
-		ResolveGpuQueries(Game::GetLastGpuFrame());
+		Game::GetLastGpuFrame().ResolveTasks();
+		Game::GetLastGpuFrame().ResolveQueries();
 		Game::ProfilerWindow.gpuGraph.LoadFrameData(
 		  Game::GetLastGpuFrame().tasks.data(),
 		  Game::GetLastGpuFrame().tasks.size()
 		);
-		Game::GpuFrameNext();
 
 		Game::ProfilerWindow.cpuGraph.LoadFrameData(
 		  Game::CpuProfilerFrame.tasks.data(),
 		  Game::CpuProfilerFrame.tasks.size()
 		);
 
-		Game::ProfilerWindow.Render();
+		Game::ProfilerWindow.Render(Game::GetLastGpuFrame());
+		Game::GpuFrameNext();
 		
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -223,17 +213,19 @@ namespace
 		Game::Instance->RendererPtr->CleanUp();
 		Game::Instance->RendererPtr.reset();
 		Game::Instance.reset();
-
-		for (int i = 0; i < Game::GpuFrameCount; i++)
-		{
-			Game::GetGpuFrame(i).Invalidate();
-		}
 	}
 
 	void CleanUp() {
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
+
+		for (int i = 0; i < Game::GpuFrameCount; i++)
+		{
+			auto& Frame = Game::GetGpuFrame(i);
+			Frame.Invalidate();
+			Frame.InvalidateQueries();
+		}
 		
 		glfwDestroyWindow(Window);
 		DestroyWorld();

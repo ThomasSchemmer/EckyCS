@@ -1,9 +1,12 @@
 ﻿#include "TerrainData.h"
+#define NOMINMAX
 #include <windows.h>
 
 #include "TerrainManager.h"
 #include "TerrainShader.h"
+#include "../GameService/Game.h"
 #include "../Util/ShaderHelper.h"
+#include "LegitProfiler/GPUProfiler.h"
 
 using namespace Util;
 namespace TTerrain
@@ -17,7 +20,8 @@ namespace TTerrain
         glDrawArrays(GL_TRIANGLES, 0, AppendCount);
         if (Manager->bRenderGrass)
         {
-           // GPU_PROFILE(GameImports::Game::GetGpuFrame(), "Grass", legit::Colors::greenSea);
+            auto& Frame = GameImports::Game::GetGpuFrame();
+            GPU_PROFILE(Frame, "Grass", legit::Colors::greenSea);
             Grass.Render(Type);
         }
     }

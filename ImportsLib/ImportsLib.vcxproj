@@ -181,6 +181,8 @@
     <ClCompile Include="ext\imgui\imgui_draw.cpp" />
     <ClCompile Include="ext\imgui\imgui_tables.cpp" />
     <ClCompile Include="ext\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="ext\LegitProfiler\ProfilerGraph.cpp" />
+    <ClCompile Include="ext\LegitProfiler\ProfilersWindow.cpp" />
     <ClCompile Include="Imports.cpp" />
     <ClCompile Include="src\EckyCS\Components\Component.cpp" />
     <ClCompile Include="src\EckyCS\Components\ComponentGroupIdentifier.cpp" />
@@ -670,7 +672,8 @@
     <ClInclude Include="ext\imgui\imstb_truetype.h" />
     <ClInclude Include="ext\LegitProfiler\CPUProfiler.h" />
     <ClInclude Include="ext\LegitProfiler\GPUProfiler.h" />
-    <ClInclude Include="ext\LegitProfiler\ImGuiProfilerRenderer.h" />
+    <ClInclude Include="ext\LegitProfiler\ProfilerGraph.h" />
+    <ClInclude Include="ext\LegitProfiler\ProfilersWindow.h" />
     <ClInclude Include="ext\LegitProfiler\ProfilerTask.h" />
     <ClInclude Include="ext\renderdoc\renderdoc_app.h" />
     <ClInclude Include="ext\stb\stb_image.h" />

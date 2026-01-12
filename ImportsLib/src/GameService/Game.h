@@ -10,7 +10,7 @@
 #include "GLFW/glfw3.h"
 #include "LegitProfiler/CPUProfiler.h"
 #include "LegitProfiler/GPUProfiler.h"
-#include "LegitProfiler/ImGuiProfilerRenderer.h"
+#include "LegitProfiler/ProfilersWindow.h"
 
 class Renderer;
 
