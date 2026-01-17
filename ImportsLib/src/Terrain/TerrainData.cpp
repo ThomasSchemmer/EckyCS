@@ -35,21 +35,21 @@ namespace TTerrain
         // actual DispatchGenerate() is called from the manager, after settings uniforms!
     }
 
-    void TerrainData::DispatchSelect(GLuint Mode) const
+    void TerrainData::DispatchSelect(GLuint Mode, GLuint Target) const
     {
         glUseProgram(ComputeProgramSelect);
         UpdateComputeVars(ComputeProgramSelect);
+        ShaderHelper::SetUniform1ui("_Target", Target, ComputeProgramSelect);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, HeightBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, SelectionBuffer);
         Dispatch(Mode, ComputeProgramSelect);
     }
 
-    void TerrainData::DispatchPaint() const
+    void TerrainData::DispatchPaint(GLuint Mode) const
     {
         glUseProgram(ComputeProgramPaint);
         UpdateComputeVars(ComputeProgramPaint);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, SelectionBuffer);
-        Dispatch(0, ComputeProgramPaint);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, HeightBuffer);
+        Dispatch(Mode, ComputeProgramPaint);
     }
 
     void TerrainData::DispatchResetHeight() const
@@ -119,7 +119,6 @@ namespace TTerrain
         glDeleteBuffers(1, &VertexBuffer);
         glDeleteBuffers(1, &NormalBuffer);
         glDeleteBuffers(1, &HeightBuffer);
-        glDeleteBuffers(1, &SelectionBuffer);
         glDeleteBuffers(1, &VertexOffsetsBuffer);
         glDeleteBuffers(1, &CountBuffer);
     }
@@ -136,9 +135,6 @@ namespace TTerrain
         // both Height and Selection are configurable fixed size
         glGenBuffers(1, &HeightBuffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, HeightBuffer); 
-        glBufferStorage(GL_SHADER_STORAGE_BUFFER, GetHeightBufferByteSize(), nullptr, GL_MAP_READ_BIT | GL_DYNAMIC_STORAGE_BIT);
-        glGenBuffers(1, &SelectionBuffer);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, SelectionBuffer); 
         glBufferStorage(GL_SHADER_STORAGE_BUFFER, GetHeightBufferByteSize(), nullptr, GL_MAP_READ_BIT | GL_DYNAMIC_STORAGE_BIT);
 
         glGenBuffers(1, &VertexOffsetsBuffer);
@@ -158,7 +154,6 @@ namespace TTerrain
         Settings.VertexBuffer = VertexBuffer;
         Settings.NormalBuffer = NormalBuffer;
         Settings.HeightBuffer = HeightBuffer;
-        Settings.SelectionBuffer = SelectionBuffer;
     }
 
     void TerrainData::UpdateComputeVars(GLuint Program) const

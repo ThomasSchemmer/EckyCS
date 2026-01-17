@@ -19,10 +19,26 @@ namespace TTerrain
         PrefixSumOffsets = 3
     };
 
+    /** How to overwrite the data slot*/
     enum class TerrainSelectionMode : uint8_t
     {
         Clear = 0,
-        Additive = 1,
+        Select = 1,
+        DeSelect = 2
+    };
+
+    /** Which data slot to overwrite */
+    enum class TerrainTarget : uint8_t
+    {
+        Selection = 0,
+        Tex0 = 1,
+        Tex1 = 2,
+        Tex2 = 3
+    };
+
+    enum class TerrainPaintMode : uint8_t
+    {
+        ApplyHeight = 0,
     };
 
     class TerrainShaderSettings;
@@ -51,7 +67,6 @@ namespace TTerrain
         GLuint NormalBuffer;
         GLuint HeightBuffer;
         GLuint VertexOffsetsBuffer;
-        GLuint SelectionBuffer;
         GLuint CountBuffer;
         static unsigned int TexSize;
 
@@ -59,8 +74,8 @@ namespace TTerrain
 
         TerrainData(glm::vec3 WorldPos, const std::shared_ptr<TerrainManager>& Manager);
         ~TerrainData() = default;
-        void DispatchSelect(GLuint Mode) const;
-        void DispatchPaint() const;
+        void DispatchSelect(GLuint Mode, GLuint Target) const;
+        void DispatchPaint(GLuint Mode) const;
         void DispatchResetHeight() const;
         void DispatchGenerate();
         void CleanUp() const;

@@ -24,12 +24,12 @@ namespace TTerrain
     public:
         RenderPassType RenderPassType;
         glm::vec3 GlobalWorldPos;
-        GLuint VertexBuffer, NormalBuffer, HeightBuffer, SelectionBuffer;
+        GLuint VertexBuffer, NormalBuffer, HeightBuffer;
         glm::vec3 BrushPos;
         unsigned int BrushSize;
         glm::ivec2 TexSize;
         
-        glm::vec3 GrassColor, DirtColor;
+        glm::vec3 GrassColor, CliffColor, Tex0Color, Tex1Color, Tex2Color;
         float GrassScale, GrassQuantize;
         bool bShowWireFrame;
         GLuint ShadowMap;

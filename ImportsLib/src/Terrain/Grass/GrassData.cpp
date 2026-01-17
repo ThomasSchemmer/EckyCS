@@ -60,6 +60,7 @@ namespace TTerrain
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, CountBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, Data.VertexBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, Data.VertexOffsetsBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, Data.HeightBuffer);
         glDispatchCompute(GroupCount, GroupCount, 1);
         AppendCount = ShaderHelper::ReadBufferCount(CountBuffer);
 

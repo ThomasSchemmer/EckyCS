@@ -63,12 +63,14 @@ namespace TTerrain
         shared_ptr<Renderer> RendererPtr;
         shared_ptr<EckyCS::SpriteGeometryProvider> GeometryProvider;
 
-        bool bIsEditing = false;
         bool bIsSelecting = false;
         bool bWasPressingSelect = false;
+        bool bIsDeSelecting = false;
+        bool bWasPressingDeSelect = false;
         bool bIsRaising = false;
         bool bWasPressingRaise = false;
         bool bIsResetting = false;
+        int TargetTex = 0;
         glm::vec2 BrushStartScreenPos;
         glm::vec3 SelectStartWorldPos;
         glm::vec3 RaiseStartWorldPos;
@@ -76,8 +78,11 @@ namespace TTerrain
         int BrushSize = 1;
 
         glm::vec3 GrassColor = glm::vec3(0.21, 0.94, 0.28);
-        glm::vec3 DirtColor = glm::vec3(0.87, 0.75, 0.63);
-        float GrassScale = 0.015f, GrassQuantize = 7;
+        glm::vec3 CliffColor = glm::vec3(0.87, 0.75, 0.63);
+        glm::vec3 Tex0Color = glm::vec3(0.87, 0.75, 0.63);
+        glm::vec3 Tex1Color = glm::vec3(0.87, 0.75, 0.63);
+        glm::vec3 Tex2Color = glm::vec3(0.87, 0.75, 0.63);
+        float GrassScale = 0.065f, GrassQuantize = 8.5;
         bool bRenderGrass = true;
         bool bShowWireframe = false;
         

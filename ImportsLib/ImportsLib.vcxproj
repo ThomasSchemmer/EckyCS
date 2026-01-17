@@ -744,6 +744,7 @@
     <Content Include="ext\glm\CMakeLists.txt" />
     <Content Include="ext\LegitProfiler\LICENSE.txt" />
     <Content Include="src\Renderer\Shaders\glsl\BlurTex.comp" />
+    <Content Include="src\Renderer\Shaders\glsl\Common.glsl" />
     <Content Include="src\Renderer\Shaders\glsl\DepthFragmentShader.frag" />
     <Content Include="src\Renderer\Shaders\glsl\DepthVertexShader.vert" />
     <Content Include="src\Renderer\Shaders\glsl\Shadow.glsl" />
@@ -751,11 +752,13 @@
     <Content Include="src\Terrain\Grass\GrassGeneration.comp" />
     <Content Include="src\Terrain\Grass\GrassVertexShader.vert" />
     <Content Include="src\Terrain\Shaders\Cubic.glsl" />
+    <Content Include="src\Terrain\Shaders\TerrainCommon.glsl" />
     <Content Include="src\Terrain\Shaders\TerrainFragmentShader.frag" />
     <Content Include="src\Terrain\Shaders\TerrainMesh.comp" />
     <Content Include="src\Terrain\Shaders\TerrainPaint.comp" />
     <Content Include="src\Terrain\Shaders\TerrainSelect.comp" />
     <Content Include="src\Terrain\Shaders\TerrainVertexShader.vert" />
+    <Content Include="src\Terrain\Shaders\TexLookup.glsl" />
     <Content Include="Textures\leaf.png" />
     <EmbeddedResource Include="src\Renderer\Shaders\glsl\BaseFragmentShader.frag" />
     <EmbeddedResource Include="src\Renderer\Shaders\glsl\BaseVertexShader.vert" />

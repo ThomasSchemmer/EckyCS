@@ -18,7 +18,8 @@
 #define MODE_GENERATE_TRIANGLES 1
 #define MODE_RESET_HEIGHT 2
 #define MODE_PREFIXSUM_OFFSET 3
-#define MAX_VALUE 10
+
+#include "TERRAIN_COMMON_SHADER"
 
 #define DISPATCH_SIZE 2
 layout(local_size_x = DISPATCH_SIZE, local_size_y = DISPATCH_SIZE) in;
@@ -43,6 +44,14 @@ layout(std430, binding = 1) buffer NormalBuffer {
     vec4 Entries[];
 } Normals;
 
+/** 
+ * Contains all necessary information to calculate the actual terrain mesh from. 
+ * Convenient cause we only need to save this and then can easily re-generate everything
+ * Layout:
+ * 0 - Selection bit mask
+ * 1..23 - unused
+ * 24..31 - actual height info
+ */
 layout(std430, binding = 2) buffer HeightBuffer {
     uint Value[];
 } Heights;
@@ -196,7 +205,7 @@ int GetHeightIndexFor(ivec3 id, ivec2 Offset){
 }
 
 int GetHeightForIndex(int Index){
-    return clamp(int(Heights.Value[Index]), 0, MAX_VALUE - 1);
+    return clamp(int(Heights.Value[Index] & LAYOUT_HEIGHT_MASK), 0, MAX_VALUE - 1);
 }
 
 void WriteTriangle(vec3 A, vec3 B, vec3 C, uint Index){
@@ -295,7 +304,6 @@ void GenerateTex(ivec3 id){
 
     uint GlobalIndex = id.z * _TexSize.x + id.x;
     Heights.Value[GlobalIndex] = 0;
-    Heights.Value[0] = 5;
 }
 
 // this is not really efficient and is only used as we dont want to transmit the data between GPU/CPU

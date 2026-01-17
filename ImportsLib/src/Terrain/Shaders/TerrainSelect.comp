@@ -7,19 +7,40 @@
 #define DISPATCH_SIZE 2
 layout(local_size_x = DISPATCH_SIZE, local_size_y = DISPATCH_SIZE) in;
 
+// for more layout info seee terrainmesh shader
 layout(std430, binding = 3) buffer HeightBuffer {
-    uint Value[];   // ranges from 0..MAX_VALUE
+    uint Value[]; 
 } Heights;
 
-layout(std430, binding = 4) buffer SelectionBuffer {
-    uint Entries[]; // either 0 or 1!
-} Selection;
-
-
 #define MODE_CLEAR 0
-#define MODE_SET 1
-//TODO: add "removing" selection mode
-#define MAX_VALUE 10
+#define MODE_SELECT 1
+#define MODE_DESELECT 2
+
+#define TARGET_SELECTION 0
+#define TARGET_TEX0 1
+#define TARGET_TEX1 2
+#define TARGET_TEX2 3
+
+#include "TERRAIN_COMMON_SHADER"
+/** Stores calculation by mode in an easy lookup table*/
+const uint LayoutByTarget[] = uint[](
+    LAYOUT_SELECTION,   
+    LAYOUT_TEX0,         
+    LAYOUT_TEX1,         
+    LAYOUT_TEX2         
+);
+
+const int MultiplierByMode[] = int[](
+    0,
+    1,
+    -1
+);
+
+const bool EqualByMode[] = bool[](
+    false,  // MODE_CLEAR
+    true,   // MODE_SET
+    false   // MODE_DIRT
+);
 
 uniform ivec2 _TexSize;
 uniform ivec3 _WorldSize;
@@ -28,9 +49,11 @@ uniform vec3 _StartWorldPos;
 uniform vec3 _BrushPos;
 uniform uint _BrushSize;
 uniform uint _Mode;
+uniform uint _Target;
 
 void ApplySelection(ivec3 id){
     uint GlobalIndex = id.z * _TexSize.x + id.x;
+    uint TargetLayout = LayoutByTarget[_Target];
     
     // use the mouse pos as origin, distance to it as falloff value
     vec2 BrushUV = (_BrushPos.xz - _WorldPos.xz) / _WorldSize.xz * _TexSize;
@@ -38,22 +61,22 @@ void ApplySelection(ivec3 id){
     float DistSqr = dot(Diff, Diff);
     float DistNorm = 1 - DistSqr / (_BrushSize * _BrushSize);
     DistNorm = clamp(round(DistNorm), 0, 1);
+    uint NewValue = uint(DistNorm) << TargetLayout;
 
     // can only add to selection if the current height is the same 
     // as the first selected height (to make managing plateaus easier)
     vec2 OriginalUV = (_StartWorldPos.xz - _WorldPos.xz) / _WorldSize.xz * _TexSize;
     uint OriginalIndex = uint(OriginalUV.y) * _TexSize.x + uint(OriginalUV.x);
-    uint OriginalHeight = Heights.Value[OriginalIndex];
-    uint Height = Heights.Value[GlobalIndex];
+    uint OriginalHeight = Heights.Value[OriginalIndex] & LAYOUT_HEIGHT_MASK;
+    uint Height = Heights.Value[GlobalIndex] & LAYOUT_HEIGHT_MASK;
     
-    // convert to binary mapping
-    uint OldValue = Selection.Entries[GlobalIndex];
-    uint NewValue = uint(DistNorm);
-    NewValue = (OriginalHeight == Height) ? NewValue : 0; 
-    uint Value = _Mode == MODE_SET ? (NewValue + OldValue) : 0;
-    Value = clamp(Value, uint(0), uint(1));
+    bool bIsEqual = !EqualByMode[_Mode] || (OriginalHeight == Height);
+    uint OldValue = Heights.Value[GlobalIndex];
+    NewValue = bIsEqual ? NewValue : 0;
+    uint ClearMask = ~(1 << TargetLayout);
+    uint Value = _Mode != MODE_CLEAR ? (NewValue | OldValue) : (ClearMask & OldValue);
     
-    Selection.Entries[GlobalIndex] = Value;
+    Heights.Value[GlobalIndex] = Value;
 }
 
 void main() {

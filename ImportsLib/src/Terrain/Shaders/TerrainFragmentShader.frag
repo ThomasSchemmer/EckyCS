@@ -3,6 +3,7 @@
 float cubicNoise(vec3 at);
 float GetGrassNoise(vec4 WorldPos, float GrassScale, float GrassQuantize);
 #include "TERRAIN_CUBIC_SHADER"
+#include "COMMON_SHADER"
 
 out vec4 FragColor;
 
@@ -18,7 +19,10 @@ uniform vec3 GlobalWorldPos;
 uniform ivec2 TexSize;
 uniform sampler2D ShadowMap;
 
-uniform vec3 DirtColor;
+uniform vec3 Tex0Color;
+uniform vec3 Tex1Color;
+uniform vec3 Tex2Color;
+uniform vec3 CliffColor;
 uniform vec3 GrassColor;
 uniform float GrassScale;
 uniform float GrassQuantize;
@@ -30,15 +34,15 @@ uniform int ShowWireFrame;
 const float BrushBorder = 0.25;
 
 #include "SHADOW_SHADER"
+#include "TERRAIN_COMMON_SHADER"
 
-// 0 and 1 are vertex and normal buffer in vertex shader. 2 is count buffer. 3 is height
+// binding 0 and 1 are vertex and normal buffer in vertex shader. 2 is count buffer. 3 is height
+// for more layout info see terrain mesh shader
 layout(std430, binding = 3) buffer HeightBuffer {
     uint Values[];
 } Heights;
 
-layout(std430, binding = 4) buffer SelectionBuffer {
-    uint Entries[];
-} Selection;
+#include "TERRAIN_TEXLOOKUP_SHADER"
 
 vec3 GetBrushColor(void){
     ivec2 id = ivec2(UV.x * TexSize.x, UV.y * TexSize.y);
@@ -56,7 +60,7 @@ vec3 GetBrushColor(void){
 
     // visibility mask according to selection
     uint GlobalIndex = id.y * TexSize.x + id.x;
-    uint Value = Selection.Entries[GlobalIndex];
+    uint Value = Heights.Values[GlobalIndex] >> LAYOUT_SELECTION;
     Value *= Show;
     
     return clamp(BrushColor + Value, 0, 1);
@@ -69,21 +73,36 @@ float GetLight(void){
     return nl;
 }
 
-
-
 void main()
 {
     vec3 BrushColor = GetBrushColor();
     float GrassNoise = GetGrassNoise(WorldPos, GrassScale, GrassQuantize);
+    GrassNoise = map(GrassNoise, .0, 1.0, TerrainMinColor, TerrainMaxColor);
     vec3 Grass = GrassColor * GrassNoise;
+
+    uint BaseIndex = GetBaseIndex(UV, TexSize);
+    vec2 BaseID = UV * vec2(TexSize);
+    uvec4 TexValues = GetTexValues(BaseIndex, TexSize);
+    float Noise = cubicNoise(WorldPos.xyz / 2.0);
+    float Tex0 = GetTexValueByLayout(BaseID, TexValues, LAYOUT_TEX0, Noise);
+    float Tex1 = GetTexValueByLayout(BaseID, TexValues, LAYOUT_TEX1, Noise);
+    float Tex2 = GetTexValueByLayout(BaseID, TexValues, LAYOUT_TEX2, Noise);
+    Grass = mix(Grass, Tex0Color, Tex0);
+    Grass = mix(Grass, Tex1Color, Tex1);
+    Grass = mix(Grass, Tex2Color, Tex2);
+    
+    // make shadow lighter
     float LightFactor = GetLight();
-    vec3 Dirt = DirtColor * LightFactor;
+    vec3 Cliff = CliffColor * map(LightFactor, 0, 1, .25, 1);
+    
     float GrassFactor = abs(dot(vec3(0, 1, 0), WorldNormals.xyz));
-    vec3 TexColor = GrassFactor * Grass + (1 - GrassFactor) * Dirt;
+    vec3 TexColor = GrassFactor * Grass + (1 - GrassFactor) * Cliff;
 
     float ShadowFactor = GetVarianceShadow();
-    vec3 Color = mix(ShadowColor, TexColor, ShadowFactor);
+    vec3 TempShadowColor = (ShadowColor * 2 + TexColor) / 3.0;
+    vec3 Color = mix(TempShadowColor, TexColor, ShadowFactor);
     
+#ifdef DEBUG
     float BariThreshold = 0.01f;
     int IsBari = int(
         ((BariCoords.x < BariThreshold) ||
@@ -93,4 +112,7 @@ void main()
     ); 
     vec3 BariColor = IsBari > 0 ? vec3(0, 0, 0) : Color; 
     FragColor = vec4(BrushColor + BariColor, 1);
+#endif
+
+    FragColor = vec4(BrushColor + Color, 1); 
 } 

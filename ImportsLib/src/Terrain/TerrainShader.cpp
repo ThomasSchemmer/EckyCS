@@ -51,7 +51,10 @@ void TTerrain::TerrainShader::UpdateVars(const TerrainShaderSettings& Settings) 
     ShaderHelper::SetUniform1ui("BrushSize", Settings.BrushSize, ActiveProgram);
 
     // procedural texturing info
-    ShaderHelper::SetUniform3fv("DirtColor", Settings.DirtColor, ActiveProgram);
+    ShaderHelper::SetUniform3fv("Tex0Color", Settings.Tex0Color, ActiveProgram);
+    ShaderHelper::SetUniform3fv("Tex1Color", Settings.Tex1Color, ActiveProgram);
+    ShaderHelper::SetUniform3fv("Tex2Color", Settings.Tex2Color, ActiveProgram);
+    ShaderHelper::SetUniform3fv("CliffColor", Settings.CliffColor, ActiveProgram);
     ShaderHelper::SetUniform3fv("GrassColor", Settings.GrassColor, ActiveProgram);
     ShaderHelper::SetUniform1f("GrassScale", Settings.GrassScale, ActiveProgram);
     ShaderHelper::SetUniform1f("GrassQuantize", Settings.GrassQuantize, ActiveProgram);
@@ -76,7 +79,6 @@ void TTerrain::TerrainShader::UpdateVars(const TerrainShaderSettings& Settings) 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, Settings.VertexBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, Settings.NormalBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, Settings.HeightBuffer);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, Settings.SelectionBuffer);
 
 }
 

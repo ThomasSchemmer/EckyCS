@@ -13,6 +13,8 @@ public:
     void Create(GLFWwindow* Window) override;
     void OnAfterRender() override;
     void CleanUp() const override;
+    virtual void Use() const override;
+    virtual void UnUse() const override;
 
 private:
     GLuint BlurTexCompute = 0;

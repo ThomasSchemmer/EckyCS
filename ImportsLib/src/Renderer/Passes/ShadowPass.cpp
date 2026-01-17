@@ -39,3 +39,15 @@ void ShadowPass::CleanUp() const
     RenderPass::CleanUp();
     glDeleteProgram(BlurTexCompute);
 }
+
+void ShadowPass::Use() const
+{
+    RenderPass::Use();
+    //glEnable(GL_FRONT);
+}
+
+void ShadowPass::UnUse() const
+{
+    RenderPass::UnUse();
+    //glEnable(GL_BACK);
+}

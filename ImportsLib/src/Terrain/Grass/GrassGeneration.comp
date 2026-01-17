@@ -12,7 +12,6 @@
 #define DISPATCH_SIZE 8
 layout(local_size_x = DISPATCH_SIZE, local_size_y = DISPATCH_SIZE) in;
 
-
 layout(std430, binding = 0) buffer PositionBuffer {
     vec4 Entries[];
 } Positions;
@@ -30,6 +29,10 @@ layout(std430, binding = 3) buffer VertexOffsetsBuffer {
     uint Values[];
 } VertexOffsets;
 
+layout(std430, binding = 4) buffer HeightBuffer {
+    uint Values[];
+} Heights;
+
 // 0 = calc overall size, 1 = actually compute vertices
 uniform uint _Mode;
 uniform ivec2 _TargetCount;
@@ -40,11 +43,23 @@ uniform uint _GroupCount;
 
 const uint VertexCount = 24;
 
-int GetQuadIndexFor(vec3 id, ivec2 Offset){
+#include "COMMON_SHADER"
+#include "TERRAIN_COMMON_SHADER"
+#include "TERRAIN_CUBIC_SHADER"
+#include "TERRAIN_TEXLOOKUP_SHADER"
+
+int GetBaseIndexFor(vec3 id, ivec2 Offset){
     float ClampedID =
         clamp(floor(id.z + float(Offset.y)), 0.0f, _TexSize.y - 1) * _TexSize.x +
         clamp(floor(id.x + float(Offset.x)), 0.0f, _TexSize.x - 1);
     return int(ClampedID);
+}
+
+ivec2 GetBaseIDFor(vec3 id, ivec2 Offset){
+    vec2 Clamped;
+    Clamped.x = clamp(floor(id.x + float(Offset.x)), 0.0f, _TexSize.x - 1);
+    Clamped.y = clamp(floor(id.z + float(Offset.y)), 0.0f, _TexSize.y - 1);
+    return ivec2(Clamped);
 }
 
 vec2 hash2(vec2 p)
@@ -98,7 +113,7 @@ float GetHeightFromWorldPos(vec3 WorldPos){
     // use the world pos to lookup which quad its supposed to reference
     vec2 Scale = vec2(float(_TexSize) / _WorldSize.x, float(_TexSize) / _WorldSize.z);
     vec3 ScaledWorldPos = vec3(WorldPos.x * Scale.x, 0, WorldPos.z * Scale.y);
-    int QuadIndex = GetQuadIndexFor(ScaledWorldPos, ivec2(0));
+    int QuadIndex = GetBaseIndexFor(ScaledWorldPos, ivec2(0));
     ivec2 QuadXY = ivec2(QuadIndex % _TexSize.x, QuadIndex / _TexSize.y);
     
     // since all terrain quadrants have the standard quad at their base, we need to check for offset
@@ -137,23 +152,37 @@ float GetHeightFromWorldPos(vec3 WorldPos){
     return BariCoords.x * VertA.y + BariCoords.y * VertB.y + BariCoords.z * VertC.y;
 }
 
-void GenerateGrassPosition(vec3 Pos){
+bool IsOnDirt(vec3 id){
+    // todo: figure out why this doesnt work "exactly"
+    vec2 Scale = vec2(float(_TexSize) / _WorldSize.x, float(_TexSize) / _WorldSize.z);
+    vec3 ScaledWorldPos = vec3(id.x * Scale.x, 0, id.z * Scale.y);
+    ivec2 BaseID = GetBaseIDFor(ScaledWorldPos, ivec2(0));
+    int QuadIndex = GetBaseIndexFor(ScaledWorldPos, ivec2(0));
+    
+    uvec4 TexValues = GetTexValues(QuadIndex, _TexSize);
+    float Noise = cubicNoise(id / 2.0);
+    float Dirt = GetTexValueByLayout(BaseID, TexValues, LAYOUT_TEX0, Noise);
+    return Dirt > 0.05;
+}
+
+void GenerateGrassPosition(vec3 id){
     // break grid structure with randomness
-    uvec2 cell = uvec2(Pos.xz);
+    uvec2 cell = uvec2(id.xz);
     cell ^= cell.yx * 1664525u;
     vec2 Offset = hash2(vec2(cell)) - .5;
-    Pos.xz += Offset;
+    id.xz += Offset;
 
     vec2 Scale = vec2(_WorldSize.xz) / vec2(_TargetCount);
-    vec3 WorldPos = vec3(Pos.x * Scale.x, 0, Pos.z * Scale.y);
+    vec3 WorldPos = vec3(id.x * Scale.x, 0, id.z * Scale.y);
     float Height = GetHeightFromWorldPos(WorldPos);
     
-    if (Pos.x < 0 || Pos.z < 0)
+    if (id.x < 0 || id.z < 0)
         return;
 
-    //Todo: check if we not are above water/dirt etc!
-    // TODO: position is super imprecise around cliffs! 
-    //todo: offset position randomly to hide grid
+    if (IsOnDirt(WorldPos))
+        return;
+
+    //Todo: check if we not are above water/dirt etc! 
 
     uint Index = atomicAdd(Counter.Count, 1);
     if (_Mode == MODE_COUNT_TRIANGLES)
@@ -164,7 +193,8 @@ void GenerateGrassPosition(vec3 Pos){
 }
 
 void GenerateGrassPositions(ivec3 id){
-
+    // since we have to generate multiple grasses per thread, we have to 
+    // call it in a way that handles leftovers
     int TotalThreadCount = int(_GroupCount * DISPATCH_SIZE);
     ivec2 CountPerThread = ivec2(_TargetCount / float(TotalThreadCount));
     ivec2 LeftOverCount = _TargetCount - CountPerThread * TotalThreadCount;

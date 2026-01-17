@@ -86,6 +86,7 @@ namespace TTerrain
         RenderTriangles(Type);
         bWasPressingRaise = bIsRaising;
         bWasPressingSelect = bIsSelecting;
+        bWasPressingDeSelect = bIsDeSelecting;
     }
 
     void TerrainManager::Update(float Delta)
@@ -95,9 +96,6 @@ namespace TTerrain
 
     void TerrainManager::DispatchCompute()
     {
-        if (!bIsEditing)
-            return;
-        
         HandleResetting();
         HandleSelecting();
         HandlePainting();
@@ -114,7 +112,7 @@ namespace TTerrain
             glUseProgram(ComputeProgramPaint);
             ShaderHelper::SetUniform3fv("_BrushPos", RaiseStartWorldPos, ComputeProgramPaint);
             UpdateComputeVars(ComputeProgramPaint);
-            Data.DispatchPaint();
+            Data.DispatchPaint((GLuint)TerrainPaintMode::ApplyHeight);
 
             glUseProgram(ComputeProgramMesh);
             UpdateComputeVars(ComputeProgramMesh);
@@ -122,24 +120,29 @@ namespace TTerrain
 
             glUseProgram(ComputeProgramSelect);
             UpdateComputeVars(ComputeProgramSelect);
-            Data.DispatchSelect((GLuint)TerrainSelectionMode::Clear);
+            Data.DispatchSelect((GLuint)TerrainSelectionMode::Clear, (GLuint)TerrainTarget::Selection);
         }
         glPopDebugGroup();
     }
 
     void TerrainManager::HandleSelecting() const
     {
-        if (bIsSelecting)
+        if (bIsSelecting || bIsDeSelecting)
         {
             glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, ComputeProgramSelect, -1, "DispatchSelect");
             glUseProgram(ComputeProgramSelect);
             UpdateComputeVars(ComputeProgramSelect);
             ShaderHelper::SetUniform3fv("_BrushPos", CamPtr->GetMouseWorldPos(), ComputeProgramSelect);
             ShaderHelper::SetUniform3fv("_StartWorldPos", SelectStartWorldPos, ComputeProgramSelect);
+            GLuint Mode =
+                bIsSelecting ? (GLuint)TerrainSelectionMode::Select :
+                bIsDeSelecting ? (GLuint)TerrainSelectionMode::DeSelect :
+                (GLuint)TerrainSelectionMode::Clear;                
+            
             for (const auto& Data : TerrainDatas)
             {
                 Data.UpdateComputeVars(ComputeProgramSelect);
-                Data.DispatchSelect((GLuint)TerrainSelectionMode::Additive);
+                Data.DispatchSelect(Mode, (GLuint)(TargetTex + 1));
             }
             glPopDebugGroup();
         }
@@ -154,7 +157,7 @@ namespace TTerrain
             for (const auto& Data : TerrainDatas)
             {
                 Data.UpdateComputeVars(ComputeProgramSelect);
-                Data.DispatchSelect((GLuint)TerrainSelectionMode::Clear);
+                Data.DispatchSelect((GLuint)TerrainSelectionMode::Clear, (GLuint)TerrainTarget::Selection);
             }
             glPopDebugGroup();
         }
@@ -195,38 +198,45 @@ namespace TTerrain
     {
         auto Pos = CamPtr->GetMouseWorldPos();
         ImGui::Begin("TerrainTool");
-        ImGui::Checkbox("Editable", &bIsEditing);
-        if (bIsEditing)
-        {
-            ImGui::Text("Pos: %.2f|%.2f|%.2f", Pos.x, Pos.y, Pos.z);
-            ImGui::Text("Appnd: %i", GetTotalAppendCount());
-            ImGui::Checkbox("Raise: ", &bIsRaising);
-            ImGui::Checkbox("Select: ", &bIsSelecting);
-            ImGui::Text("Brush Settings:");
-            ImGui::SliderInt("Size: ", &BrushSize, 1, 10);
-            ImGui::SliderInt("Strength: ", &BrushStrength, 1, 10);
+        ImGui::Text("Pos: %.2f|%.2f|%.2f", Pos.x, Pos.y, Pos.z);
+        ImGui::Text("Appnd: %i", GetTotalAppendCount());
+        ImGui::Columns(2);
+        ImGui::Checkbox("Raise: ", &bIsRaising);
+        ImGui::Checkbox("Select: ", &bIsSelecting);
+        ImGui::NextColumn();
+        ImGui::SliderInt("Target Tex: ", &TargetTex, -1, 2);
+        ImGui::Columns(1);
+        ImGui::Text("Brush Settings:");
+        ImGui::SliderInt("Size: ", &BrushSize, 1, 10);
+        ImGui::SliderInt("Strength: ", &BrushStrength, 1, 10);
+    
+        ImGui::Spacing();
+        ImGui::Columns(2);
+        ImGui::SetNextItemWidth(150);
+        ImGui::ColorPicker3("Grass", glm::value_ptr(GrassColor), ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoOptions);
+        ImGui::SetNextItemWidth(150);
+        ImGui::ColorPicker3("Cliff", glm::value_ptr(CliffColor), ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoOptions);
         
-            glm::vec2 Diff;
-            CamPtr->GetMouseCoords(Diff);
-            Diff = BrushStartScreenPos - Diff;
-            ImGui::Text("Diff: %.2f|%.2f", Diff.x, Diff.y);
+        ImGui::NextColumn();
+        ImGui::SetNextItemWidth(150);
+        ImGui::ColorPicker3("Tex0", glm::value_ptr(Tex0Color), ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoOptions);
+        ImGui::SetNextItemWidth(150);
+        ImGui::ColorPicker3("Tex1", glm::value_ptr(Tex1Color), ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoOptions);
+        ImGui::SetNextItemWidth(150);
+        ImGui::ColorPicker3("Tex2", glm::value_ptr(Tex2Color), ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoOptions);
         
-            ImGui::Spacing();
-            ImGui::SetNextItemWidth(150);
-            ImGui::ColorPicker3("Dirt", glm::value_ptr(DirtColor), ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoOptions);
-            ImGui::SetNextItemWidth(150);
-            ImGui::ColorPicker3("Grass", glm::value_ptr(GrassColor), ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoOptions);
-            ImGui::SliderFloat("Scale: ", &GrassScale, 0, 0.25);
-            ImGui::SliderFloat("Quantize: ", &GrassQuantize, 2, 10);
-            
-            ImGui::Spacing();
-            ImGui::Checkbox("Grass", &bRenderGrass);
-            ImGui::Checkbox("WireFrame", &bShowWireframe);
+        ImGui::Columns(1);
         
-            ImGui::Spacing();
-            if (ImGui::Button("Save")) SaveData();
-            if (ImGui::Button("Load")) LoadData();
-        }
+        ImGui::SliderFloat("Scale: ", &GrassScale, 0, 0.25);
+        ImGui::SliderFloat("Quantize: ", &GrassQuantize, 2, 10);
+        
+        ImGui::Spacing();
+        ImGui::Checkbox("Grass", &bRenderGrass);
+        ImGui::Checkbox("WireFrame", &bShowWireframe);
+    
+        ImGui::Spacing();
+        if (ImGui::Button("Save")) SaveData();
+        if (ImGui::Button("Load")) LoadData();
         ImGui::End();
     }
 
@@ -350,7 +360,10 @@ namespace TTerrain
         Settings.BrushPos = CamPtr->GetMouseWorldPos();
         Settings.BrushSize = BrushSize;
         Settings.TexSize = glm::ivec2(TerrainData::TexSize);
-        Settings.DirtColor = DirtColor;
+        Settings.Tex0Color = Tex0Color;
+        Settings.Tex1Color = Tex1Color;
+        Settings.Tex2Color = Tex2Color;
+        Settings.CliffColor = CliffColor;
         Settings.GrassColor = GrassColor;
         Settings.GrassScale = GrassScale;
         Settings.GrassQuantize = GrassQuantize;
@@ -365,7 +378,6 @@ namespace TTerrain
         Settings.VertexBuffer = 0;
         Settings.NormalBuffer = 0;
         Settings.HeightBuffer = 0;
-        Settings.SelectionBuffer = 0;
         
         return Settings;
     }

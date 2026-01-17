@@ -20,14 +20,22 @@ uniform vec3 Right;
 uniform vec3 Up;
 uniform mat4 LightView;
 uniform mat4 LightProjection;
+// calculating grass color, depending on underlying terrain
+uniform float GrassScale;
+uniform float GrassQuantize;
+uniform sampler2D GrassTex;
 
 // used to lookup grass color
 out vec4 BaseWorldPos;
 out vec4 WorldNormals;
 out vec2 UV;
 out vec4 PosLightClip;
+out float GrassNoise;
 
 const vec3 WorldUpOffset = vec3(0, 0.5, 0);
+
+float GetGrassNoise(vec4 WorldPos, float GrassScale, float GrassQuantize);
+#include "TERRAIN_CUBIC_SHADER"
 
 void main()
 {
@@ -45,4 +53,6 @@ void main()
     PosLightClip = LightProjection * LightView * BaseWorldPos;
     gl_Position = Projection * View * WorldPos;
     WorldNormals = vec4(1, 0, 0, 1);
+
+    GrassNoise = GetGrassNoise(BaseWorldPos, GrassScale, GrassQuantize);
 }

@@ -1,19 +1,15 @@
 #version 430
 
-float cubicNoise(vec3 at);
-float GetGrassNoise(vec4 WorldPos, float GrassScale, float GrassQuantize);
-#include "TERRAIN_CUBIC_SHADER"
+#include "COMMON_SHADER"
 
 in vec4 BaseWorldPos;
 in vec4 WorldNormals;
 in vec2 UV;
 in vec4 PosLightClip;
+in float GrassNoise;
 
-// calculating grass color, depending on underlying terrain
-uniform sampler2D GrassTex;
 uniform vec3 GrassColor;
-uniform float GrassScale;
-uniform float GrassQuantize;
+uniform sampler2D GrassTex;
 
 uniform sampler2D ShadowMap;
 uniform vec3 LightDir;
@@ -21,21 +17,19 @@ uniform vec3 LightPos;
 uniform vec2 LightClip;
 
 out vec4 FragColor;
-
-
 #include "SHADOW_SHADER"
+#include "TERRAIN_CUBIC_SHADER"
 
 void main(){
     vec4 Grass = texture(GrassTex, UV); 
     if (Grass.a < .5)
         discard;
 
-    float GrassNoise = GetGrassNoise(BaseWorldPos, GrassScale, GrassQuantize);
-    vec3 Color = GrassNoise * GrassColor;
+    float tGrassNoise = map(GrassNoise, .0, 1.0, TerrainMinColor, TerrainMaxColor);
+    vec3 Color = tGrassNoise * GrassColor;
 
     float ShadowFactor = GetVarianceShadow();
-    if (ShadowFactor < .75)
-        discard;
-    Color = mix(ShadowColor, Color, ShadowFactor);
+    vec3 TempShadowColor = (ShadowColor * 2 + Color) / 3.0;
+    Color = mix(TempShadowColor, Color, ShadowFactor);
     FragColor = vec4(Color, 1);
 }
