@@ -51,6 +51,8 @@ namespace TTerrain
         void Update(float Delta);
         void OnDrawGizmos(const shared_ptr<Gizmos>& Gizmos);
         void CleanUp() const;
+        bool IsDirty() const;
+        TerrainData& GetData(int i);
 
     private:
         //todo: this is kinda inefficient, better to have one big buffer instead of clustering
@@ -70,7 +72,8 @@ namespace TTerrain
         bool bIsRaising = false;
         bool bWasPressingRaise = false;
         bool bIsResetting = false;
-        int TargetTex = 0;
+        bool bIsLensing = false;
+        int TargetBrush = 0;
         glm::vec2 BrushStartScreenPos;
         glm::vec3 SelectStartWorldPos;
         glm::vec3 RaiseStartWorldPos;
@@ -97,9 +100,11 @@ namespace TTerrain
 
         void DispatchCompute();
         void HandleResetting();
-        void HandleSelecting() const;
-        void HandlePainting();
+        void HandleSelecting();
+        void HandleRaising();
         void RenderTriangles(RenderPassType Type);
+        void DrawRegularGizmos();
+        void DrawLenseGizmos(glm::vec3& Pos);
         
         void HandleInput();
         void HandleToggle(bool* bIsDoing, bool* bWasDoing, GLint Key) const;

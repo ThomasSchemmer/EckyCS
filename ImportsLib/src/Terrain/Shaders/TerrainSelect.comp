@@ -20,6 +20,8 @@ layout(std430, binding = 3) buffer HeightBuffer {
 #define TARGET_TEX0 1
 #define TARGET_TEX1 2
 #define TARGET_TEX2 3
+#define TARGET_GRASS 4
+#define TARGET_FLOWER 5
 
 #include "TERRAIN_COMMON_SHADER"
 /** Stores calculation by mode in an easy lookup table*/
@@ -27,19 +29,18 @@ const uint LayoutByTarget[] = uint[](
     LAYOUT_SELECTION,   
     LAYOUT_TEX0,         
     LAYOUT_TEX1,         
-    LAYOUT_TEX2         
+    LAYOUT_TEX2,
+    LAYOUT_GRASS,
+    LAYOUT_FLOWER         
 );
 
-const int MultiplierByMode[] = int[](
-    0,
-    1,
-    -1
-);
-
-const bool EqualByMode[] = bool[](
-    false,  // MODE_CLEAR
-    true,   // MODE_SET
-    false   // MODE_DIRT
+const bool EqualByTarget[] = bool[](
+    true,       //LAYOUT_SELECTION,
+    false,      //LAYOUT_TEX0,     
+    false,      //LAYOUT_TEX1,     
+    false,      //LAYOUT_TEX2      
+    false,      //LAYOUT_GRASS      
+    false       //LAYOUT_FLOWER      
 );
 
 uniform ivec2 _TexSize;
@@ -70,11 +71,14 @@ void ApplySelection(ivec3 id){
     uint OriginalHeight = Heights.Value[OriginalIndex] & LAYOUT_HEIGHT_MASK;
     uint Height = Heights.Value[GlobalIndex] & LAYOUT_HEIGHT_MASK;
     
-    bool bIsEqual = !EqualByMode[_Mode] || (OriginalHeight == Height);
+    bool bIsEqual = !EqualByTarget[_Target] || (OriginalHeight == Height);
     uint OldValue = Heights.Value[GlobalIndex];
     NewValue = bIsEqual ? NewValue : 0;
     uint ClearMask = ~(1 << TargetLayout);
-    uint Value = _Mode != MODE_CLEAR ? (NewValue | OldValue) : (ClearMask & OldValue);
+    uint Value =
+        _Mode == MODE_CLEAR ? (ClearMask & OldValue) :
+        _Mode == MODE_SELECT ? (NewValue | OldValue) : 
+        _Mode == MODE_DESELECT ? ((~NewValue) & OldValue) : 0;
     
     Heights.Value[GlobalIndex] = Value;
 }

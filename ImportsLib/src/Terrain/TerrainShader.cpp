@@ -51,9 +51,8 @@ void TTerrain::TerrainShader::UpdateVars(const TerrainShaderSettings& Settings) 
     ShaderHelper::SetUniform1ui("BrushSize", Settings.BrushSize, ActiveProgram);
 
     // procedural texturing info
-    ShaderHelper::SetUniform3fv("Tex0Color", Settings.Tex0Color, ActiveProgram);
-    ShaderHelper::SetUniform3fv("Tex1Color", Settings.Tex1Color, ActiveProgram);
-    ShaderHelper::SetUniform3fv("Tex2Color", Settings.Tex2Color, ActiveProgram);
+    vector<glm::vec3> Colors = {Settings.Tex0Color, Settings.Tex1Color, Settings.Tex2Color};
+    ShaderHelper::SetUniform3fva("TexColors", Colors, 3, ActiveProgram);
     ShaderHelper::SetUniform3fv("CliffColor", Settings.CliffColor, ActiveProgram);
     ShaderHelper::SetUniform3fv("GrassColor", Settings.GrassColor, ActiveProgram);
     ShaderHelper::SetUniform1f("GrassScale", Settings.GrassScale, ActiveProgram);

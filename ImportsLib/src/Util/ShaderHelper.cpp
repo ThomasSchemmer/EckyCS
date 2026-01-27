@@ -206,6 +206,42 @@ namespace Util
         return ID;
     }
 
+    vector<GLuint> ShaderHelper::CreateTextureArray(vector<const wchar_t*>& FilePaths, GLsizei Width, GLsizei Height, GLint Format)
+    {
+        vector<GLuint> Texs;
+        Texs.reserve(FilePaths.size() + 1);
+
+        // create the array itself with global configs
+        GLuint TempArrayID;
+        glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &TempArrayID);
+        glTextureStorage3D(
+            TempArrayID, 1, GL_RGBA8, Width, Height, FilePaths.size()
+        );
+        glTextureParameteri(TempArrayID, GL_TEXTURE_MIN_FILTER, GL_POINT);
+        glTextureParameteri(TempArrayID, GL_TEXTURE_MAG_FILTER, GL_POINT);
+        glTextureParameteri(TempArrayID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(TempArrayID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        Texs.push_back(TempArrayID);
+
+        // now try to load each tex and load it into the array
+        unsigned int Layer = 0;
+        for (const auto& FilePath : FilePaths)
+        {
+            GLuint TempID = CreateTexture(FilePath, Format);
+            glCopyImageSubData(
+                TempID, 
+                GL_TEXTURE_2D, 0, 0, 0, 0,
+                TempArrayID,
+                GL_TEXTURE_2D_ARRAY, 0, 0, 0, Layer,  
+                Width, Height, 1 
+            );
+            Texs.push_back(TempID);
+            Layer++;
+        }
+        
+        return Texs;
+    }
+
     unsigned int ShaderHelper::CreateTextureInternal(int Width, int Height, const unsigned char* Data, GLint Format)
     {
         unsigned int ID;
@@ -247,6 +283,12 @@ namespace Util
     {
         const int ID = glGetUniformLocation(Program, UniformName.c_str());
         glUniform3fv(ID, 1, value_ptr(Value));
+    }
+    
+    void ShaderHelper:: SetUniform3fva(const string& UniformName, const vector<glm::vec3>& Values, int Count, unsigned int Program) 
+    {
+        const int ID = glGetUniformLocation(Program, UniformName.c_str());
+        glUniform3fv(ID, Count, value_ptr(Values[0]));
     }
 
     void ShaderHelper:: SetUniform2fv(const string& UniformName, const glm::vec2& Value, unsigned int Program) 

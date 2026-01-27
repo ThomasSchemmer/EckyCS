@@ -45,14 +45,13 @@ namespace TTerrain
 
     void GrassData::DispatchGenerate(const TerrainData& Data)
     {
-        TerrainHelper::GetHeightFromWorldPos(glm::vec3(5, 0, 5), Data.VertexBuffer, Data.VertexOffsetsBuffer, Data.WorldSize);
         glUseProgram(GrassCompute);
         ShaderHelper::ResetBufferCounter(CountBuffer);
 
         ShaderHelper::SetUniform1ui("_Mode", 0, GrassCompute);
         ShaderHelper::SetUniform2iv("_TexSize", glm::vec2(TerrainData::TexSize), GrassCompute);
         ShaderHelper::SetUniform2iv("_TargetCount", TargetCount, GrassCompute);
-        ShaderHelper::SetUniform3iv("_WorldSize", Data.WorldSize, GrassCompute);
+        ShaderHelper::SetUniform3iv("_WorldSize", TerrainData::WorldSize, GrassCompute);
         ShaderHelper::SetUniform3fv("_GlobalWorldPos", Data.GlobalWorldPos, GrassCompute);
         ShaderHelper::SetUniform1ui("_GroupCount", GroupCount, GrassCompute);
     

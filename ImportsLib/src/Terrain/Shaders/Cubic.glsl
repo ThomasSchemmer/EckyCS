@@ -1,4 +1,4 @@
-﻿
+﻿//todo: get actually good and efficient noise!
 
 const float TerrainMinColor = 0.4;
 const float TerrainMaxColor = 0.9;

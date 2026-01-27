@@ -45,7 +45,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <EnableASAN>false</EnableASAN>
   </PropertyGroup>
@@ -759,6 +759,7 @@
     <Content Include="src\Terrain\Shaders\TerrainSelect.comp" />
     <Content Include="src\Terrain\Shaders\TerrainVertexShader.vert" />
     <Content Include="src\Terrain\Shaders\TexLookup.glsl" />
+    <Content Include="Textures\flower.png" />
     <Content Include="Textures\leaf.png" />
     <EmbeddedResource Include="src\Renderer\Shaders\glsl\BaseFragmentShader.frag" />
     <EmbeddedResource Include="src\Renderer\Shaders\glsl\BaseVertexShader.vert" />

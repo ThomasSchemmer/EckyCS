@@ -48,6 +48,11 @@ const uint VertexCount = 24;
 #include "TERRAIN_CUBIC_SHADER"
 #include "TERRAIN_TEXLOOKUP_SHADER"
 
+const vec2 Decorations[] = vec2[](
+vec2(LAYOUT_GRASS, DECORATION_CHANCE_GRASS),
+vec2(LAYOUT_FLOWER, DECORATION_CHANCE_FLOWER)
+);
+
 int GetBaseIndexFor(vec3 id, ivec2 Offset){
     float ClampedID =
         clamp(floor(id.z + float(Offset.y)), 0.0f, _TexSize.y - 1) * _TexSize.x +
@@ -60,6 +65,16 @@ ivec2 GetBaseIDFor(vec3 id, ivec2 Offset){
     Clamped.x = clamp(floor(id.x + float(Offset.x)), 0.0f, _TexSize.x - 1);
     Clamped.y = clamp(floor(id.z + float(Offset.y)), 0.0f, _TexSize.y - 1);
     return ivec2(Clamped);
+}
+
+ivec3 GetQuadIndexForThreadID(vec3 id){
+    // use the world pos to lookup which quad its supposed to reference
+    // todo: figure out why this doesnt work "exactly"
+    vec2 Scale = vec2(float(_TexSize) / _WorldSize.x, float(_TexSize) / _WorldSize.z);
+    vec3 ScaledWorldPos = vec3(id.x * Scale.x, 0, id.z * Scale.y);
+    ivec2 BaseID = GetBaseIDFor(ScaledWorldPos, ivec2(0));
+    int QuadIndex = GetBaseIndexFor(ScaledWorldPos, ivec2(0));
+    return ivec3(QuadIndex, BaseID);
 }
 
 vec2 hash2(vec2 p)
@@ -110,12 +125,9 @@ vec3 GetBaricentricCoordinates(vec3 WorldPos, vec4 VertA, vec4 VertB, vec4 VertC
 }
 
 float GetHeightFromWorldPos(vec3 WorldPos){
-    // use the world pos to lookup which quad its supposed to reference
-    vec2 Scale = vec2(float(_TexSize) / _WorldSize.x, float(_TexSize) / _WorldSize.z);
-    vec3 ScaledWorldPos = vec3(WorldPos.x * Scale.x, 0, WorldPos.z * Scale.y);
-    int QuadIndex = GetBaseIndexFor(ScaledWorldPos, ivec2(0));
-    ivec2 QuadXY = ivec2(QuadIndex % _TexSize.x, QuadIndex / _TexSize.y);
-    
+    ivec3 QuadIndices = GetQuadIndexForThreadID(WorldPos);
+    int QuadIndex = QuadIndices.x;
+    ivec2 QuadXY = QuadIndices.yz;
     // since all terrain quadrants have the standard quad at their base, we need to check for offset
     vec2 WorldSizePerQuad = vec2(_WorldSize.x, _WorldSize.z) / vec2(_TexSize);
     vec2 WorldPosOfQuad;
@@ -152,17 +164,36 @@ float GetHeightFromWorldPos(vec3 WorldPos){
     return BariCoords.x * VertA.y + BariCoords.y * VertB.y + BariCoords.z * VertC.y;
 }
 
-bool IsOnDirt(vec3 id){
-    // todo: figure out why this doesnt work "exactly"
-    vec2 Scale = vec2(float(_TexSize) / _WorldSize.x, float(_TexSize) / _WorldSize.z);
-    vec3 ScaledWorldPos = vec3(id.x * Scale.x, 0, id.z * Scale.y);
-    ivec2 BaseID = GetBaseIDFor(ScaledWorldPos, ivec2(0));
-    int QuadIndex = GetBaseIndexFor(ScaledWorldPos, ivec2(0));
-    
+
+bool IsOnDirt(vec3 id, ivec3 QuadIndices){
+    int QuadIndex = QuadIndices.x;
+    ivec2 BaseID = QuadIndices.yz;
     uvec4 TexValues = GetTexValues(QuadIndex, _TexSize);
     float Noise = cubicNoise(id / 2.0);
     float Dirt = GetTexValueByLayout(BaseID, TexValues, LAYOUT_TEX0, Noise);
-    return Dirt > 0.05;
+    Dirt += GetTexValueByLayout(BaseID, TexValues, LAYOUT_TEX1, Noise);
+    Dirt += GetTexValueByLayout(BaseID, TexValues, LAYOUT_TEX2, Noise);
+    return Dirt > 0.02;
+}
+
+uint GetDecorationType(uint Value, float Chance, int DecorationValue){
+    vec2 Decoration = Decorations[DecorationValue - 1].xy;
+    uint Offset = uint(Decoration.x);
+    Value = Value & uint(1 << Offset);
+    bool bHasDecoration = Value > 0 ? true : false;
+    bool bHasChance = Chance < Decoration.y ? true : false;
+    return bHasDecoration && bHasChance ? DecorationValue : 0;
+}
+
+uint GetDecorationType(ivec3 QuadIndices, vec3 WorldPos){
+    float Chance = cubicNoise(WorldPos);
+    Chance = map(Chance, -.34, 1.34, 0, 1);
+    uint Values = Heights.Values[QuadIndices.x];
+    uint DecorationType = 0;
+    DecorationType += GetDecorationType(Values, Chance, DECORATION_GRASS);
+    Chance = fract((Chance + 1.36) * 1.94);
+    DecorationType += GetDecorationType(Values, Chance, DECORATION_FLOWER);
+    return DecorationType;
 }
 
 void GenerateGrassPosition(vec3 id){
@@ -171,15 +202,19 @@ void GenerateGrassPosition(vec3 id){
     cell ^= cell.yx * 1664525u;
     vec2 Offset = hash2(vec2(cell)) - .5;
     id.xz += Offset;
+    if (id.x < 0 || id.z < 0)
+        return;
 
     vec2 Scale = vec2(_WorldSize.xz) / vec2(_TargetCount);
     vec3 WorldPos = vec3(id.x * Scale.x, 0, id.z * Scale.y);
     float Height = GetHeightFromWorldPos(WorldPos);
+    ivec3 QuadIndices = GetQuadIndexForThreadID(id);
     
-    if (id.x < 0 || id.z < 0)
+    uint DecorationType = GetDecorationType(QuadIndices, WorldPos);
+    if (DecorationType == 0)
         return;
-
-    if (IsOnDirt(WorldPos))
+    
+    if (IsOnDirt(WorldPos, QuadIndices))
         return;
 
     //Todo: check if we not are above water/dirt etc! 
@@ -190,6 +225,7 @@ void GenerateGrassPosition(vec3 id){
 
     Positions.Entries[Index].xz = WorldPos.xz;
     Positions.Entries[Index].y = Height;
+    Positions.Entries[Index].w = DecorationType - 1;
 }
 
 void GenerateGrassPositions(ivec3 id){

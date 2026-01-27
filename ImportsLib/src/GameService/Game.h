@@ -55,6 +55,7 @@ namespace GameImports {
 		
 		static unique_ptr<Game> Instance;
 		static float DeltaTime, DeltaFixedTime;
+		static unsigned int FrameCounter;
 		shared_ptr<Renderer> RendererPtr;
 		shared_ptr<TTerrain::TerrainManager> TerrainPtr;
 

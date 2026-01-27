@@ -26,7 +26,11 @@ TTerrain::GrassShader::GrassShader()
     
     Transform = glm::mat4(1.0f);
 
-    GrassTex = ShaderHelper::CreateTexture(GrassTexLocation, GL_RGBA);
+    vector List = {GrassTexLocation, FlowerTexLocation};
+    auto Result = ShaderHelper::CreateTextureArray(List, 256, 256, GL_RGBA);
+    FoliageTexArray = Result[0];
+    GrassTex = Result[1];
+    FlowerTex = Result[2];
     glCreateVertexArrays(1, &VAO);
 }
 
@@ -46,8 +50,8 @@ void TTerrain::GrassShader::UpdateVars(const GrassShaderSettings& Settings, cons
     ShaderHelper::SetUniformM4("Transform", Transform, GrassProgram);
     ShaderHelper::SetUniform3fv("Right", Settings.Camera->GetRight(), GrassProgram);
     ShaderHelper::SetUniform3fv("Up", Settings.Camera->GetUp(), GrassProgram);
-    ShaderHelper::SetUniformTexture("GrassTex", GrassTex, 0, GrassProgram);
-
+    glBindTextureUnit(0, FoliageTexArray);
+    
     // pass in terrain data for grass color ..
     ShaderHelper::SetUniform3fv("GrassColor", TerrainSettings.GrassColor, GrassProgram);
     ShaderHelper::SetUniform1f("GrassScale", TerrainSettings.GrassScale, GrassProgram);
@@ -64,5 +68,10 @@ void TTerrain::GrassShader::UpdateVars(const GrassShaderSettings& Settings, cons
 
 void TTerrain::GrassShader::CleanUp() const
 {
+    glDeleteTextures(1, &FoliageTexArray);
+    glDeleteTextures(1, &GrassTex);
+    glDeleteTextures(1, &FlowerTex);
+    glDeleteVertexArrays(1, &VAO);
     glDeleteProgram(GrassProgram);
+    
 }

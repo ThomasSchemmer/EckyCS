@@ -42,17 +42,21 @@ void main()
     // every other Entry is an actual vertex position
     vec3 Vertex = Vertices.Entries[gl_VertexID * 2].xyz;
     vec3 Combined = Vertex.x * Right + Vertex.y * Up + WorldUpOffset;
-    vec3 Offset = Positions.Entries[gl_InstanceID].xyz;
-    vec4 pos = vec4(Combined + Offset, 1);
+    vec4 Offset = Positions.Entries[gl_InstanceID];
+    float DecorationType = Offset.w;
+    vec4 pos = vec4(Combined + Offset.xyz, 1);
     UV = vec2(
         Vertices.Entries[gl_VertexID * 2 + 0].w, 
         1 - Vertices.Entries[gl_VertexID * 2 + 1].x
     );
-    BaseWorldPos = Transform * vec4(Offset, 1);
+    BaseWorldPos = Transform * vec4(Offset.xyz, 1);
     vec4 WorldPos = Transform * vec4(pos.xyz, 1);
     PosLightClip = LightProjection * LightView * BaseWorldPos;
     gl_Position = Projection * View * WorldPos;
     WorldNormals = vec4(1, 0, 0, 1);
 
+    //todo: should only use a general noise input and then scale in f-shader prolly
     GrassNoise = GetGrassNoise(BaseWorldPos, GrassScale, GrassQuantize);
+    // only set this now to still have light clip position correct!
+    BaseWorldPos.w = DecorationType;
 }

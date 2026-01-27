@@ -4,7 +4,10 @@
 #include <imgui/imgui.h>
 #include "TerrainManager.h"
 
+#include <bitset>
+
 #include "TerrainData.h"
+#include "TerrainHelper.h"
 #include "../Renderer/Camera.h"
 #include "../Util/ShaderHelper.h"
 #include "../GameService/Game.h"
@@ -92,16 +95,17 @@ namespace TTerrain
     void TerrainManager::Update(float Delta)
     {
         HandleInput();
+        TerrainHelper::Update(this);
     }
 
     void TerrainManager::DispatchCompute()
     {
         HandleResetting();
         HandleSelecting();
-        HandlePainting();
+        HandleRaising();
     }
 
-    void TerrainManager::HandlePainting()
+    void TerrainManager::HandleRaising()
     { 
         if (bIsRaising || !bWasPressingRaise)
             return;
@@ -112,7 +116,7 @@ namespace TTerrain
             glUseProgram(ComputeProgramPaint);
             ShaderHelper::SetUniform3fv("_BrushPos", RaiseStartWorldPos, ComputeProgramPaint);
             UpdateComputeVars(ComputeProgramPaint);
-            Data.DispatchPaint((GLuint)TerrainPaintMode::ApplyHeight);
+            Data.DispatchRaise((GLuint)TerrainPaintMode::ApplyHeight);
 
             glUseProgram(ComputeProgramMesh);
             UpdateComputeVars(ComputeProgramMesh);
@@ -125,7 +129,7 @@ namespace TTerrain
         glPopDebugGroup();
     }
 
-    void TerrainManager::HandleSelecting() const
+    void TerrainManager::HandleSelecting()
     {
         if (bIsSelecting || bIsDeSelecting)
         {
@@ -139,25 +143,33 @@ namespace TTerrain
                 bIsDeSelecting ? (GLuint)TerrainSelectionMode::DeSelect :
                 (GLuint)TerrainSelectionMode::Clear;                
             
-            for (const auto& Data : TerrainDatas)
+            for (auto& Data : TerrainDatas)
             {
                 Data.UpdateComputeVars(ComputeProgramSelect);
-                Data.DispatchSelect(Mode, (GLuint)(TargetTex + 1));
+                Data.DispatchSelect(Mode, (GLuint)(TargetBrush));
             }
             glPopDebugGroup();
         }
         
         // resets the selection once we let go of shift
-        if (!bIsSelecting && bWasPressingSelect)
+        if ((!bIsSelecting && bWasPressingSelect) || (!bIsDeSelecting && bWasPressingDeSelect))
         {
             glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, ComputeProgramSelect, -1, "DispatchDeSelect");
             glUseProgram(ComputeProgramSelect);
             UpdateComputeVars(ComputeProgramSelect);
             ShaderHelper::SetUniform3fv("_StartWorldPos", SelectStartWorldPos, ComputeProgramSelect);
-            for (const auto& Data : TerrainDatas)
+            for (auto& Data : TerrainDatas)
             {
                 Data.UpdateComputeVars(ComputeProgramSelect);
                 Data.DispatchSelect((GLuint)TerrainSelectionMode::Clear, (GLuint)TerrainTarget::Selection);
+            }
+
+            // and then also reset grass generation (since we may have overpainted it)
+            glUseProgram(ComputeProgramMesh);
+            UpdateComputeVars(ComputeProgramMesh);
+            for (auto& Data : TerrainDatas)
+            {
+                Data.DispatchGenerate();
             }
             glPopDebugGroup();
         }
@@ -193,19 +205,9 @@ namespace TTerrain
         }
         glPopDebugGroup();
     }
-    
-    void TerrainManager::OnDrawGizmos(const shared_ptr<Gizmos>& Gizmos) 
+
+    void TerrainManager::DrawRegularGizmos()
     {
-        auto Pos = CamPtr->GetMouseWorldPos();
-        ImGui::Begin("TerrainTool");
-        ImGui::Text("Pos: %.2f|%.2f|%.2f", Pos.x, Pos.y, Pos.z);
-        ImGui::Text("Appnd: %i", GetTotalAppendCount());
-        ImGui::Columns(2);
-        ImGui::Checkbox("Raise: ", &bIsRaising);
-        ImGui::Checkbox("Select: ", &bIsSelecting);
-        ImGui::NextColumn();
-        ImGui::SliderInt("Target Tex: ", &TargetTex, -1, 2);
-        ImGui::Columns(1);
         ImGui::Text("Brush Settings:");
         ImGui::SliderInt("Size: ", &BrushSize, 1, 10);
         ImGui::SliderInt("Strength: ", &BrushStrength, 1, 10);
@@ -237,6 +239,51 @@ namespace TTerrain
         ImGui::Spacing();
         if (ImGui::Button("Save")) SaveData();
         if (ImGui::Button("Load")) LoadData();
+    }
+
+    void TerrainManager::DrawLenseGizmos(glm::vec3& Pos)
+    {
+        int QuadIndex;
+        glm::ivec2 QuadXY;
+        TerrainHelper::GetQuadIndices(Pos, TerrainData::WorldSize2D, QuadIndex, QuadXY);
+        ImGui::Columns(2);
+        ImGui::InputInt("Quad X: ", glm::value_ptr(QuadXY));
+        ImGui::InputInt("Index: ", &QuadIndex);
+        ImGui::NextColumn();
+        ImGui::InputInt("Quad Y: ", glm::value_ptr(QuadXY) + 1);
+        ImGui::Columns(1);
+        
+        int HeightData = TerrainHelper::GetClosestHeightData(Pos, TerrainData::WorldSize2D);
+        const size_t Bits = sizeof(unsigned int) * 8; 
+        bitset<Bits> BinaryBits(HeightData);
+        string Bitstring = BinaryBits.to_string();
+        ImGui::Text(Bitstring.c_str());
+        
+    }
+
+    void TerrainManager::OnDrawGizmos(const shared_ptr<Gizmos>& Gizmos) 
+    {
+        
+        ImGui::Begin("TerrainTool");
+        
+        auto Pos = CamPtr->GetMouseWorldPos();
+        ImGui::Text("Pos: %.2f|%.2f|%.2f", Pos.x, Pos.y, Pos.z);
+        ImGui::Text("Appnd: %i", GetTotalAppendCount());
+        ImGui::Columns(2);
+        ImGui::Checkbox("Raise: ", &bIsRaising);
+        ImGui::Checkbox("Select: ", &bIsSelecting);
+        ImGui::Checkbox("Remove", &bIsDeSelecting);
+        ImGui::NextColumn();
+        const char* items[] = { "Select", "Tex0", "Tex1", "Tex2", "Grass", "Flower" };
+        ImGui::Combo("Target", &TargetBrush, items, IM_ARRAYSIZE(items));
+        ImGui::Checkbox("Lense: ", &bIsLensing);
+        ImGui::Columns(1);
+        if (!bIsLensing)
+        {
+            DrawRegularGizmos();
+        }else{
+            DrawLenseGizmos(Pos);
+        }
         ImGui::End();
     }
 
@@ -256,6 +303,21 @@ namespace TTerrain
         glDeleteBuffers(1, &VerticalQuadBuffer);
         glDeleteBuffers(1, &VerticalQuadLengthBuffer);
         glDeleteBuffers(1, &HorizontalQuadBuffer);
+    }
+
+    bool TerrainManager::IsDirty() const
+    {
+        for (auto& Data : TerrainDatas)
+        {
+            if (Data.IsDirty())
+                return true;
+        }
+        return false;
+    }
+
+    TerrainData& TerrainManager::GetData(int i)
+    {
+        return TerrainDatas[i];
     }
 
     void TerrainManager::HandleToggle(bool* bIsDoing, bool* bWasDoing, GLint Key) const
@@ -294,6 +356,7 @@ namespace TTerrain
             return;
         
         bIsSelecting = CamPtr->GetKey(GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
+        bIsDeSelecting = CamPtr->GetKey(GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS;
         bIsRaising = CamPtr->GetMouse(GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
         bIsResetting = CamPtr->GetKey(GLFW_KEY_O) == GLFW_PRESS;
         if (bIsRaising && !bWasPressingRaise)

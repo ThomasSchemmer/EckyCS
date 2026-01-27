@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <map>
 #include <glm/vec3.hpp>
 #include <GL/glew.h>
 #include <gl\gl.h>
@@ -33,7 +34,9 @@ namespace TTerrain
         Selection = 0,
         Tex0 = 1,
         Tex1 = 2,
-        Tex2 = 3
+        Tex2 = 3,
+        Grass = 4,
+        Flower = 5
     };
 
     enum class TerrainPaintMode : uint8_t
@@ -53,7 +56,6 @@ namespace TTerrain
         GLsizei AppendCount = 0;
 
         glm::vec3 GlobalWorldPos = glm::vec3(0);
-        glm::vec3 WorldSize = glm::vec3(100, 10, 100);
 
         /** Owned by the manager! */
         GLuint ComputeProgramMesh;
@@ -69,20 +71,24 @@ namespace TTerrain
         GLuint VertexOffsetsBuffer;
         GLuint CountBuffer;
         static unsigned int TexSize;
+        static glm::vec3 WorldSize;
+        static glm::vec2 WorldSize2D;
 
         GrassData Grass;
 
         TerrainData(glm::vec3 WorldPos, const std::shared_ptr<TerrainManager>& Manager);
         ~TerrainData() = default;
-        void DispatchSelect(GLuint Mode, GLuint Target) const;
-        void DispatchPaint(GLuint Mode) const;
-        void DispatchResetHeight() const;
+        void DispatchSelect(GLuint Mode, GLuint Target);
+        void DispatchRaise(GLuint Mode);
+        void DispatchResetHeight();
         void DispatchGenerate();
+        void Dispatch(GLuint Mode, GLuint Target);
         void CleanUp() const;
-        static void Dispatch(GLuint Mode, GLuint Target);
+        bool IsDirty() const;
         
         void RenderTriangles(RenderPassType Type) const;
         
+        void CreateTempCompute();
         void CreateCompute();
         void ApplyToSettings(TerrainShaderSettings& Settings) const;
         void UpdateComputeVars(GLuint Program) const;
@@ -91,5 +97,10 @@ namespace TTerrain
         
         static unsigned int GetHeightBufferSize();
         static unsigned int GetHeightBufferByteSize();
+
+        void* MappedHeightPtr = nullptr;
+        void* MappedVertexPtr = nullptr;
+        void* MappedVertexOffsetPtr = nullptr;
+        bool bIsDirty = false;
     };
 }

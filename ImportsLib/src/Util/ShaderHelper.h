@@ -29,12 +29,14 @@ namespace Util
         static unsigned int CreateProgram(const vector<unsigned int>& ShaderIDs);
         static unsigned int CreateTexture(const string& FilePath, GLint Format);
         static unsigned int CreateTexture(const wchar_t* FilePath, GLint Format);
+        static vector<GLuint> CreateTextureArray(vector<const wchar_t*>& FilePaths, GLsizei Width, GLsizei Height, GLint Format);
 
         static void SetUniform1f(const string& UniformName, float Value, unsigned int Program);
         static void SetUniform1i(const string& UniformName, int Value, unsigned int Program);
         static void SetUniform1ui(const string& UniformName, unsigned int Value, unsigned int Program);
         static void SetUniformM4(const string& UniformName, const glm::mat4& Value, unsigned int Program);
         static void SetUniform3fv(const string& UniformName, const glm::vec3& Value, unsigned int Program) ;
+        static void SetUniform3fva(const string& UniformName, const vector<glm::vec3>& Values, int Count, unsigned int Program);
         static void SetUniform2fv(const string& UniformName, const glm::vec2& Value, unsigned int Program) ;
         static void SetUniform3iv(const string& UniformName, const glm::ivec3& Value, unsigned int Program) ;
         static void SetUniform2iv(const string& UniformName, const glm::ivec2& Value, unsigned int Program) ;

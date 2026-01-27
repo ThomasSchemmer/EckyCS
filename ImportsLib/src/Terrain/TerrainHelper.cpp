@@ -14,13 +14,46 @@ namespace TTerrain
     using namespace glm;
     using namespace std;
     
+    std::vector<std::tuple<unsigned int, GLsync>> TerrainHelper::Fences;
+    std::vector<vec4> TerrainHelper::Vertices;
+    std::vector<int> TerrainHelper::Offsets;
+    std::vector<unsigned int> TerrainHelper::HeightDatas;
+
+    void TerrainHelper::DeleteFence(int i)
+    {
+        const auto& Tuple = Fences[i];
+        GLenum result = glClientWaitSync(
+            get<1>(Tuple),
+            0,              
+            0               
+        );
+
+        if (result == GL_ALREADY_SIGNALED ||
+            result == GL_CONDITION_SATISFIED)
+        {
+            glDeleteSync(get<1>(Tuple));
+            Fences.erase(Fences.begin() + i);
+        }
+    }
+
+    void TerrainHelper::GetQuadIndices(vec3 WorldPos, vec2 WorldSize, int& QuadIndex, ivec2& QuadXY)
+    {
+        auto TexSize = ivec2(TerrainData::TexSize);
+        
+        // use the world pos to lookup which quad its supposed to reference
+        vec2 Scale = vec2((float)TerrainData::TexSize / WorldSize.x, (float)TerrainData::TexSize / WorldSize.y);
+        auto ScaledWorldPos = vec3(WorldPos.x * Scale.x, 0, WorldPos.z * Scale.y);
+        QuadIndex = GetQuadIndexFor(ScaledWorldPos, ivec2(0));
+        QuadXY = ivec2(QuadIndex % TexSize.x, QuadIndex / TexSize.y);
+    }
+
     int TerrainHelper::GetQuadIndexFor(vec3 id, ivec2 Offset){
         auto TexSize = vec2(TerrainData::TexSize);
         float X = std::floor(id.z + (float)Offset.y);
         float Z = std::floor(id.x + (float)Offset.x);
         float ClampedID =
-            glm::clamp(X, 0.0f, TexSize.y - 1) * TexSize.x +
-            glm::clamp(Z, 0.0f, TexSize.x - 1);
+            clamp(X, 0.0f, TexSize.y - 1) * TexSize.x +
+            clamp(Z, 0.0f, TexSize.x - 1);
         return (int)ClampedID;
     }
 
@@ -45,12 +78,11 @@ namespace TTerrain
         return Side;
     }
 
-    vec3 TerrainHelper::GetBaricentricCoordinates(vec3 WorldPos, const vec4& VertA, const vec4& VertB, const vec4& VertC)
+    vec3 TerrainHelper::GetBaricentricCoordinates(vec3 WorldPos, const vec3& VertA, const vec3& VertB, const vec3& VertC)
     {
-        //  and then get the baricentric coordinates
-        auto VecAB = xyz(VertB - VertA);
-        auto VecAC = xyz(VertC - VertA);
-        auto VecAP = WorldPos - xyz(VertA);
+        auto VecAB = VertB - VertA;
+        auto VecAC = VertC - VertA;
+        auto VecAP = WorldPos - VertA;
         auto d00 = dot(VecAB, VecAB);
         auto d01 = dot(VecAB, VecAC);
         auto d11 = dot(VecAC, VecAC);
@@ -63,43 +95,31 @@ namespace TTerrain
         return {alpha, beta, gamma};
     }
 
-    float TerrainHelper::GetHeightFromWorldPos(vec3 WorldPos, GLuint VertexBuffer, GLuint VertexOffsetBuffer, vec2 WorldSize){
-        auto TexSize = ivec2(TerrainData::TexSize);
-        auto TotalSize = TexSize.x * TexSize.y;
-        //TODO: get actual size!
-        auto TotalVertices = TotalSize * 24;
-        vector<vec4> Vertices;
-        Vertices.resize(TotalVertices);
-        vector<int> Offsets;
-        Offsets.resize(TotalSize);
+    float TerrainHelper::GetHeightFromWorldPos(vec3 WorldPos, vec2 WorldSize)
+    {
+        auto ClosestVertices = GetClosestVertices(WorldPos, WorldSize);
+        auto BariCoords = GetBaricentricCoordinates(WorldPos, ClosestVertices[0], ClosestVertices[1], ClosestVertices[2]);
+        // and now we can use that to interpolate the height
+        return BariCoords.x * ClosestVertices[0].y + BariCoords.y * ClosestVertices[1].y + BariCoords.z * ClosestVertices[2].y;
+    }
+
+    unsigned int TerrainHelper::GetClosestHeightData(vec3 WorldPos, vec2 WorldSize)
+    {
+        if (HeightDatas.empty())
+            return 0;
         
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, VertexBuffer);
-        size_t ByteCount = sizeof(vec4) * TotalVertices;
-        void* ptr = glMapBufferRange(
-            GL_SHADER_STORAGE_BUFFER, 
-            0,                        
-            ByteCount,        
-            GL_MAP_READ_BIT           
-        );
-        memcpy(Vertices.data(), ptr, ByteCount);
-        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+        int QuadIndex;
+        ivec2 QuadXY;
+        GetQuadIndices(WorldPos, WorldSize, QuadIndex, QuadXY);
+        return HeightDatas[QuadIndex];
+    }
 
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, VertexOffsetBuffer);
-        ByteCount = sizeof(int) * TotalSize;
-        ptr = glMapBufferRange(
-            GL_SHADER_STORAGE_BUFFER, 
-            0,                        
-            ByteCount,       
-            GL_MAP_READ_BIT           
-        );
-        memcpy(Offsets.data(), ptr, ByteCount);
-        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-
-        // use the world pos to lookup which quad its supposed to reference
-        vec2 Scale = vec2((float)TerrainData::TexSize / WorldSize.x, (float)TerrainData::TexSize / WorldSize.y);
-        auto ScaledWorldPos = vec3(WorldPos.x * Scale.x, 0, WorldPos.z * Scale.y);
-        int QuadIndex = GetQuadIndexFor(ScaledWorldPos, ivec2(0));
-        ivec2 QuadXY = ivec2(QuadIndex % TexSize.x, QuadIndex / TexSize.y);
+    vector<vec3> TerrainHelper::GetClosestVertices(vec3 WorldPos, vec2 WorldSize)
+    {
+        auto TexSize = ivec2(TerrainData::TexSize);
+        int QuadIndex;
+        ivec2 QuadXY;
+        GetQuadIndices(WorldPos, WorldSize, QuadIndex, QuadXY);
         
         // since all terrain quadrants have the standard quad at their base, we need to check for offset
         vec2 WorldSizePerQuad = vec2(WorldSize.x, WorldSize.y) / vec2(TexSize);
@@ -130,10 +150,61 @@ namespace TTerrain
         auto VertA = Vertices[TriangleStart + 0];
         auto VertB = Vertices[TriangleStart + 1];
         auto VertC = Vertices[TriangleStart + 2];
-        
-        vec3 BariCoords = GetBaricentricCoordinates(WorldPos, VertA, VertB, VertC);
 
-        // and now we can use that to interpolate the height
-        return BariCoords.x * VertA.y + BariCoords.y * VertB.y + BariCoords.z * VertC.y;
+        vector<vec3> ClosestVertices = {VertA, VertB, VertC};
+        return ClosestVertices;
+    }
+
+    void TerrainHelper::UpdateData(TerrainManager* TerrainManager)
+    {
+        // we always expect the first entry to be the actual queried!
+        if (glClientWaitSync(get<1>(Fences[0]), 0, 0) != GL_ALREADY_SIGNALED)
+            return;
+        
+        GPU_PROFILE(GameImports::Game::GetGpuFrame(), "ShaderHelper::UpdateData", legit::Colors::wisteria);
+        //TODO:: make chunks!
+        const auto& Data = TerrainManager->GetData(0);
+
+        auto TexSize = uvec2(TerrainData::TexSize);
+        auto TotalSize = TexSize.x * TexSize.y;
+        //TODO: get actual size!
+        auto HeightBufferByteSize = TotalSize;
+        auto VertexBufferByteSize = TotalSize * 24;
+        Vertices.resize(VertexBufferByteSize);
+        Offsets.resize(HeightBufferByteSize);
+        HeightDatas.resize(HeightBufferByteSize);
+        
+        memcpy(Vertices.data(), Data.MappedVertexPtr, VertexBufferByteSize * sizeof(vec4));
+        memcpy(Offsets.data(), Data.MappedVertexOffsetPtr, HeightBufferByteSize * sizeof(unsigned int));
+        memcpy(HeightDatas.data(), Data.MappedHeightPtr, HeightBufferByteSize * sizeof(unsigned int));
+    }
+
+    void TerrainHelper::Update(TerrainManager* TerrainManager)
+    {
+        auto CurrentFrame = GameImports::Game::FrameCounter;
+        // get the oldest, valid frame
+        for (int i = Fences.size() - 1; i >= 0; i--)
+        {
+            const auto& Tuple = Fences[i];
+            if (get<0>(Tuple) > CurrentFrame - 2)
+                continue;
+
+            // there are some older ones, so we can ignore the requests in between
+            if (i != 0)
+            {
+                DeleteFence(i);
+                continue;
+            }
+            
+            UpdateData(TerrainManager);
+            DeleteFence(i);
+        }
+        
+        if (!TerrainManager->IsDirty())
+            return;
+
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        auto Fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        Fences.emplace_back(GameImports::Game::FrameCounter, Fence);
     }
 }

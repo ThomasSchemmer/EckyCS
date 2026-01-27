@@ -20,6 +20,7 @@ namespace GameImports {
 	unique_ptr<Game> Game::Instance = nullptr;
 	float Game::DeltaTime = 0;
 	float Game::DeltaFixedTime = 0;
+	unsigned int Game::FrameCounter = 0;
 
 	legit::GpuProfilerFrame& Game::GetGpuFrame(int Index)
 	{
@@ -94,6 +95,7 @@ namespace GameImports {
 			LastFixedTick = Now;
 		}
 		LastTick = Now;
+		FrameCounter++;
 	}
 
 	void Game::FixedUpdate() const

@@ -19,9 +19,7 @@ uniform vec3 GlobalWorldPos;
 uniform ivec2 TexSize;
 uniform sampler2D ShadowMap;
 
-uniform vec3 Tex0Color;
-uniform vec3 Tex1Color;
-uniform vec3 Tex2Color;
+uniform vec3 TexColors[3];
 uniform vec3 CliffColor;
 uniform vec3 GrassColor;
 uniform float GrassScale;
@@ -80,6 +78,7 @@ void main()
     GrassNoise = map(GrassNoise, .0, 1.0, TerrainMinColor, TerrainMaxColor);
     vec3 Grass = GrassColor * GrassNoise;
 
+    // sample all available textures and display only the highest one
     uint BaseIndex = GetBaseIndex(UV, TexSize);
     vec2 BaseID = UV * vec2(TexSize);
     uvec4 TexValues = GetTexValues(BaseIndex, TexSize);
@@ -87,9 +86,12 @@ void main()
     float Tex0 = GetTexValueByLayout(BaseID, TexValues, LAYOUT_TEX0, Noise);
     float Tex1 = GetTexValueByLayout(BaseID, TexValues, LAYOUT_TEX1, Noise);
     float Tex2 = GetTexValueByLayout(BaseID, TexValues, LAYOUT_TEX2, Noise);
-    Grass = mix(Grass, Tex0Color, Tex0);
-    Grass = mix(Grass, Tex1Color, Tex1);
-    Grass = mix(Grass, Tex2Color, Tex2);
+
+    float MaxValue = Tex1 >= Tex0 ? Tex1 : Tex0;
+    uint Max = Tex1 >= Tex0 ? 1 : 0;
+    Max = Tex2 >= MaxValue ? 2 : Max;
+    MaxValue = Tex2 >= MaxValue ? Tex2 : MaxValue;
+    Grass = mix(Grass, TexColors[Max], MaxValue);
     
     // make shadow lighter
     float LightFactor = GetLight();

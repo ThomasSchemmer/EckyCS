@@ -31,7 +31,8 @@ namespace TTerrain
 
     private:
         GLuint VAO;
-        GLuint GrassTex;
+        GLuint GrassTex, FlowerTex;
+        GLuint FoliageTexArray;
         GLuint GrassProgram;
         glm::mat4 Transform;
 
@@ -39,5 +40,6 @@ namespace TTerrain
         const wchar_t* GrassVertexShader = L"TERRAIN_GRASS_VERTEX_SHADER";
         const wchar_t* GrassFragmentShader = L"TERRAIN_GRASS_FRAGMENT_SHADER";
         const wchar_t* GrassTexLocation = L"TERRAIN_GRASS_TEX_LOCATION";
+        const wchar_t* FlowerTexLocation = L"TERRAIN_FLOWER_TEX_LOCATION";
     };
 }
