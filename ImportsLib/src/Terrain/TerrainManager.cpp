@@ -175,9 +175,9 @@ namespace TTerrain
         }
     }
 
-    void TerrainManager::HandleResetting()
+    void TerrainManager::HandleResetting(bool bForce)
     {
-        if (!bIsResetting)
+        if (!bIsResetting && !bForce)
             return;
 
         glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, ComputeProgramMesh, -1, "DispatchReset");
@@ -346,8 +346,8 @@ namespace TTerrain
     {
         glUseProgram(ComputeProgramMesh);
         UpdateComputeVars(ComputeProgramMesh);
-        auto& TmpTerrain = TerrainDatas.emplace_back(WorldPos, shared_from_this());
-        TmpTerrain.DispatchGenerate();
+        TerrainDatas.emplace_back(WorldPos, shared_from_this());
+        HandleResetting(true);
     }
 
     void TerrainManager::HandleInput()
@@ -438,7 +438,7 @@ namespace TTerrain
         
         // will be filled by the different chunks
         Settings.GlobalWorldPos = glm::vec3(0);
-        Settings.VertexBuffer = 0;
+        Settings.PositionBuffer = 0;
         Settings.NormalBuffer = 0;
         Settings.HeightBuffer = 0;
         

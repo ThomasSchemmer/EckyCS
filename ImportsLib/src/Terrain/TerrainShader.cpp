@@ -1,6 +1,8 @@
 ﻿#include "TerrainShader.h"
 #include <glew/include/GL/glew.h>
 #include <glm/glm.hpp>
+
+#include "TerrainManager.h"
 #include "../Renderer/Camera.h"
 #include "../Renderer/Light.h"
 #include "../Util/ShaderHelper.h"
@@ -75,9 +77,9 @@ void TTerrain::TerrainShader::UpdateVars(const TerrainShaderSettings& Settings) 
     ShaderHelper::SetUniformM4("LightView", Settings.Light->View, ActiveProgram);
     ShaderHelper::SetUniformTexture("ShadowMap", Settings.ShadowMap, 0, ActiveProgram);
 
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, Settings.VertexBuffer);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, Settings.NormalBuffer);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, Settings.HeightBuffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVertices, Settings.PositionBuffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBONormals, Settings.NormalBuffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOHeights, Settings.HeightBuffer);
 
 }
 

@@ -27,6 +27,24 @@ namespace TTerrain
     using namespace std;
     class TerrainShaderSettings;
     class TerrainShader;
+    
+    
+    /** Ensures same assignment pattern for SSBOs
+     * Keep this equal to @TerrainCommon.glsl! 
+     */
+    enum TerrainSSBO : GLuint
+    {
+        SSBOVertices = 0,
+        SSBONormals = 1,
+        SSBOHeights = 2,
+        SSBOVertexOffsets = 3,
+        SSBOVerticalQuads = 4,
+        SSBOVerticalQuadLengths = 5,
+        SSBOHorizontalQuads = 6,
+        SSBOCount = 7,
+        SSBOPositions = 8
+    };
+    
 
     /**
      * Provides access for all thing related to the terrain
@@ -99,7 +117,7 @@ namespace TTerrain
         GLuint HorizontalQuadBuffer;
 
         void DispatchCompute();
-        void HandleResetting();
+        void HandleResetting(bool bForce = false);
         void HandleSelecting();
         void HandleRaising();
         void RenderTriangles(RenderPassType Type);
@@ -148,5 +166,6 @@ namespace TTerrain
         /** Actual length of the vertical buffers */
         static int VerticalQuadLengthLookup[QuadIndexCount0];
 
+        
     };
 }

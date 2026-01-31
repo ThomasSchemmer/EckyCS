@@ -55,12 +55,13 @@ namespace TTerrain
         ShaderHelper::SetUniform3fv("_GlobalWorldPos", Data.GlobalWorldPos, GrassCompute);
         ShaderHelper::SetUniform1ui("_GroupCount", GroupCount, GrassCompute);
     
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, CountBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, Data.VertexBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, Data.VertexOffsetsBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, Data.HeightBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOPositions, 0);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOCount, CountBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVertices, Data.VertexBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVertexOffsets, Data.VertexOffsetsBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOHeights, Data.HeightBuffer);
         glDispatchCompute(GroupCount, GroupCount, 1);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         AppendCount = ShaderHelper::ReadBufferCount(CountBuffer);
 
         if (PositionBuffer != 0) glDeleteBuffers(1, &PositionBuffer);
@@ -70,8 +71,9 @@ namespace TTerrain
 
         ShaderHelper::ResetBufferCounter(CountBuffer);
         ShaderHelper::SetUniform1ui("_Mode", 1, GrassCompute);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, PositionBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOPositions, PositionBuffer);
         glDispatchCompute(GroupCount, GroupCount, 1);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         AppendCount = ShaderHelper::ReadBufferCount(CountBuffer);
     }
 

@@ -36,11 +36,11 @@ layout(local_size_x = DISPATCH_SIZE, local_size_y = DISPATCH_SIZE) in;
  * Since each quad can have different heights, we might need additional vertical quads, which are added after all regular quads
  * This leads to different sizes in memory depending on vertical quad amount, see PositionOffsetBuffer
  **/
-layout(std430, binding = 0) buffer PositionBuffer {
+layout(std430, binding = SSBO_LAYOUT_VERTICES) buffer VertexBuffer {
     vec4 Entries[];
 } Vertices;
 
-layout(std430, binding = 1) buffer NormalBuffer {
+layout(std430, binding = SSBO_LAYOUT_NORMALS) buffer NormalBuffer {
     vec4 Entries[];
 } Normals;
 
@@ -52,7 +52,7 @@ layout(std430, binding = 1) buffer NormalBuffer {
  * 1..23 - unused
  * 24..31 - actual height info
  */
-layout(std430, binding = 2) buffer HeightBuffer {
+layout(std430, binding = SSBO_LAYOUT_HEIGHTS) buffer HeightBuffer {
     uint Value[];
 } Heights;
 
@@ -61,7 +61,7 @@ layout(std430, binding = 2) buffer HeightBuffer {
  * This can be different, depending on the amount of vertical slices!
  * Note: will have just the base amount of triangles in the first iteration
  */
-layout(std430, binding = 3) buffer VertexOffsetsBuffer {
+layout(std430, binding = SSBO_LAYOUT_VERTEX_OFFSETS) buffer VertexOffsetsBuffer {
     uint Values[];
 } VertexOffsets;
 
@@ -77,12 +77,12 @@ layout(std430, binding = 3) buffer VertexOffsetsBuffer {
  * Connecting triples into triangles results in the actual mesh part
  * Note: Will be filled by @TerrainManager
  */
-layout(std430, binding = 4) readonly buffer VerticalQuadBuffer {
+layout(std430, binding = SSBO_LAYOUT_VERTICAL_QUADS) readonly buffer VerticalQuadBuffer {
     int Values[15][24];
 } VerticalQuadLookup;
 
 /** Buffer that contains the actual length of each of the @VerticalQuadLookup entries */
-layout(std430, binding = 5) readonly buffer VerticalQuadLengthBuffer {
+layout(std430, binding = SSBO_LAYOUT_VERTICAL_QUAD_LENGTHS) readonly buffer VerticalQuadLengthBuffer {
     int Values[15];
 } VerticalQuadLength;
 
@@ -90,12 +90,12 @@ layout(std430, binding = 5) readonly buffer VerticalQuadLengthBuffer {
  * Buffer containing the base vertices that every point will have
  * Same indexing as VerticalQuadLookup, though each vertex row is way more similar
  */
-layout(std430, binding = 6) readonly buffer HorizontalQuadBuffer {
+layout(std430, binding = SSBO_LAYOUT_HORIZONTAL_QUADS) readonly buffer HorizontalQuadBuffer {
     int Values[15][24];
 } HorizontalQuadLookup;
 
 /** Small buffer that is used to copy the overall size back to the CPU*/
-layout(std430, binding = 7) buffer CountBuffer {
+layout(std430, binding = SSBO_LAYOUT_COUNT) buffer CountBuffer {
     uint Value;
 } Count;
 
@@ -304,6 +304,7 @@ void GenerateTex(ivec3 id){
 
     uint GlobalIndex = id.z * _TexSize.x + id.x;
     Heights.Value[GlobalIndex] = 0;
+    Heights.Value[GlobalIndex] |= (1 << LAYOUT_GRASS);
 }
 
 // this is not really efficient and is only used as we dont want to transmit the data between GPU/CPU

@@ -24,7 +24,7 @@ namespace TTerrain
     public:
         RenderPassType RenderPassType;
         glm::vec3 GlobalWorldPos;
-        GLuint VertexBuffer, NormalBuffer, HeightBuffer;
+        GLuint PositionBuffer, NormalBuffer, HeightBuffer;
         glm::vec3 BrushPos;
         unsigned int BrushSize;
         glm::ivec2 TexSize;

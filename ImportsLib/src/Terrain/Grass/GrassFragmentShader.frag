@@ -11,8 +11,8 @@ in float GrassNoise;
 uniform vec3 GrassColor;
 
 layout(binding = 0) uniform sampler2DArray FoliageTex;
+layout(binding = 1) uniform sampler2D ShadowMap;
 
-uniform sampler2D ShadowMap;
 uniform vec3 LightDir;
 uniform vec3 LightPos;
 uniform vec2 LightClip;

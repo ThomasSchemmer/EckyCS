@@ -17,8 +17,8 @@ namespace TTerrain
     
     void TerrainData::RenderTriangles(RenderPassType Type) const
     {
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, VertexBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, NormalBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVertices, VertexBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBONormals, NormalBuffer);
         glDrawArrays(GL_TRIANGLES, 0, AppendCount);
         if (Manager->bRenderGrass)
         {
@@ -42,7 +42,7 @@ namespace TTerrain
         glUseProgram(ComputeProgramSelect);
         UpdateComputeVars(ComputeProgramSelect);
         ShaderHelper::SetUniform1ui("_Target", Target, ComputeProgramSelect);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, HeightBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOHeights, HeightBuffer);
         Dispatch(Mode, ComputeProgramSelect);
     }
 
@@ -50,13 +50,13 @@ namespace TTerrain
     {
         glUseProgram(ComputeProgramPaint);
         UpdateComputeVars(ComputeProgramPaint);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, HeightBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOHeights, HeightBuffer);
         Dispatch(Mode, ComputeProgramPaint);
     }
 
     void TerrainData::DispatchResetHeight()
     {
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, HeightBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOHeights, HeightBuffer);
         Dispatch((GLuint)TerrainComputeMode::ResetHeight, ComputeProgramMesh);
     }
 
@@ -67,12 +67,12 @@ namespace TTerrain
         ShaderHelper::ResetBufferCounter(CountBuffer);
         
         // calculate how many vertices we will have per triangle
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, HeightBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, VertexOffsetsBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, VerticalQuadBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, VerticalQuadLengthBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, HorizontalQuadBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, CountBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOHeights, HeightBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVertexOffsets, VertexOffsetsBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVerticalQuads, VerticalQuadBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVerticalQuadLengths, VerticalQuadLengthBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOHorizontalQuads, HorizontalQuadBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOCount, CountBuffer);
         Dispatch((GLuint)TerrainComputeMode::CountTriangles, ComputeProgramMesh);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         
@@ -82,8 +82,8 @@ namespace TTerrain
         AppendCount = ShaderHelper::ReadBufferCount(CountBuffer);
 
         CreateTempCompute();
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, VertexBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, NormalBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVertices, VertexBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBONormals, NormalBuffer);
 
         ShaderHelper::ResetBufferCounter(CountBuffer);
         
@@ -186,7 +186,7 @@ namespace TTerrain
     void TerrainData::ApplyToSettings(TerrainShaderSettings& Settings) const
     {
         Settings.GlobalWorldPos = GlobalWorldPos;
-        Settings.VertexBuffer = VertexBuffer;
+        Settings.PositionBuffer = VertexBuffer;
         Settings.NormalBuffer = NormalBuffer;
         Settings.HeightBuffer = HeightBuffer;
     }

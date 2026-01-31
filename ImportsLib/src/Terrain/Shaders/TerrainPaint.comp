@@ -12,7 +12,7 @@
 layout(local_size_x = DISPATCH_SIZE, local_size_y = DISPATCH_SIZE) in;
 
 // for more layout info see terrainmesh shader
-layout(std430, binding = 3) buffer HeightBuffer {
+layout(std430, binding = SSBO_LAYOUT_HEIGHTS) buffer HeightBuffer {
     uint Value[]; 
 } Heights;
 

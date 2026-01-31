@@ -1,15 +1,17 @@
 ﻿#version 430
 
+#include "TERRAIN_COMMON_SHADER"
+
 // layout isnt only vertex, see @SpriteGeometryProvider!
-layout(std430, binding = 0) buffer VertexBuffer {
+layout(std430, binding = SSBO_LAYOUT_VERTICES) buffer VertexBuffer {
     vec4 Entries[];
 } Vertices;
 
-layout(std430, binding = 1) buffer PositionBuffer {
+layout(std430, binding = SSBO_LAYOUT_POSITIONS) buffer PositionBuffer {
     vec4 Entries[];
 } Positions;
 
-layout(std430, binding = 2) buffer NormalsBuffer {
+layout(std430, binding = SSBO_LAYOUT_NORMALS) buffer NormalsBuffer {
     vec4 Entries[];
 } Normals;
 

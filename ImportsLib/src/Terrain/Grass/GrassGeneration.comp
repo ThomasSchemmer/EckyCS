@@ -9,27 +9,31 @@
 #define MODE_COUNT_TRIANGLES 0
 #define MODE_GENERATE_TRIANGLES 1
 
+
+#include "COMMON_SHADER"
+#include "TERRAIN_COMMON_SHADER"
+
 #define DISPATCH_SIZE 8
 layout(local_size_x = DISPATCH_SIZE, local_size_y = DISPATCH_SIZE) in;
 
-layout(std430, binding = 0) buffer PositionBuffer {
+layout(std430, binding = SSBO_LAYOUT_POSITIONS) buffer PositionBuffer {
     vec4 Entries[];
 } Positions;
 
-layout(std430, binding = 1) buffer CountBuffer {
+layout(std430, binding = SSBO_LAYOUT_COUNT) buffer CountBuffer {
     uint Count;
 } Counter;
 
 /** Contains the ordered terrain triangles, see TerrainMesh.comp */
-layout(std430, binding = 2) buffer VerticesBuffer {
+layout(std430, binding = SSBO_LAYOUT_VERTICES) buffer VerticesBuffer {
     vec4 Entries[];
 } Vertices;
 
-layout(std430, binding = 3) buffer VertexOffsetsBuffer {
+layout(std430, binding = SSBO_LAYOUT_VERTEX_OFFSETS) buffer VertexOffsetsBuffer {
     uint Values[];
 } VertexOffsets;
 
-layout(std430, binding = 4) buffer HeightBuffer {
+layout(std430, binding = SSBO_LAYOUT_HEIGHTS) buffer HeightBuffer {
     uint Values[];
 } Heights;
 
@@ -43,8 +47,6 @@ uniform uint _GroupCount;
 
 const uint VertexCount = 24;
 
-#include "COMMON_SHADER"
-#include "TERRAIN_COMMON_SHADER"
 #include "TERRAIN_CUBIC_SHADER"
 #include "TERRAIN_TEXLOOKUP_SHADER"
 
@@ -209,16 +211,15 @@ void GenerateGrassPosition(vec3 id){
     vec3 WorldPos = vec3(id.x * Scale.x, 0, id.z * Scale.y);
     float Height = GetHeightFromWorldPos(WorldPos);
     ivec3 QuadIndices = GetQuadIndexForThreadID(id);
-    
+
     uint DecorationType = GetDecorationType(QuadIndices, WorldPos);
     if (DecorationType == 0)
         return;
-    
+
     if (IsOnDirt(WorldPos, QuadIndices))
         return;
 
-    //Todo: check if we not are above water/dirt etc! 
-
+    //Todo: check if we not are above water/dirt etc!
     uint Index = atomicAdd(Counter.Count, 1);
     if (_Mode == MODE_COUNT_TRIANGLES)
         return;
@@ -234,6 +235,7 @@ void GenerateGrassPositions(ivec3 id){
     int TotalThreadCount = int(_GroupCount * DISPATCH_SIZE);
     ivec2 CountPerThread = ivec2(_TargetCount / float(TotalThreadCount));
     ivec2 LeftOverCount = _TargetCount - CountPerThread * TotalThreadCount;
+    
     
     for (int x = 0; x < CountPerThread.x; x++){
         for (int y = 0; y < CountPerThread.y; y++){
@@ -260,6 +262,8 @@ void GenerateGrassPositions(ivec3 id){
 
 void main() {
     ivec3 id = ivec3(gl_GlobalInvocationID.x, 0, gl_GlobalInvocationID.y);
-    
+    if (id.x < 25){
+        Positions.Entries[id.x].xy = vec2(42);
+    }
     GenerateGrassPositions(id);
 }

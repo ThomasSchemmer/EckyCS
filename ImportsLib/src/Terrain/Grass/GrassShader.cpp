@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "../TerrainManager.h"
 #include "../TerrainShader.h"
 #include "../../Renderer/Camera.h"
 #include "../../Renderer/Light.h"
@@ -42,8 +43,8 @@ void TTerrain::GrassShader::Use() const
 
 void TTerrain::GrassShader::UpdateVars(const GrassShaderSettings& Settings, const TerrainShaderSettings& TerrainSettings) const
 {
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, Settings.VertexBuffer);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, Settings.PositionBuffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVertices, Settings.VertexBuffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOPositions, Settings.PositionBuffer);
     
     ShaderHelper::SetUniformM4("Projection", Settings.Camera->Projection, GrassProgram);
     ShaderHelper::SetUniformM4("View", Settings.Camera->View, GrassProgram);
@@ -51,6 +52,7 @@ void TTerrain::GrassShader::UpdateVars(const GrassShaderSettings& Settings, cons
     ShaderHelper::SetUniform3fv("Right", Settings.Camera->GetRight(), GrassProgram);
     ShaderHelper::SetUniform3fv("Up", Settings.Camera->GetUp(), GrassProgram);
     glBindTextureUnit(0, FoliageTexArray);
+    glBindTextureUnit(1, TerrainSettings.ShadowMap);
     
     // pass in terrain data for grass color ..
     ShaderHelper::SetUniform3fv("GrassColor", TerrainSettings.GrassColor, GrassProgram);
@@ -63,7 +65,6 @@ void TTerrain::GrassShader::UpdateVars(const GrassShaderSettings& Settings, cons
     ShaderHelper::SetUniform2fv("LightClip", TerrainSettings.Light->ClipPlanes, GrassProgram);
     ShaderHelper::SetUniformM4("LightProjection", TerrainSettings.Light->Projection, GrassProgram);
     ShaderHelper::SetUniformM4("LightView", TerrainSettings.Light->View, GrassProgram);
-    ShaderHelper::SetUniformTexture("ShadowMap", TerrainSettings.ShadowMap, 1, GrassProgram);
 }
 
 void TTerrain::GrassShader::CleanUp() const

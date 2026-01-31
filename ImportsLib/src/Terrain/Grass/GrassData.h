@@ -47,7 +47,6 @@ namespace TTerrain
 
         // owned by the Manager!
         GLuint GrassCompute = 0;
-        GLuint GrassShaderProgram = 0;
 
         glm::ivec2 TargetCount = glm::ivec2(100);
         unsigned int GroupCount = 8;
