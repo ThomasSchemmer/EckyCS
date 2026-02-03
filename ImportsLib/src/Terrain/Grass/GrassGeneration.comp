@@ -47,7 +47,7 @@ uniform uint _GroupCount;
 
 const uint VertexCount = 24;
 
-#include "TERRAIN_CUBIC_SHADER"
+#include "TERRAIN_NOISE_SHADER"
 #include "TERRAIN_TEXLOOKUP_SHADER"
 
 const vec2 Decorations[] = vec2[](
@@ -77,14 +77,6 @@ ivec3 GetQuadIndexForThreadID(vec3 id){
     ivec2 BaseID = GetBaseIDFor(ScaledWorldPos, ivec2(0));
     int QuadIndex = GetBaseIndexFor(ScaledWorldPos, ivec2(0));
     return ivec3(QuadIndex, BaseID);
-}
-
-vec2 hash2(vec2 p)
-{
-    uvec2 q = floatBitsToUint(p);
-    q *= uvec2(1597334677u, 3812015801u);
-    q ^= q >> 16;
-    return vec2(q) * (1.0 / 4294967296.0);
 }
 
 float GetSideOfTriangle(int IndexInQuad, int StartVertex, vec3 WorldPos)
@@ -171,7 +163,7 @@ bool IsOnDirt(vec3 id, ivec3 QuadIndices){
     int QuadIndex = QuadIndices.x;
     ivec2 BaseID = QuadIndices.yz;
     uvec4 TexValues = GetTexValues(QuadIndex, _TexSize);
-    float Noise = cubicNoise(id / 2.0);
+    float Noise = valueNoise2D(id.xz / 2.0);
     float Dirt = GetTexValueByLayout(BaseID, TexValues, LAYOUT_TEX0, Noise);
     Dirt += GetTexValueByLayout(BaseID, TexValues, LAYOUT_TEX1, Noise);
     Dirt += GetTexValueByLayout(BaseID, TexValues, LAYOUT_TEX2, Noise);
@@ -188,7 +180,7 @@ uint GetDecorationType(uint Value, float Chance, int DecorationValue){
 }
 
 uint GetDecorationType(ivec3 QuadIndices, vec3 WorldPos){
-    float Chance = cubicNoise(WorldPos);
+    float Chance = simplexNoise(WorldPos);
     Chance = map(Chance, -.34, 1.34, 0, 1);
     uint Values = Heights.Values[QuadIndices.x];
     uint DecorationType = 0;
@@ -202,7 +194,7 @@ void GenerateGrassPosition(vec3 id){
     // break grid structure with randomness
     uvec2 cell = uvec2(id.xz);
     cell ^= cell.yx * 1664525u;
-    vec2 Offset = hash2(vec2(cell)) - .5;
+    vec2 Offset = hashv2(vec2(cell)) - .5;
     id.xz += Offset;
     if (id.x < 0 || id.z < 0)
         return;

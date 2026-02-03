@@ -1,6 +1,6 @@
 #version 430 
 
-float cubicNoise(vec3 at);
+float valueNoise3D(vec3 at);
 float GetGrassNoise(vec4 WorldPos, float GrassScale, float GrassQuantize);
 
 out vec4 FragColor;
@@ -31,7 +31,7 @@ const float BrushBorder = 0.25;
 #include "SHADOW_SHADER"
 #include "LIGHT_SHADER"
 #include "TERRAIN_COMMON_SHADER"
-#include "TERRAIN_CUBIC_SHADER"
+#include "TERRAIN_NOISE_SHADER"
 #include "COMMON_SHADER"
 
 // binding 0 and 1 are vertex and normal buffer in vertex shader. 2 is count buffer. 3 is height
@@ -76,7 +76,7 @@ void main()
     uint BaseIndex = GetBaseIndex(UV, TexSize);
     vec2 BaseID = UV * vec2(TexSize);
     uvec4 TexValues = GetTexValues(BaseIndex, TexSize);
-    float Noise = cubicNoise(WorldPos.xyz / 2.0);
+    float Noise = valueNoise2D(WorldPos.xz / 2.0);
     float Tex0 = GetTexValueByLayout(BaseID, TexValues, LAYOUT_TEX0, Noise);
     float Tex1 = GetTexValueByLayout(BaseID, TexValues, LAYOUT_TEX1, Noise);
     float Tex2 = GetTexValueByLayout(BaseID, TexValues, LAYOUT_TEX2, Noise);

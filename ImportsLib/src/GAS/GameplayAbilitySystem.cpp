@@ -11,14 +11,13 @@ namespace GAS
         Type = GameServiceType::GameplayAbilitySystem;
     }
 
-    void GameplayAbilitySystem::Update()
+    void GameplayAbilitySystem::Update(float Delta)
     {
         for (const auto& Pair : Components)
         {
             for (auto& Component : Pair.second)
             {
-                //TODO: delta
-                Component->Tick(0.1f);
+                Component->Tick(Delta);
             }
         }
     }

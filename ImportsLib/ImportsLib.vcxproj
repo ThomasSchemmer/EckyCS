@@ -769,7 +769,7 @@
     <Content Include="src\Terrain\Grass\GrassFragmentShader.frag" />
     <Content Include="src\Terrain\Grass\GrassGeneration.comp" />
     <Content Include="src\Terrain\Grass\GrassVertexShader.vert" />
-    <Content Include="src\Terrain\Shaders\Cubic.glsl" />
+    <Content Include="src\Terrain\Shaders\Noise.glsl" />
     <Content Include="src\Terrain\Shaders\TerrainCommon.glsl" />
     <Content Include="src\Terrain\Shaders\TerrainFragmentShader.frag" />
     <Content Include="src\Terrain\Shaders\TerrainMesh.comp" />

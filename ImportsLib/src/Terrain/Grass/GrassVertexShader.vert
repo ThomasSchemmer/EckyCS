@@ -37,7 +37,7 @@ out float GrassNoise;
 const vec3 WorldUpOffset = vec3(0, 0.5, 0);
 
 float GetGrassNoise(vec4 WorldPos, float GrassScale, float GrassQuantize);
-#include "TERRAIN_CUBIC_SHADER"
+#include "TERRAIN_NOISE_SHADER"
 
 void main()
 {

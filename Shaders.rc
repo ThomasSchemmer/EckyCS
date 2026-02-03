@@ -16,7 +16,7 @@ TERRAIN_GRASS_FRAGMENT_SHADER RCDATA    "./ImportsLib/src/Terrain/Grass/GrassFra
 TERRAIN_GRASS_COMPUTE_SHADER RCDATA     "./ImportsLib/src/Terrain/Grass/GrassGeneration.comp"
 TERRAIN_GRASS_TEX_LOCATION RCDATA       "./ImportsLib/Textures/leaf.png";
 TERRAIN_FLOWER_TEX_LOCATION RCDATA      "./ImportsLib/Textures/flower.png";
-TERRAIN_CUBIC_SHADER  RCDATA            "./ImportsLib/src/Terrain/Shaders/Cubic.glsl"
+TERRAIN_NOISE_SHADER  RCDATA            "./ImportsLib/src/Terrain/Shaders/Noise.glsl"
 TERRAIN_COMMON_SHADER  RCDATA           "./ImportsLib/src/Terrain/Shaders/TerrainCommon.glsl"
 TERRAIN_TEXLOOKUP_SHADER  RCDATA        "./ImportsLib/src/Terrain/Shaders/TexLookup.glsl"
 

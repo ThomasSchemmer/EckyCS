@@ -19,7 +19,7 @@ out vec4 FragColor;
 
 #include "COMMON_SHADER"
 #include "SHADOW_SHADER"
-#include "TERRAIN_CUBIC_SHADER"
+#include "TERRAIN_NOISE_SHADER"
 
 const vec3 FlowerColors[] = vec3[](
     vec3(0.74, 0.68, 0.63), // Dusty beige rose

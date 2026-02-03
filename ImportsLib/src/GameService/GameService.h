@@ -21,8 +21,8 @@ namespace GameImports {
 	public:
 		virtual ~GameService() = default;
 		GameService();
-		virtual void Update() {}
-		virtual void FixedUpdate() {}
+		virtual void Update(float Delta) {}
+		virtual void FixedUpdate(float Delta) {}
 		virtual void StartService();
 		virtual void StopService();
 		virtual void ResetService();

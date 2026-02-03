@@ -77,7 +77,7 @@ namespace GameImports {
 		virtual void Init(GLFWwindow* Window);
 
 		virtual void Update();
-		virtual void FixedUpdate() const;
+		virtual void FixedUpdate(float Delta) const;
 		
 		/** Returns the best fitting service according to type */
 		template<class T>

@@ -31,8 +31,8 @@ namespace EckyCS
         ComponentGroupIdentifier EmptyGroup;
         
     public:
-        void Update() override;
-        void FixedUpdate() override;
+        void Update(float Delta) override;
+        void FixedUpdate(float Delta) override;
         ECS();
         ~ECS() override;
 

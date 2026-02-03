@@ -7,18 +7,18 @@
 using namespace std;
 namespace EckyCS
 {
-    void ECS::Update()
+    void ECS::Update(float Delta)
     {
-        GameService::Update();
+        GameService::Update(Delta);
         ForEachSystem([](const shared_ptr<System>& S)
         {
            S->Tick(Game::DeltaTime);
         });
     }
 
-    void ECS::FixedUpdate()
+    void ECS::FixedUpdate(float Delta)
     {
-        GameService::FixedUpdate();
+        GameService::FixedUpdate(Delta);
         ForEachSystem([](const shared_ptr<System>& S)
         {
            S->FixedTick(Game::DeltaFixedTime);

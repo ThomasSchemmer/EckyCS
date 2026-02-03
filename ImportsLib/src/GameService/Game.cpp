@@ -86,23 +86,23 @@ namespace GameImports {
 		DeltaTime = Now - LastTick;
 		for (auto& Service: Services)
 		{
-			Service->Update();
+			Service->Update(DeltaTime);
 		}
 		if (Now - LastFixedTick > FIXED_TICK_INTERVAL)
 		{
 			DeltaFixedTime = Now - LastFixedTick;
-			FixedUpdate();
+			FixedUpdate(DeltaFixedTime);
 			LastFixedTick = Now;
 		}
 		LastTick = Now;
 		FrameCounter++;
 	}
 
-	void Game::FixedUpdate() const
+	void Game::FixedUpdate(float Delta) const
 	{
 		for (auto& Service: Services)
 		{
-			Service->FixedUpdate();
+			Service->FixedUpdate(Delta);
 		}
 	}
 

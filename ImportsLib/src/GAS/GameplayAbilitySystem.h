@@ -35,7 +35,7 @@ namespace GAS
 
         std::map<GameplayAbilityComponentType, vector<shared_ptr<GameplayAbilityComponent>>> Components;
 
-        void Update() override;
+        void Update(float Delta) override;
         void Register(const shared_ptr<GameplayAbilityComponent>& Component, GameplayAbilityComponentType ComponentType);
         void DeRegister(const shared_ptr<GameplayAbilityComponent>& Component, GameplayAbilityComponentType ComponentType);
 
