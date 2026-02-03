@@ -16,7 +16,6 @@ out vec4 WorldPos;
 out vec4 WorldNormals;
 out vec2 UV;
 out vec4 PosLightClip;
-out vec3 BariCoords;
 
 const int Size = 100;
 
@@ -24,10 +23,6 @@ void main()
 {
     vec4 pos = Positions.Entries[gl_VertexID];
     vec4 normal = Normals.Entries[gl_VertexID / 3];
-    
-    BariCoords.x = gl_VertexID % 3 == 0 ? 1 : 0;
-    BariCoords.y = gl_VertexID % 3 == 1 ? 1 : 0;
-    BariCoords.z = gl_VertexID % 3 == 2 ? 1 : 0;
     
     WorldPos = Transform * vec4(pos.xyz, 1);
     WorldNormals = Transform * vec4(normal.xyz, 1);

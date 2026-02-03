@@ -39,24 +39,32 @@ namespace Util
     
     string ShaderHelper::ResourceToString(const wchar_t* ResourcePath)
     {
+        auto Tuple = ResourceToData(ResourcePath);
+        auto Data = get<0>(Tuple);
+        auto Size = get<1>(Tuple);
+        
+        // Strip UTF-8 BOM if present
+        size_t offset = 0;
+        if (Size >= 3 && Data[0] == 0xEF && Data[1] == 0xBB && Data[2] == 0xBF) {
+            offset = 3;
+        }
+
+        return std::string(reinterpret_cast<const char*>(Data + offset),
+                           Size - offset);
+    }
+
+    tuple<const unsigned char*, size_t> ShaderHelper::ResourceToData(const wchar_t* ResourcePath)
+    {
         HRSRC rc = FindResourceW(nullptr, ResourcePath, RT_RCDATA);
         if (!rc) {
             wcerr << "ERROR::SHADER::FILE_MISSING: " << ResourcePath << "\n";
-            return "";
+            return make_tuple(nullptr, 0);
         }
 
         HGLOBAL h = LoadResource(nullptr, rc);
         DWORD size = SizeofResource(nullptr, rc);
         const unsigned char* Data = static_cast<const unsigned char*>(LockResource(h));
-        
-        // Strip UTF-8 BOM if present
-        size_t offset = 0;
-        if (size >= 3 && Data[0] == 0xEF && Data[1] == 0xBB && Data[2] == 0xBF) {
-            offset = 3;
-        }
-
-        return std::string(reinterpret_cast<const char*>(Data + offset),
-                           size - offset);
+        return make_tuple(Data, size);
     }
 
     string ShaderHelper::LoadResourceIncludes(const string& Code)

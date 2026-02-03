@@ -42,7 +42,7 @@ namespace GameImports {
 	{
 		RendererPtr = make_shared<Renderer>();
 		TerrainPtr = make_shared<TerrainManager>();
-		Game::GpuProfilerFrames.resize(GpuFrameCount);
+		GpuProfilerFrames.resize(GpuFrameCount);
 	}
 
 	Game::~Game()

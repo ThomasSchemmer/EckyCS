@@ -2,8 +2,6 @@
 
 float cubicNoise(vec3 at);
 float GetGrassNoise(vec4 WorldPos, float GrassScale, float GrassQuantize);
-#include "TERRAIN_CUBIC_SHADER"
-#include "COMMON_SHADER"
 
 out vec4 FragColor;
 
@@ -11,7 +9,6 @@ in vec4 WorldPos;
 in vec4 WorldNormals;
 in vec2 UV;
 in vec4 PosLightClip;
-in vec3 BariCoords;
 
 uniform vec3 BrushPos;
 uniform uint BrushSize;
@@ -32,7 +29,10 @@ uniform int ShowWireFrame;
 const float BrushBorder = 0.25;
 
 #include "SHADOW_SHADER"
+#include "LIGHT_SHADER"
 #include "TERRAIN_COMMON_SHADER"
+#include "TERRAIN_CUBIC_SHADER"
+#include "COMMON_SHADER"
 
 // binding 0 and 1 are vertex and normal buffer in vertex shader. 2 is count buffer. 3 is height
 // for more layout info see terrain mesh shader
@@ -62,13 +62,6 @@ vec3 GetBrushColor(void){
     Value *= Show;
     
     return clamp(BrushColor + Value, 0, 1);
-}
-
-float GetLight(void){
-    float _Quantize = 15;
-    float nl = max(0, dot(normalize(WorldNormals.xyz), LightDir));
-    nl = int(nl * _Quantize) / _Quantize;
-    return nl;
 }
 
 void main()
@@ -101,20 +94,8 @@ void main()
     vec3 TexColor = GrassFactor * Grass + (1 - GrassFactor) * Cliff;
 
     float ShadowFactor = GetVarianceShadow();
-    vec3 TempShadowColor = (ShadowColor * 2 + TexColor) / 3.0;
+    vec3 TempShadowColor = ShadowColor;//(ShadowColor * 2 + TexColor) / 3.0;
     vec3 Color = mix(TempShadowColor, TexColor, ShadowFactor);
-    
-#ifdef DEBUG
-    float BariThreshold = 0.01f;
-    int IsBari = int(
-        ((BariCoords.x < BariThreshold) ||
-        (BariCoords.y < BariThreshold) ||
-        (BariCoords.z < BariThreshold)) &&
-        ShowWireFrame > 0
-    ); 
-    vec3 BariColor = IsBari > 0 ? vec3(0, 0, 0) : Color; 
-    FragColor = vec4(BrushColor + BariColor, 1);
-#endif
 
-    FragColor = vec4(BrushColor + Color, 1); 
+    FragColor = vec4(BrushColor + Color, 1);
 } 

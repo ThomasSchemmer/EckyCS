@@ -27,10 +27,11 @@ namespace EckyCS
         RenderData() = default;
         virtual ~RenderData() = default;
         virtual void Create(size_t count, const shared_ptr<GeometryProvider>& Provider);
+        virtual const wchar_t* GetResourcePath() const = 0;
         
         void Render() const;
 
-        
+        /** Copies the Transforms, IDs, and any additionally defined compoments from CPU to GPU */
         template <typename... Components>
         requires AllContainedIn<tuple<TransformComponent>, tuple<Components...>>
         void UpdateBuffers(ComponentGroupIdentifier GroupID, size_t InCount, View<Components...> Data)

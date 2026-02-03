@@ -5,12 +5,12 @@ namespace EckyCS
 {
     /**
      * Creates a sprite mesh for Entities to be drawn
-     * //TODO: make static, as a sprite is shared 
+     * //TODO: make provider static, as a sprite is shared 
      */
     class SpriteGeometryProvider : public GeometryProvider
     {
     public:
-        float* GetVertexArray() override
+        void* GetVertexArray() override
         {
             return SpriteVertices;
         }
@@ -24,6 +24,9 @@ namespace EckyCS
         {
             return sizeof(SpriteVertices);
         }
+
+        // dont need to load anything
+        void Load(const wchar_t* Path) override {}
 
         float SpriteVertices[48] = {
             // vec3 pos, vec2 uv, vec3 normal

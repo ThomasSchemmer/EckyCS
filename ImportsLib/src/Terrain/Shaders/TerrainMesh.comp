@@ -223,7 +223,8 @@ void WriteTriangle(vec3 A, vec3 B, vec3 C, uint Index){
     Vertices.Entries[Index + 0].xyz = A;
     Vertices.Entries[Index + 1].xyz = B;
     Vertices.Entries[Index + 2].xyz = C;
-    Normals.Entries[Index / 3].xyz = normalize(cross(normalize(A - B), normalize(C - B)));
+    uint NormalIndex = Index / 3;
+    Normals.Entries[NormalIndex].xyz = -normalize(cross(normalize(A - B), normalize(C - B)));
 }
 
 void GenerateTriangles(ivec3 id, int Heights[4], int Combination){

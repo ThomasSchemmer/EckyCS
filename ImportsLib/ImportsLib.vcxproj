@@ -32,13 +32,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -52,7 +52,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -172,6 +172,7 @@
   <ItemGroup>
     <ClCompile Include="ext\glm\detail\glm.cpp" />
     <ClCompile Include="ext\glm\glm.cppm" />
+    <ClCompile Include="ext\gltf\gltf.cpp" />
     <ClCompile Include="ext\imgui\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="ext\imgui\backends\imgui_impl_opengl2.cpp" />
     <ClCompile Include="ext\imgui\backends\imgui_impl_opengl3.cpp" />
@@ -183,6 +184,7 @@
     <ClCompile Include="ext\imgui\imgui_widgets.cpp" />
     <ClCompile Include="ext\LegitProfiler\ProfilerGraph.cpp" />
     <ClCompile Include="ext\LegitProfiler\ProfilersWindow.cpp" />
+    <ClCompile Include="ext\simdjson\simdjson.cpp" />
     <ClCompile Include="Imports.cpp" />
     <ClCompile Include="src\EckyCS\Components\Component.cpp" />
     <ClCompile Include="src\EckyCS\Components\ComponentGroupIdentifier.cpp" />
@@ -203,6 +205,7 @@
     <ClCompile Include="src\GAS\Effects\GameplayEffectModifier.cpp" />
     <ClCompile Include="src\GAS\GameplayAbilityComponent.cpp" />
     <ClCompile Include="src\GAS\GameplayAbilitySystem.cpp" />
+    <ClCompile Include="src\Objects\ObjectRenderSystem.cpp" />
     <ClCompile Include="src\Player\PlayerController.cpp" />
     <ClCompile Include="src\Renderer\Camera.cpp" />
     <ClCompile Include="src\Renderer\Gizmos.cpp" />
@@ -214,12 +217,15 @@
     <ClCompile Include="src\Renderer\Shaders\DepthShader.cpp" />
     <ClCompile Include="src\Renderer\Util\Projector.cpp" />
     <ClCompile Include="src\Renderer\Util\Transform.cpp" />
+    <ClCompile Include="src\Scene\Scene.cpp" />
+    <ClCompile Include="src\Scene\SceneManager.cpp" />
     <ClCompile Include="src\Terrain\Grass\GrassData.cpp" />
     <ClCompile Include="src\Terrain\Grass\GrassShader.cpp" />
     <ClCompile Include="src\Terrain\TerrainData.cpp" />
     <ClCompile Include="src\Terrain\TerrainHelper.cpp" />
     <ClCompile Include="src\Terrain\TerrainManager.cpp" />
     <ClCompile Include="src\Terrain\TerrainShader.cpp" />
+    <ClCompile Include="src\Util\ModelHelper.cpp" />
     <ClCompile Include="src\Util\ShaderHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -659,6 +665,7 @@
     <ClInclude Include="ext\glm\vec3.hpp" />
     <ClInclude Include="ext\glm\vec4.hpp" />
     <ClInclude Include="ext\glm\vector_relational.hpp" />
+    <ClInclude Include="ext\gltf\gltf.hpp" />
     <ClInclude Include="ext\imgui\backends\imgui_impl_glfw.h" />
     <ClInclude Include="ext\imgui\backends\imgui_impl_opengl2.h" />
     <ClInclude Include="ext\imgui\backends\imgui_impl_opengl3.h" />
@@ -676,6 +683,7 @@
     <ClInclude Include="ext\LegitProfiler\ProfilersWindow.h" />
     <ClInclude Include="ext\LegitProfiler\ProfilerTask.h" />
     <ClInclude Include="ext\renderdoc\renderdoc_app.h" />
+    <ClInclude Include="ext\simdjson\simdjson.h" />
     <ClInclude Include="ext\stb\stb_image.h" />
     <ClInclude Include="src\EckyCS\Components\Base\TransformComponent.h" />
     <ClInclude Include="src\EckyCS\Components\Component.h" />
@@ -690,6 +698,7 @@
     <ClInclude Include="src\EckyCS\SparseSet\SparseSet.h" />
     <ClInclude Include="src\EckyCS\SparseSet\SparseSetPage.h" />
     <ClInclude Include="src\EckyCS\Systems\Rendering\GeometryProvider.h" />
+    <ClInclude Include="src\EckyCS\Systems\Rendering\GLTFGeometryProvider.h" />
     <ClInclude Include="src\EckyCS\Systems\Rendering\RenderData.h" />
     <ClInclude Include="src\EckyCS\Systems\Rendering\EntityRenderSystem.h" />
     <ClInclude Include="src\EckyCS\Systems\Rendering\SpriteGeometryProvider.h" />
@@ -717,6 +726,9 @@
     <ClInclude Include="src\GAS\Tags\GameplayTags.h" />
     <ClInclude Include="src\GAS\Tags\GameplayTagSourceContainer.h" />
     <ClInclude Include="src\GAS\Tags\GameplayTagToken.h" />
+    <ClInclude Include="src\Objects\Object.h" />
+    <ClInclude Include="src\Objects\ObjectRenderData.h" />
+    <ClInclude Include="src\Objects\ObjectRenderSystem.h" />
     <ClInclude Include="src\Player\PlayerController.h" />
     <ClInclude Include="src\Renderer\Camera.h" />
     <ClInclude Include="src\Renderer\Gizmos.h" />
@@ -730,6 +742,8 @@
     <ClInclude Include="src\Renderer\Util\Projector.h" />
     <ClInclude Include="src\Renderer\Util\Transform.h" />
     <ClInclude Include="src\Renderer\Util\Utils.h" />
+    <ClInclude Include="src\Scene\Scene.h" />
+    <ClInclude Include="src\Scene\SceneManager.h" />
     <ClInclude Include="src\Terrain\Grass\GrassData.h" />
     <ClInclude Include="src\Terrain\Grass\GrassShader.h" />
     <ClInclude Include="src\Terrain\TerrainData.h" />
@@ -738,15 +752,19 @@
     <ClInclude Include="src\Terrain\TerrainShader.h" />
     <ClInclude Include="src\Util\ActionMap.h" />
     <ClInclude Include="src\Util\Headers.h" />
+    <ClInclude Include="src\Util\ModelHelper.h" />
     <ClInclude Include="src\Util\ShaderHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="ext\glm\CMakeLists.txt" />
+    <Content Include="ext\gltf\README.md" />
     <Content Include="ext\LegitProfiler\LICENSE.txt" />
+    <Content Include="ext\simdjson\README.md" />
     <Content Include="src\Renderer\Shaders\glsl\BlurTex.comp" />
     <Content Include="src\Renderer\Shaders\glsl\Common.glsl" />
     <Content Include="src\Renderer\Shaders\glsl\DepthFragmentShader.frag" />
     <Content Include="src\Renderer\Shaders\glsl\DepthVertexShader.vert" />
+    <Content Include="src\Renderer\Shaders\glsl\Light.glsl" />
     <Content Include="src\Renderer\Shaders\glsl\Shadow.glsl" />
     <Content Include="src\Terrain\Grass\GrassFragmentShader.frag" />
     <Content Include="src\Terrain\Grass\GrassGeneration.comp" />

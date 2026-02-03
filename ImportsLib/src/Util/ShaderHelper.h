@@ -44,6 +44,8 @@ namespace Util
 
         static void ResetBufferCounter(GLuint Buffer);
         static GLsizei ReadBufferCount(GLuint Buffer);
+        
+        static tuple<const unsigned char*, size_t> ResourceToData(const wchar_t* ResourcePath);
 
     private:
         static unsigned int CreateTextureInternal(int Width, int Height, const unsigned char* Data, GLint Format);

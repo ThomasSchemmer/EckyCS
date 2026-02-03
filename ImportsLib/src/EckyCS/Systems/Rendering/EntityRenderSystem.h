@@ -3,10 +3,10 @@
 
 #include "GeometryProvider.h"
 #include "RenderData.h"
+#include "../../../Renderer/Passes/RenderPass.h"
 #include "../System.h"
 #include "../../Util/EckyCSHeader.h"
 #include "../../Entities/Entity.h"
-
 namespace EckyCS
 {
     class ExplicitRenderData;

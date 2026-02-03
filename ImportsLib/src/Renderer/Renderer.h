@@ -8,6 +8,12 @@
 #include "GLFW/glfw3.h"
 #include "Passes/RenderPass.h"
 
+namespace Scene
+{
+    class SceneManager;
+}
+
+class SceneManager;
 class DepthShader;
 
 namespace TTerrain
@@ -58,6 +64,7 @@ private:
     std::shared_ptr<BaseShader> ShaderPtr;
     std::shared_ptr<DepthShader> DepthShaderPtr;
     std::shared_ptr<Gizmos> GizmosPtr;
+    std::shared_ptr<Scene::SceneManager> SceneManagerPtr;
     std::vector<std::shared_ptr<RenderPass>> RenderPasses;
     std::shared_ptr<RenderPass> CurrentRenderPass;
 

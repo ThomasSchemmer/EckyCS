@@ -1,7 +1,5 @@
 #version 430
 
-#include "COMMON_SHADER"
-
 in vec4 BaseWorldPos;
 in vec4 WorldNormals;
 in vec2 UV;
@@ -18,6 +16,8 @@ uniform vec3 LightPos;
 uniform vec2 LightClip;
 
 out vec4 FragColor;
+
+#include "COMMON_SHADER"
 #include "SHADOW_SHADER"
 #include "TERRAIN_CUBIC_SHADER"
 

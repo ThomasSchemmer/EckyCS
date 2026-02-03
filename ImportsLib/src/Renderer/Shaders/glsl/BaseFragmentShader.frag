@@ -10,21 +10,11 @@ uniform vec3 LightPos;
 uniform vec3 LightDir;
 uniform vec3 CamPos;
 
-float GetLight(void){
-    float ambi = 0.1;
-    vec3 Norm = normalize(WorldNormals.xyz);
-    float diff = max(dot(Norm, LightDir), 0.0);
-    
-    vec3 viewDir = normalize(CamPos - WorldPos.xyz);
-    vec3 reflectDir = reflect(-LightDir, Norm);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-    
-    return spec + diff + ambi;
-}
+#include "LIGHT_SHADER"
 
 void main()
 {
     float a = GetLight();
-    FragColor = vec4(WorldNormals.xyz * a, 1);
+    FragColor = vec4(WorldNormals.y, 0, 0, 1);
     return;
 } 

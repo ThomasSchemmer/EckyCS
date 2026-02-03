@@ -10,11 +10,13 @@ namespace EckyCS
     class GeometryProvider
     {
     public:
-        virtual float* GetVertexArray() = 0;
+        virtual void* GetVertexArray() = 0;
 
         virtual GLsizei GetVertexCount() const= 0;
 
         virtual GLsizei GetVertexByteCount() const = 0;
+
+        virtual void Load(const wchar_t* Path) = 0;
 
         virtual ~GeometryProvider() = default;
     };

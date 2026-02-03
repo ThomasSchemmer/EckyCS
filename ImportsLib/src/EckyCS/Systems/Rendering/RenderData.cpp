@@ -10,6 +10,7 @@ namespace EckyCS
     void RenderData::Create(size_t InCount, const shared_ptr<GeometryProvider>& Provider)
     {
         DataProvider = Provider;
+        DataProvider->Load(GetResourcePath());
         
         Count = InCount;
         glGenVertexArrays(1, &VAO);

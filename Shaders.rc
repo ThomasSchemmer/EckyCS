@@ -22,6 +22,7 @@ TERRAIN_TEXLOOKUP_SHADER  RCDATA        "./ImportsLib/src/Terrain/Shaders/TexLoo
 
 COMMON_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/Common.glsl"
 SHADOW_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/Shadow.glsl"
+LIGHT_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/Light.glsl"
 
 BLUR_TEX_COMPUTE_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/BlurTex.comp"
 

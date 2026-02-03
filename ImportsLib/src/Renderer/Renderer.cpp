@@ -18,8 +18,10 @@
 #include "../Terrain/TerrainManager.h"
 #include "Passes/BasePass.h"
 #include "Passes/ShadowPass.h"
-#include "Util/Utils.h"
+#include "../Scene/SceneManager.h"
+
 using namespace EckyCS;
+using namespace Scene;
 
 
 void Renderer::Init(GLFWwindow* Window)
@@ -29,6 +31,7 @@ void Renderer::Init(GLFWwindow* Window)
     DepthShaderPtr = make_shared<DepthShader>();
     DepthShaderPtr->Create();
     Camera = make_shared<class Camera>(Window);
+    SceneManagerPtr = make_shared<Scene::SceneManager>();
     LightPtr = make_shared<Light>(
         glm::vec3(10),
         glm::vec3(glm::radians(125.0f), glm::radians(140.0f), 0),
@@ -39,6 +42,7 @@ void Renderer::Init(GLFWwindow* Window)
     GizmosPtr = make_shared<Gizmos>();
 
     InitRenderPasses(Window);
+    SceneManagerPtr->Init();
 }
 
 void Renderer::InitRenderPasses(GLFWwindow* Window)
