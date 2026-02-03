@@ -28,5 +28,6 @@ void main()
     WorldNormals = Transform * vec4(normal.xyz, 1);
     UV = vec2(pos.xz / float(Size));
     gl_Position = Projection * View * WorldPos;
+    // in Light space to get shadow info
     PosLightClip = LightProjection * LightView * WorldPos;
 }

@@ -1,4 +1,4 @@
-﻿
+﻿/** Provides shared layout information regarding the Height uint */
 #define MAX_VALUE 10
 #define LAYOUT_SELECTION 31
 #define LAYOUT_TEX0 (LAYOUT_SELECTION - 1)
@@ -15,6 +15,7 @@
 #define DECORATION_GRASS 1
 #define DECORATION_FLOWER 2
 
+/** SSBO bindings, have to be the same as @TerrainSSBO! */
 #define SSBO_LAYOUT_VERTICES 0
 #define SSBO_LAYOUT_NORMALS 1
 #define SSBO_LAYOUT_HEIGHTS 2

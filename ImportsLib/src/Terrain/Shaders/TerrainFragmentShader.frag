@@ -72,6 +72,7 @@ void main()
     vec3 Grass = GrassColor * GrassNoise;
 
     // sample all available textures and display only the highest one
+    // since we have the info compressed in one uint we can re-use it  
     uint BaseIndex = GetBaseIndex(UV, TexSize);
     vec2 BaseID = UV * vec2(TexSize);
     uvec4 TexValues = GetTexValues(BaseIndex, TexSize);
@@ -93,8 +94,9 @@ void main()
     float GrassFactor = abs(dot(vec3(0, 1, 0), WorldNormals.xyz));
     vec3 TexColor = GrassFactor * Grass + (1 - GrassFactor) * Cliff;
 
+    // todo: shadow is offset from base still?
     float ShadowFactor = GetVarianceShadow();
-    vec3 TempShadowColor = ShadowColor;//(ShadowColor * 2 + TexColor) / 3.0;
+    vec3 TempShadowColor = (ShadowColor * 2 + TexColor) / 3.0;
     vec3 Color = mix(TempShadowColor, TexColor, ShadowFactor);
 
     FragColor = vec4(BrushColor + Color, 1);

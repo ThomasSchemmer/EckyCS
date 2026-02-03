@@ -14,6 +14,12 @@ namespace TTerrain
 
 namespace TTerrain
 {
+    /**
+     * Helper class providing functionality to get information about the terrain from the GPU
+     * Queries once every frame (if dirty) per @TerrainData
+     * Currently can interpolate height by world position
+     * Note: Due to the async nature of the GPU we request an update and can only receive it ~2 frames later!
+     */
     class TerrainHelper
     {
     public:
