@@ -166,6 +166,6 @@ namespace TTerrain
         /** Actual length of the vertical buffers */
         static int VerticalQuadLengthLookup[QuadIndexCount0];
 
-        
+        static constexpr unsigned int LAYOUT_HEIGHT_MASK = 0xFFu;
     };
 }

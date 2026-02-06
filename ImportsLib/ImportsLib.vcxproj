@@ -225,6 +225,8 @@
     <ClCompile Include="src\Terrain\TerrainHelper.cpp" />
     <ClCompile Include="src\Terrain\TerrainManager.cpp" />
     <ClCompile Include="src\Terrain\TerrainShader.cpp" />
+    <ClCompile Include="src\Terrain\Water\WaterData.cpp" />
+    <ClCompile Include="src\Terrain\Water\WaterShader.cpp" />
     <ClCompile Include="src\Util\ModelHelper.cpp" />
     <ClCompile Include="src\Util\ShaderHelper.cpp" />
   </ItemGroup>
@@ -750,6 +752,8 @@
     <ClInclude Include="src\Terrain\TerrainHelper.h" />
     <ClInclude Include="src\Terrain\TerrainManager.h" />
     <ClInclude Include="src\Terrain\TerrainShader.h" />
+    <ClInclude Include="src\Terrain\Water\WaterData.h" />
+    <ClInclude Include="src\Terrain\Water\WaterShader.h" />
     <ClInclude Include="src\Util\ActionMap.h" />
     <ClInclude Include="src\Util\Headers.h" />
     <ClInclude Include="src\Util\ModelHelper.h" />
@@ -766,9 +770,9 @@
     <Content Include="src\Renderer\Shaders\glsl\DepthVertexShader.vert" />
     <Content Include="src\Renderer\Shaders\glsl\Light.glsl" />
     <Content Include="src\Renderer\Shaders\glsl\Shadow.glsl" />
-    <Content Include="src\Terrain\Grass\GrassFragmentShader.frag" />
-    <Content Include="src\Terrain\Grass\GrassGeneration.comp" />
-    <Content Include="src\Terrain\Grass\GrassVertexShader.vert" />
+    <Content Include="src\Terrain\Grass\Shaders\GrassFragmentShader.frag" />
+    <Content Include="src\Terrain\Grass\Shaders\GrassGeneration.comp" />
+    <Content Include="src\Terrain\Grass\Shaders\GrassVertexShader.vert" />
     <Content Include="src\Terrain\Shaders\Noise.glsl" />
     <Content Include="src\Terrain\Shaders\TerrainCommon.glsl" />
     <Content Include="src\Terrain\Shaders\TerrainFragmentShader.frag" />
@@ -777,6 +781,8 @@
     <Content Include="src\Terrain\Shaders\TerrainSelect.comp" />
     <Content Include="src\Terrain\Shaders\TerrainVertexShader.vert" />
     <Content Include="src\Terrain\Shaders\TexLookup.glsl" />
+    <Content Include="src\Terrain\Water\Shaders\WaterFragmentShader.frag" />
+    <Content Include="src\Terrain\Water\Shaders\WaterVertexShader.vert" />
     <Content Include="Textures\flower.png" />
     <Content Include="Textures\leaf.png" />
     <EmbeddedResource Include="src\Renderer\Shaders\glsl\BaseFragmentShader.frag" />

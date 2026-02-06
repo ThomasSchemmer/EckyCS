@@ -5,12 +5,15 @@
 #include <gl\gl.h>
 
 #include "Grass/GrassData.h"
+#include "Water/WaterData.h"
 
 
 enum class RenderPassType : uint8_t;
 
 namespace TTerrain
 {
+    
+    class TerrainShaderSettings;
     
     enum class TerrainComputeMode : uint8_t
     {
@@ -44,10 +47,12 @@ namespace TTerrain
         ApplyHeight = 0,
     };
 
-    class TerrainShaderSettings;
+    
     /**
      * Holds all relevant data for a single terrain chunk
      * This includes buffer ids for opengl, transform etc
+     * Careful: Each TerrainData has its dependent @WaterData and @GrassData
+     * included in its lifecycle!
      */
     class TerrainData
     {
@@ -75,6 +80,7 @@ namespace TTerrain
         static glm::vec2 WorldSize2D;
 
         GrassData Grass;
+        WaterData Water;
 
         TerrainData(glm::vec3 WorldPos, const std::shared_ptr<TerrainManager>& Manager);
         ~TerrainData() = default;

@@ -22,9 +22,12 @@ namespace TTerrain
         glDrawArrays(GL_TRIANGLES, 0, AppendCount);
         if (Manager->bRenderGrass)
         {
-            auto& Frame = GameImports::Game::GetGpuFrame();
-            GPU_PROFILE(Frame, "Grass", legit::Colors::greenSea);
+            GPU_PROFILE(GameImports::Game::GetGpuFrame(), "Grass", legit::Colors::greenSea);
             Grass.Render(Type);
+        }
+        {
+            GPU_PROFILE(GameImports::Game::GetGpuFrame(), "Water", legit::Colors::peterRiver);
+            Water.Render(Type);
         }
     }
 
@@ -90,8 +93,9 @@ namespace TTerrain
         // actually compute the vertices & normals
         Dispatch((GLuint)TerrainComputeMode::GenerateTriangles, ComputeProgramMesh);
         
-        // now we can trigger the grass creation
+        // now we can trigger the grass/water creation
         Grass.DispatchGenerate(*this);
+        Water.DispatchGenerate(*this);
     }
 
     void TerrainData::CreateTempCompute()
@@ -130,6 +134,7 @@ namespace TTerrain
     void TerrainData::CleanUp() const
     {
         Grass.CleanUp();
+        Water.CleanUp();
         glDeleteBuffers(1, &VertexBuffer);
         glDeleteBuffers(1, &NormalBuffer);
         glDeleteBuffers(1, &HeightBuffer);
@@ -186,7 +191,7 @@ namespace TTerrain
     void TerrainData::ApplyToSettings(TerrainShaderSettings& Settings) const
     {
         Settings.GlobalWorldPos = GlobalWorldPos;
-        Settings.PositionBuffer = VertexBuffer;
+        Settings.VertexBuffer = VertexBuffer;
         Settings.NormalBuffer = NormalBuffer;
         Settings.HeightBuffer = HeightBuffer;
     }
@@ -194,7 +199,8 @@ namespace TTerrain
     void TerrainData::UpdateComputeVars(GLuint Program) const
     {
         ShaderHelper::SetUniform3fv("_WorldPos", GlobalWorldPos, Program);
-        ShaderHelper::SetUniform3iv("_WorldSize", TerrainData::WorldSize, Program);
+        ShaderHelper::SetUniform3iv("_WorldSize", WorldSize, Program);
+        ShaderHelper::SetUniform1ui("TargetHeightMask", TerrainManager::LAYOUT_HEIGHT_MASK, Program);
     }
 
     unsigned int TerrainData::GetHeightBufferSize()

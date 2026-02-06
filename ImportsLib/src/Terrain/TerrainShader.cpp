@@ -6,7 +6,7 @@
 #include "../Renderer/Camera.h"
 #include "../Renderer/Light.h"
 #include "../Util/ShaderHelper.h"
-class Light;
+
 using namespace Util;
 
 TTerrain::TerrainShader::TerrainShader()
@@ -77,7 +77,7 @@ void TTerrain::TerrainShader::UpdateVars(const TerrainShaderSettings& Settings) 
     ShaderHelper::SetUniformM4("LightView", Settings.Light->View, ActiveProgram);
     ShaderHelper::SetUniformTexture("ShadowMap", Settings.ShadowMap, 0, ActiveProgram);
 
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVertices, Settings.PositionBuffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVertices, Settings.VertexBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBONormals, Settings.NormalBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOHeights, Settings.HeightBuffer);
 

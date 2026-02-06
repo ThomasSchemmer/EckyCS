@@ -19,12 +19,6 @@ layout(std430, binding = SSBO_LAYOUT_HEIGHTS) buffer HeightBuffer {
 #define MODE_SELECT 1
 #define MODE_DESELECT 2
 
-#define TARGET_SELECTION 0
-#define TARGET_TEX0 1
-#define TARGET_TEX1 2
-#define TARGET_TEX2 3
-#define TARGET_GRASS 4
-#define TARGET_FLOWER 5
 
 /** Stores calculation by mode in an easy lookup table*/
 const uint LayoutByTarget[] = uint[](
@@ -33,7 +27,8 @@ const uint LayoutByTarget[] = uint[](
     LAYOUT_TEX1,         
     LAYOUT_TEX2,
     LAYOUT_GRASS,
-    LAYOUT_FLOWER         
+    LAYOUT_FLOWER,
+    LAYOUT_WATER
 );
 
 const bool EqualByTarget[] = bool[](
@@ -42,7 +37,8 @@ const bool EqualByTarget[] = bool[](
     false,      //LAYOUT_TEX1,     
     false,      //LAYOUT_TEX2      
     false,      //LAYOUT_GRASS      
-    false       //LAYOUT_FLOWER      
+    false,      //LAYOUT_FLOWER      
+    true        //LAYOUT_WATER      
 );
 
 uniform ivec2 _TexSize;
