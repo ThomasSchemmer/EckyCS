@@ -12,7 +12,8 @@ enum class RenderPassType : uint8_t;
 
 namespace TTerrain
 {
-    
+    class WaterShaderSettings;
+
     class TerrainShaderSettings;
     
     enum class TerrainComputeMode : uint8_t
@@ -92,11 +93,13 @@ namespace TTerrain
         void CleanUp() const;
         bool IsDirty() const;
         
-        void RenderTriangles(RenderPassType Type) const;
+        void RenderBase(RenderPassType Type) const;
+        void RenderWater(RenderPassType Type) const;
         
         void CreateTempCompute();
         void CreateCompute();
         void ApplyToSettings(TerrainShaderSettings& Settings) const;
+        void ApplyToSettings(WaterShaderSettings& Settings) const;
         void UpdateComputeVars(GLuint Program) const;
 
         std::shared_ptr<TerrainManager> Manager;

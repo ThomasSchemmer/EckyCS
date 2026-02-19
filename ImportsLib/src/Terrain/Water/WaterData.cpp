@@ -26,14 +26,17 @@ namespace TTerrain
         glUseProgram(Data.ComputeProgramMesh);
         ShaderHelper::ResetBufferCounter(CountBuffer);
         
-        ShaderHelper::SetUniform1ui("TargetHeightMask", LAYOUT_WATER, Data.ComputeProgramMesh);
+        ShaderHelper::SetUniform1ui("TargetHeightMask", LAYOUT_WATER_MASK, Data.ComputeProgramMesh);
+        ShaderHelper::SetUniform1ui("TargetHeightOffset", LAYOUT_WATER_OFFSET, Data.ComputeProgramMesh);
         
         // calculate how many vertices we will have per triangle
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVertices, 0);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBONormals, 0);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOHeights, Data.HeightBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVertexOffsets, VertexOffsetBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVerticalQuads, 0);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVerticalQuadLengths, 0);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOHorizontalQuads, 0);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOHorizontalQuads, Data.HorizontalQuadBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOCount, CountBuffer);
         Dispatch((GLuint)TerrainComputeMode::CountTriangles, Data.ComputeProgramMesh);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -92,5 +95,12 @@ namespace TTerrain
     {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVertices, VertexBuffer);
         glDrawArrays(GL_TRIANGLES, 0, AppendCount);
+    }
+
+    void WaterData::CleanUp() const
+    {
+        glDeleteBuffers(1, &CountBuffer);
+        glDeleteBuffers(1, &VertexBuffer);
+        glDeleteBuffers(1, &VertexOffsetBuffer);
     }
 }

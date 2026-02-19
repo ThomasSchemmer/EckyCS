@@ -104,6 +104,7 @@ uniform vec3 _WorldPos;
 uniform int VertexLookupLength0;
 uniform int VertexLookupLength1;
 uniform uint TargetHeightMask;
+uniform uint TargetHeightOffset;
 
 const int VertexMapLength = 28;
 
@@ -201,7 +202,8 @@ int GetHeightIndexFor(ivec3 id, ivec2 Offset){
 }
 
 int GetHeightForIndex(int Index){
-    return clamp(int(Heights.Value[Index] & TargetHeightMask), 0, MAX_VALUE - 1);
+    int Height = int(Heights.Value[Index] & TargetHeightMask) >> TargetHeightOffset;
+    return clamp(Height, 0, MAX_VALUE - 1);
 }
 
 

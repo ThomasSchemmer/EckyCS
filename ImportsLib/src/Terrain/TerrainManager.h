@@ -8,6 +8,7 @@
 #include "TerrainData.h"
 #include "../EckyCS/Systems/Rendering/SpriteGeometryProvider.h"
 #include "Grass/GrassData.h"
+#include "Water/WaterShader.h"
 
 
 namespace EckyCS
@@ -23,6 +24,7 @@ class Camera;
 
 namespace TTerrain
 {
+    class WaterShader;
     class GrassShader;
     using namespace std;
     class TerrainShaderSettings;
@@ -79,6 +81,7 @@ namespace TTerrain
         shared_ptr<Camera> CamPtr;
         shared_ptr<Light> LightPtr;
         shared_ptr<TerrainShader> TerrainShader;
+        shared_ptr<WaterShader> WaterShader;
         shared_ptr<GrassShader> GrassShader;
         shared_ptr<Renderer> RendererPtr;
         shared_ptr<EckyCS::SpriteGeometryProvider> GeometryProvider;
@@ -95,6 +98,7 @@ namespace TTerrain
         glm::vec2 BrushStartScreenPos;
         glm::vec3 SelectStartWorldPos;
         glm::vec3 RaiseStartWorldPos;
+        glm::vec2 DepthThreshold;
         int BrushStrength = 1;
         int BrushSize = 1;
 
@@ -120,7 +124,8 @@ namespace TTerrain
         void HandleResetting(bool bForce = false);
         void HandleSelecting();
         void HandleRaising();
-        void RenderTriangles(RenderPassType Type);
+        void RenderBase(RenderPassType Type);
+        void RenderWater(RenderPassType Type);
         void DrawRegularGizmos();
         void DrawLenseGizmos(glm::vec3& Pos);
         
@@ -134,7 +139,8 @@ namespace TTerrain
         
         void SaveData() const;
         void LoadData();
-        TerrainShaderSettings GetStandardSettings() const;
+        TerrainShaderSettings GetStandardBaseSettings() const;
+        WaterShaderSettings GetStandardWaterSettings() const;
         void UpdateComputeVars(GLuint Program) const;
         GLsizei GetTotalAppendCount() const; 
         
@@ -167,5 +173,6 @@ namespace TTerrain
         static int VerticalQuadLengthLookup[QuadIndexCount0];
 
         static constexpr unsigned int LAYOUT_HEIGHT_MASK = 0xFFu;
+        static constexpr unsigned int LAYOUT_HEIGHT_OFFSET = 0x0u;
     };
 }

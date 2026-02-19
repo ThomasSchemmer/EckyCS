@@ -19,6 +19,7 @@
 #include "Passes/BasePass.h"
 #include "Passes/ShadowPass.h"
 #include "../Scene/SceneManager.h"
+#include "Passes/DepthPrePass.h"
 
 using namespace EckyCS;
 using namespace Scene;
@@ -51,7 +52,10 @@ void Renderer::InitRenderPasses(GLFWwindow* Window)
     SPass->Create(Window);
     auto BPass = make_shared<BasePass>();
     BPass->Create(Window);
+    auto DPass = make_shared<DepthPrePass>();
+    DPass->Create(Window);
     RenderPasses.emplace_back(SPass);
+    RenderPasses.emplace_back(DPass);
     RenderPasses.emplace_back(BPass);
 }
 
@@ -81,26 +85,26 @@ void Renderer::Render()
         Game::Instance->TerrainPtr->Render(Pass->Type);
 
         auto CurrentShader = GetShaderForCurrentPass();
-        if (!CurrentShader)
-            continue;
-        
-        CurrentShader->Use();
-        CurrentShader->UpdateVars(Camera, LightPtr);
-        
-        for (auto& System : Systems)
+        if (CurrentShader)
         {
-            auto RenderSystem = dynamic_pointer_cast<BaseRenderSystem>(System);
-            if (!RenderSystem || !RenderSystem->SupportsRenderPass(Pass->Type))
-                continue;
+            CurrentShader->Use();
+            CurrentShader->UpdateVars(Camera, LightPtr);
+        
+            for (auto& System : Systems)
+            {
+                auto RenderSystem = dynamic_pointer_cast<BaseRenderSystem>(System);
+                if (!RenderSystem || !RenderSystem->SupportsRenderPass(Pass->Type))
+                    continue;
             
-            GPU_PROFILE(Game::GetGpuFrame(), "RenderSystem", legit::Colors::silver);   
-            RenderSystem->Render();
-        }
+                GPU_PROFILE(Game::GetGpuFrame(), "RenderSystem", legit::Colors::silver);   
+                RenderSystem->Render();
+            }
         
-        if (Pass->Type == RenderPassType::BasePass)
-        {
-            GPU_PROFILE(Game::GetGpuFrame(), "RenderGizmos", legit::Colors::silver);
-            GizmosPtr->Render();
+            if (Pass->Type == RenderPassType::BasePass)
+            {
+                GPU_PROFILE(Game::GetGpuFrame(), "RenderGizmos", legit::Colors::silver);
+                GizmosPtr->Render();
+            }
         }
 
         Pass->OnAfterRender();
@@ -155,6 +159,9 @@ std::shared_ptr<BaseShader> Renderer::GetShaderForCurrentPass() const
 
     if (CurrentRenderPass->Type == RenderPassType::ShadowPass)
         return DepthShaderPtr;
+    
+    if (CurrentRenderPass->Type == RenderPassType::DepthPrePass)
+        return ShaderPtr;
 
     return nullptr;
 }

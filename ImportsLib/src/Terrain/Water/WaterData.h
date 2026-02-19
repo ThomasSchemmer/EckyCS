@@ -20,6 +20,8 @@ namespace TTerrain
         void DispatchGenerate(TerrainData& Data);
         void Dispatch(GLuint Mode, GLuint Target);
         void Render(RenderPassType Type) const;
+        
+        void CleanUp() const;
 
     private:
         GLuint CountBuffer = 0;
@@ -32,6 +34,7 @@ namespace TTerrain
         void CreateCompute();
         
         
-        static constexpr unsigned int LAYOUT_WATER = 1 << 25;
+        static constexpr unsigned int LAYOUT_WATER_MASK = 1 << 25;
+        static constexpr unsigned int LAYOUT_WATER_OFFSET = 25;
     };
 }

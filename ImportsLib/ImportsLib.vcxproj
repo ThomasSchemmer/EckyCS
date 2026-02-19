@@ -210,6 +210,7 @@
     <ClCompile Include="src\Renderer\Camera.cpp" />
     <ClCompile Include="src\Renderer\Gizmos.cpp" />
     <ClCompile Include="src\Renderer\Light.cpp" />
+    <ClCompile Include="src\Renderer\Passes\DepthPrePass.cpp" />
     <ClCompile Include="src\Renderer\Passes\RenderPass.cpp" />
     <ClCompile Include="src\Renderer\Passes\ShadowPass.cpp" />
     <ClCompile Include="src\Renderer\Renderer.cpp" />
@@ -736,6 +737,7 @@
     <ClInclude Include="src\Renderer\Gizmos.h" />
     <ClInclude Include="src\Renderer\Light.h" />
     <ClInclude Include="src\Renderer\Passes\BasePass.h" />
+    <ClInclude Include="src\Renderer\Passes\DepthPrePass.h" />
     <ClInclude Include="src\Renderer\Passes\RenderPass.h" />
     <ClInclude Include="src\Renderer\Passes\ShadowPass.h" />
     <ClInclude Include="src\Renderer\Renderer.h" />

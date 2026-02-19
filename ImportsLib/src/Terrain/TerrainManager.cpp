@@ -14,10 +14,12 @@
 
 #include "TerrainShader.h"
 #include "../Renderer/Renderer.h"
+#include "../Renderer/Passes/DepthPrePass.h"
 #include "../Renderer/Passes/ShadowPass.h"
 #include "Grass/GrassData.h"
 #include "Grass/GrassShader.h"
 #include "LegitProfiler/GPUProfiler.h"
+#include "Water/WaterShader.h"
 
 using namespace std;
 using namespace Util;
@@ -74,6 +76,7 @@ namespace TTerrain
         CamPtr = RendererPtr->GetCamera();
         LightPtr = RendererPtr->GetLight();
         TerrainShader = make_shared<class TerrainShader>();
+        WaterShader = make_shared<class WaterShader>();
         GrassShader = make_shared<class GrassShader>();
         GeometryProvider = make_shared<EckyCS::SpriteGeometryProvider>();
         
@@ -86,7 +89,8 @@ namespace TTerrain
     {
         GPU_PROFILE(Game::GetGpuFrame(), "Terrain::Render", legit::Colors::alizarin);
         DispatchCompute();
-        RenderTriangles(Type);
+        RenderBase(Type);
+        RenderWater(Type);
         bWasPressingRaise = bIsRaising;
         bWasPressingSelect = bIsSelecting;
         bWasPressingDeSelect = bIsDeSelecting;
@@ -192,16 +196,33 @@ namespace TTerrain
         glPopDebugGroup();
     }
 
-    void TerrainManager::RenderTriangles(RenderPassType Type)
+    void TerrainManager::RenderBase(RenderPassType Type)
     {
         glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, TerrainShader->Program, -1, "RenderTerrain");
         TerrainShader->Use(Type);
-        auto Settings = GetStandardSettings();
+        auto Settings = GetStandardBaseSettings();
         for (auto& TData : TerrainDatas)
         {
             TData.ApplyToSettings(Settings);
             TerrainShader->UpdateVars(Settings);
-            TData.RenderTriangles(Type);
+            TData.RenderBase(Type);
+        }
+        glPopDebugGroup();
+    }
+
+    void TerrainManager::RenderWater(RenderPassType Type)
+    {
+        if (Type != RenderPassType::BasePass)
+            return; 
+        
+        glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, WaterShader->Program, -1, "RenderWater");
+        WaterShader->Use(Type);
+        auto Settings = GetStandardWaterSettings();
+        for (auto& TData : TerrainDatas)
+        {
+            TData.ApplyToSettings(Settings);
+            WaterShader->UpdateVars(Settings);
+            TData.RenderWater(Type);
         }
         glPopDebugGroup();
     }
@@ -212,6 +233,7 @@ namespace TTerrain
         ImGui::SliderInt("Size: ", &BrushSize, 1, 10);
         ImGui::SliderInt("Strength: ", &BrushStrength, 1, 10);
     
+        ImGui::DragFloat2("DepthThreshold", glm::value_ptr(DepthThreshold), 0, 1);
         ImGui::Spacing();
         ImGui::Columns(2);
         ImGui::SetNextItemWidth(150);
@@ -291,6 +313,7 @@ namespace TTerrain
     {
         TerrainShader->CleanUp();
         GrassShader->CleanUp();
+        WaterShader->CleanUp();
         for (auto& Data : TerrainDatas)
         {
             Data.CleanUp();
@@ -415,7 +438,7 @@ namespace TTerrain
         return TotalAppendCount;
     }
 
-    TerrainShaderSettings TerrainManager::GetStandardSettings() const
+    TerrainShaderSettings TerrainManager::GetStandardBaseSettings() const
     {
         // todo: this gets called / created a lot, streamline!
         static TerrainShaderSettings Settings;
@@ -441,6 +464,24 @@ namespace TTerrain
         Settings.VertexBuffer = 0;
         Settings.NormalBuffer = 0;
         Settings.HeightBuffer = 0;
+        
+        return Settings;
+    }
+
+    WaterShaderSettings TerrainManager::GetStandardWaterSettings() const
+    {
+        static WaterShaderSettings Settings;
+        Settings.RenderPassType = RendererPtr->GetCurrentRenderPassType();
+        Settings.TexSize = glm::ivec2(TerrainData::TexSize);
+        Settings.Camera = CamPtr;
+        Settings.Light = LightPtr;
+        auto DPass = RendererPtr->GetRenderPass<DepthPrePass>();
+        Settings.DepthTex = DPass ? DPass->DepthTex : 0;
+        
+        // will be filled by the different chunks
+        Settings.GlobalWorldPos = glm::vec3(0);
+        Settings.VertexBuffer = 0;
+        Settings.DepthThreshold = DepthThreshold;
         
         return Settings;
     }

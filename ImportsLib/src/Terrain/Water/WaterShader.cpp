@@ -19,7 +19,7 @@ namespace TTerrain
 
         vector IDs = {Vertex, Fragment};
         Program = ShaderHelper::CreateProgram(IDs);
-        glObjectLabel(GL_PROGRAM, Program, -1, "TerrainShaderProgram");
+        glObjectLabel(GL_PROGRAM, Program, -1, "WaterShaderProgram");
     
         glDeleteShader(Vertex);
         glDeleteShader(Fragment);
@@ -48,7 +48,9 @@ namespace TTerrain
         ShaderHelper::SetUniform2fv("LightClip", Settings.Light->ClipPlanes, Program);
         ShaderHelper::SetUniformM4("LightProjection", Settings.Light->Projection, Program);
         ShaderHelper::SetUniformM4("LightView", Settings.Light->View, Program);
-        ShaderHelper::SetUniformTexture("ShadowMap", Settings.ShadowMap, 0, Program);
+        ShaderHelper::SetUniformTexture("DepthTex", Settings.DepthTex, 0, Program);
+        
+        ShaderHelper::SetUniform2fv("DepthThreshold", Settings.DepthThreshold, Program);
 
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVertices, Settings.VertexBuffer);
     }

@@ -15,7 +15,7 @@ namespace TTerrain
     glm::vec3 TerrainData::WorldSize = glm::vec3(100, 10, 100);
     glm::vec2 TerrainData::WorldSize2D = glm::vec2(WorldSize.x, WorldSize.z);
     
-    void TerrainData::RenderTriangles(RenderPassType Type) const
+    void TerrainData::RenderBase(RenderPassType Type) const
     {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVertices, VertexBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBONormals, NormalBuffer);
@@ -25,10 +25,12 @@ namespace TTerrain
             GPU_PROFILE(GameImports::Game::GetGpuFrame(), "Grass", legit::Colors::greenSea);
             Grass.Render(Type);
         }
-        {
-            GPU_PROFILE(GameImports::Game::GetGpuFrame(), "Water", legit::Colors::peterRiver);
-            Water.Render(Type);
-        }
+    }
+
+    void TerrainData::RenderWater(RenderPassType Type) const
+    {
+        GPU_PROFILE(GameImports::Game::GetGpuFrame(), "Water", legit::Colors::peterRiver);
+        Water.Render(Type);
     }
 
     TerrainData::TerrainData(glm::vec3 WorldPos, const std::shared_ptr<TerrainManager>& Manager) :
@@ -196,11 +198,18 @@ namespace TTerrain
         Settings.HeightBuffer = HeightBuffer;
     }
 
+    void TerrainData::ApplyToSettings(WaterShaderSettings& Settings) const
+    {
+        Settings.GlobalWorldPos = GlobalWorldPos;
+        Settings.VertexBuffer = VertexBuffer;
+    }
+
     void TerrainData::UpdateComputeVars(GLuint Program) const
     {
         ShaderHelper::SetUniform3fv("_WorldPos", GlobalWorldPos, Program);
         ShaderHelper::SetUniform3iv("_WorldSize", WorldSize, Program);
         ShaderHelper::SetUniform1ui("TargetHeightMask", TerrainManager::LAYOUT_HEIGHT_MASK, Program);
+        ShaderHelper::SetUniform1ui("TargetHeightOffset", TerrainManager::LAYOUT_HEIGHT_OFFSET, Program);
     }
 
     unsigned int TerrainData::GetHeightBufferSize()

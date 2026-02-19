@@ -91,7 +91,7 @@ namespace TTerrain
             return;
 
         GrassShader->Use();
-        GrassShader->UpdateVars( GetStandardSettings(), Manager->GetStandardSettings());
+        GrassShader->UpdateVars( GetStandardSettings(), Manager->GetStandardBaseSettings());
         glDrawArraysInstanced(GL_TRIANGLES, 0, 6, AppendCount);
     }
 
