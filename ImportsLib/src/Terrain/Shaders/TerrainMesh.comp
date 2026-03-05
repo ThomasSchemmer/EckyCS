@@ -190,9 +190,9 @@ vec3 GetVertex(int Index, int Heights[4])
     // points into a collection of vec3
     int Start = Index * 3;
     vec3 Tmp = vec3(
-    VertexToWorld[Start],
-    Heights[int(VertexToWorld[Start + 2])],
-    VertexToWorld[Start + 1]
+        VertexToWorld[Start],
+        Heights[int(VertexToWorld[Start + 2])],
+        VertexToWorld[Start + 1]
     );
     return Tmp;
 }

@@ -34,7 +34,7 @@ namespace TTerrain
     }
 
     TerrainData::TerrainData(glm::vec3 WorldPos, const std::shared_ptr<TerrainManager>& Manager) :
-        GlobalWorldPos(WorldPos), ComputeProgramMesh(Manager->ComputeProgramMesh), ComputeProgramPaint(Manager->ComputeProgramPaint), ComputeProgramSelect(Manager->ComputeProgramSelect),
+        GlobalWorldPos(WorldPos), ComputeProgramMesh(Manager->ComputeProgramMesh), ComputeProgramRaise(Manager->ComputeProgramPaint), ComputeProgramSelect(Manager->ComputeProgramSelect),
         VerticalQuadBuffer(Manager->VerticalQuadBuffer), VerticalQuadLengthBuffer(Manager->VerticalQuadLengthBuffer), HorizontalQuadBuffer(Manager->HorizontalQuadBuffer),
         Grass(Manager), Manager(Manager)
     {
@@ -53,10 +53,10 @@ namespace TTerrain
 
     void TerrainData::DispatchRaise(GLuint Mode)
     {
-        glUseProgram(ComputeProgramPaint);
-        UpdateComputeVars(ComputeProgramPaint);
+        glUseProgram(ComputeProgramRaise);
+        UpdateComputeVars(ComputeProgramRaise);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOHeights, HeightBuffer);
-        Dispatch(Mode, ComputeProgramPaint);
+        Dispatch(Mode, ComputeProgramRaise);
     }
 
     void TerrainData::DispatchResetHeight()

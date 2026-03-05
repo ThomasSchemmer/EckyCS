@@ -20,6 +20,7 @@ namespace TTerrain
         GLuint VertexBuffer;
         glm::ivec2 TexSize;
         glm::vec2 DepthThreshold;
+        glm::vec2 ScreenSize;
         
         GLuint DepthTex;
 

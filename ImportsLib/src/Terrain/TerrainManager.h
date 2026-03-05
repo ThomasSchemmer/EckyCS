@@ -98,7 +98,7 @@ namespace TTerrain
         glm::vec2 BrushStartScreenPos;
         glm::vec3 SelectStartWorldPos;
         glm::vec3 RaiseStartWorldPos;
-        glm::vec2 DepthThreshold;
+        glm::vec2 DepthThreshold = glm::vec2(0.0f, 0.005f);
         int BrushStrength = 1;
         int BrushSize = 1;
 
@@ -145,7 +145,7 @@ namespace TTerrain
         GLsizei GetTotalAppendCount() const; 
         
         const wchar_t* ComputeShaderMesh = L"TERRAIN_MESH_COMPUTE_SHADER";
-        const wchar_t* ComputeShaderPaint = L"TERRAIN_PAINT_COMPUTE_SHADER";
+        const wchar_t* ComputeShaderPaint = L"TERRAIN_RAISE_COMPUTE_SHADER";
         const wchar_t* ComputeShaderSelect = L"TERRAIN_SELECT_COMPUTE_SHADER";
         
         const wchar_t* ComputeShaderGrass = L"TERRAIN_GRASS_COMPUTE_SHADER";
@@ -174,5 +174,7 @@ namespace TTerrain
 
         static constexpr unsigned int LAYOUT_HEIGHT_MASK = 0xFFu;
         static constexpr unsigned int LAYOUT_HEIGHT_OFFSET = 0x0u;
+        static constexpr int TARGET_BRUSH_TERRAIN = 0; 
+        static constexpr int TARGET_BRUSH_WATER = 6; 
     };
 }

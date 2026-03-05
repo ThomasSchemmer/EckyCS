@@ -34,7 +34,7 @@ namespace TTerrain
         void CreateCompute();
         
         
-        static constexpr unsigned int LAYOUT_WATER_MASK = 1 << 25;
-        static constexpr unsigned int LAYOUT_WATER_OFFSET = 25;
+        static constexpr unsigned int LAYOUT_WATER_MASK = 0xFF00u;
+        static constexpr unsigned int LAYOUT_WATER_OFFSET = 8u;
     };
 }

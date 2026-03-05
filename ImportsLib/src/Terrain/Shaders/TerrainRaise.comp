@@ -7,6 +7,7 @@
  */
 
 #define MODE_APPLY_HEIGHT 0
+#define MODE_APPLY_WATER 1
 
 #define DISPATCH_SIZE 2
 layout(local_size_x = DISPATCH_SIZE, local_size_y = DISPATCH_SIZE) in;
@@ -25,6 +26,23 @@ uniform int _BrushStrength;
 uniform uint _HasSelection;
 uniform uint _Mode;
 
+
+const uint MaskByMode[] = uint[](
+    LAYOUT_HEIGHT_MASK,
+    LAYOUT_WATER_MASK
+);
+
+const uint OffsetByMode[] = uint[](
+    LAYOUT_HEIGHT_OFFSET,
+    LAYOUT_WATER_OFFSET
+);
+
+const bool CombineByMode[] = bool[](
+    true,
+    false
+);
+        
+
 void main() {
     ivec3 id = ivec3(gl_GlobalInvocationID.x, 0, gl_GlobalInvocationID.y);
 
@@ -38,13 +56,23 @@ void main() {
     float NormDist = 1 - DistSqr / (_BrushSize * _BrushSize);
     NormDist = clamp(NormDist, 0, 1);
     
+    uint Mask = MaskByMode[_Mode];
+    uint Offset = OffsetByMode[_Mode];
+    
+    // are we in range for selection?
     uint SelectionValue = Heights.Value[GlobalIndex] >> LAYOUT_SELECTION;
     uint SelectionMask = _HasSelection == 1 ? SelectionValue : uint(round(NormDist));
     
     // has to be int, cause _BrushStrength can be negative
     int NewValue = int(_BrushStrength * SelectionMask);
-    uint HeightValue = clamp(int(OldValue & LAYOUT_HEIGHT_MASK) + NewValue, 0, MAX_VALUE) & LAYOUT_HEIGHT_MASK;  
-    uint Value = (OldValue & ~LAYOUT_HEIGHT_MASK) + HeightValue;
+    // since the layout can have an offset, we need to shift that away (and add it later again)
+    int CurrentTargetValue = int(OldValue & Mask) >> Offset;
+    int CombinedTargetValue = 
+        CombineByMode[_Mode] ? int(CurrentTargetValue + NewValue) :
+        int(SelectionMask * NewValue + (1 - SelectionMask) * CurrentTargetValue); 
+    uint ClampedTargetValue = clamp(CombinedTargetValue, 0, MAX_VALUE);
+    ClampedTargetValue = (ClampedTargetValue << Offset) & Mask;
+    uint Value = (OldValue & ~Mask) + ClampedTargetValue;
     
     Heights.Value[GlobalIndex] = Value;
 }

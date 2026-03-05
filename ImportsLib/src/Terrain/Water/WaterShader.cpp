@@ -51,6 +51,7 @@ namespace TTerrain
         ShaderHelper::SetUniformTexture("DepthTex", Settings.DepthTex, 0, Program);
         
         ShaderHelper::SetUniform2fv("DepthThreshold", Settings.DepthThreshold, Program);
+        ShaderHelper::SetUniform2fv("ScreenSize", Settings.ScreenSize, Program);
 
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVertices, Settings.VertexBuffer);
     }

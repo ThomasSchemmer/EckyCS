@@ -10,7 +10,7 @@ DEPTH_FRAGMENT_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/DepthFrag
 TERRAIN_VERTEX_SHADER  RCDATA           "./ImportsLib/src/Terrain/Shaders/TerrainVertexShader.vert"
 TERRAIN_FRAGMENT_SHADER  RCDATA         "./ImportsLib/src/Terrain/Shaders/TerrainFragmentShader.frag"
 TERRAIN_MESH_COMPUTE_SHADER  RCDATA     "./ImportsLib/src/Terrain/Shaders/TerrainMesh.comp"
-TERRAIN_PAINT_COMPUTE_SHADER  RCDATA    "./ImportsLib/src/Terrain/Shaders/TerrainPaint.comp"
+TERRAIN_RAISE_COMPUTE_SHADER  RCDATA    "./ImportsLib/src/Terrain/Shaders/TerrainRaise.comp"
 TERRAIN_SELECT_COMPUTE_SHADER  RCDATA   "./ImportsLib/src/Terrain/Shaders/TerrainSelect.comp"
 TERRAIN_GRASS_VERTEX_SHADER RCDATA      "./ImportsLib/src/Terrain/Grass/Shaders/GrassVertexShader.vert"
 TERRAIN_GRASS_FRAGMENT_SHADER RCDATA    "./ImportsLib/src/Terrain/Grass/Shaders/GrassFragmentShader.frag"

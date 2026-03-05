@@ -779,7 +779,7 @@
     <Content Include="src\Terrain\Shaders\TerrainCommon.glsl" />
     <Content Include="src\Terrain\Shaders\TerrainFragmentShader.frag" />
     <Content Include="src\Terrain\Shaders\TerrainMesh.comp" />
-    <Content Include="src\Terrain\Shaders\TerrainPaint.comp" />
+    <Content Include="src\Terrain\Shaders\TerrainRaise.comp" />
     <Content Include="src\Terrain\Shaders\TerrainSelect.comp" />
     <Content Include="src\Terrain\Shaders\TerrainVertexShader.vert" />
     <Content Include="src\Terrain\Shaders\TexLookup.glsl" />

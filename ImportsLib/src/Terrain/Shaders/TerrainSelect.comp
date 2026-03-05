@@ -20,7 +20,10 @@ layout(std430, binding = SSBO_LAYOUT_HEIGHTS) buffer HeightBuffer {
 #define MODE_DESELECT 2
 
 
-/** Stores calculation by mode in an easy lookup table*/
+/** 
+ * Stores calculation by mode in an easy lookup table
+ * Both height and water write to selection map, everything else directly into their slot
+ */
 const uint LayoutByTarget[] = uint[](
     LAYOUT_SELECTION,   
     LAYOUT_TEX0,         
@@ -28,7 +31,7 @@ const uint LayoutByTarget[] = uint[](
     LAYOUT_TEX2,
     LAYOUT_GRASS,
     LAYOUT_FLOWER,
-    LAYOUT_WATER
+    LAYOUT_SELECTION
 );
 
 const bool EqualByTarget[] = bool[](
@@ -38,7 +41,7 @@ const bool EqualByTarget[] = bool[](
     false,      //LAYOUT_TEX2      
     false,      //LAYOUT_GRASS      
     false,      //LAYOUT_FLOWER      
-    true        //LAYOUT_WATER      
+    true        //LAYOUT_SELECTION      
 );
 
 uniform ivec2 _TexSize;
@@ -66,6 +69,7 @@ void ApplySelection(ivec3 id){
     // as the first selected height (to make managing plateaus easier)
     vec2 OriginalUV = (_StartWorldPos.xz - _WorldPos.xz) / _WorldSize.xz * _TexSize;
     uint OriginalIndex = uint(OriginalUV.y) * _TexSize.x + uint(OriginalUV.x);
+    // todo: water should not depend on height?
     uint OriginalHeight = Heights.Value[OriginalIndex] & LAYOUT_HEIGHT_MASK;
     uint Height = Heights.Value[GlobalIndex] & LAYOUT_HEIGHT_MASK;
     

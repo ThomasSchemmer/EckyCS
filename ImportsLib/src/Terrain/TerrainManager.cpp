@@ -116,11 +116,15 @@ namespace TTerrain
 
         
         glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, ComputeProgramPaint, -1, "DispatchPaint");
+        GLuint RaiseMode =
+            TargetBrush == TARGET_BRUSH_WATER ? (GLuint)TerrainRaiseMode::ApplyWater :
+            (GLuint)TerrainRaiseMode::ApplyTerrain;
+        
         for (TerrainData& Data : TerrainDatas){
             glUseProgram(ComputeProgramPaint);
             ShaderHelper::SetUniform3fv("_BrushPos", RaiseStartWorldPos, ComputeProgramPaint);
             UpdateComputeVars(ComputeProgramPaint);
-            Data.DispatchRaise((GLuint)TerrainPaintMode::ApplyHeight);
+            Data.DispatchRaise(RaiseMode);
 
             glUseProgram(ComputeProgramMesh);
             UpdateComputeVars(ComputeProgramMesh);
@@ -296,7 +300,7 @@ namespace TTerrain
         ImGui::Checkbox("Select: ", &bIsSelecting);
         ImGui::Checkbox("Remove", &bIsDeSelecting);
         ImGui::NextColumn();
-        const char* items[] = { "Select", "Tex0", "Tex1", "Tex2", "Grass", "Flower", "Water" };
+        const char* items[] = { "Terrain", "Tex0", "Tex1", "Tex2", "Grass", "Flower", "Water" };
         ImGui::Combo("Target", &TargetBrush, items, IM_ARRAYSIZE(items));
         ImGui::Checkbox("Lense: ", &bIsLensing);
         ImGui::Columns(1);
@@ -483,6 +487,10 @@ namespace TTerrain
         Settings.VertexBuffer = 0;
         Settings.DepthThreshold = DepthThreshold;
         
+        GLFWmonitor* Monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode* Mode = glfwGetVideoMode(Monitor);
+        Settings.ScreenSize = glm::vec2(Mode->width, Mode->height);
+        
         return Settings;
     }
 
@@ -500,8 +508,7 @@ namespace TTerrain
         {
             file.write(reinterpret_cast<const char*>(&TData.GlobalWorldPos.x), sizeof(glm::vec3));
             std::vector<uint32_t> Data(BufferSize / sizeof(uint32_t));
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, TData.HeightBuffer);
-            glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, BufferSize, Data.data());
+            memcpy(Data.data(), TData.MappedHeightPtr, BufferSize);
             file.write(reinterpret_cast<char*>(Data.data()), BufferSize);
         }
 
@@ -510,6 +517,10 @@ namespace TTerrain
 
     void TerrainManager::LoadData()
     {
+        for (TerrainData& Data : TerrainDatas)
+        {
+            Data.CleanUp();
+        }
         TerrainDatas.clear();
 
         // basically the reverse of @SaveData()
@@ -533,16 +544,17 @@ namespace TTerrain
             File.read(reinterpret_cast<char*>(&WorldPos), sizeof(glm::vec3));
             File.read(reinterpret_cast<char*>(Data.data()), DataPerChunk);
             auto& TerrainData = TerrainDatas.emplace_back(WorldPos, shared_from_this());
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, TerrainData.HeightBuffer);
-            glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, DataPerChunk, Data.data());
+            memcpy(TerrainData.MappedHeightPtr, Data.data(), DataPerChunk);
         }
         File.close();
         
+        glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, ComputeProgramMesh, -1, "DispatchGenerateFromLoad");
         glUseProgram(ComputeProgramMesh);
         UpdateComputeVars(ComputeProgramMesh);
-        for (auto& TData : TerrainDatas)
+        for (TerrainData& TData : TerrainDatas)
         {
             TData.DispatchGenerate();
         }
+        glPopDebugGroup();
     }
 }

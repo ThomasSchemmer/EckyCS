@@ -11,6 +11,8 @@
 // keep this the same as @TerrainManager::..
 #define LAYOUT_HEIGHT_MASK 0xFFu
 #define LAYOUT_HEIGHT_OFFSET 0u
+#define LAYOUT_WATER_MASK 0xFF00u
+#define LAYOUT_WATER_OFFSET 8u
 
 #define DECORATION_TYPE_COUNT 2
 #define DECORATION_CHANCE_GRASS 1

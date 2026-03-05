@@ -43,9 +43,10 @@ namespace TTerrain
         Flower = 5
     };
 
-    enum class TerrainPaintMode : uint8_t
+    enum class TerrainRaiseMode : uint8_t
     {
-        ApplyHeight = 0,
+        ApplyTerrain = 0,
+        ApplyWater = 1,
     };
 
     
@@ -65,7 +66,7 @@ namespace TTerrain
 
         /** Owned by the manager! */
         GLuint ComputeProgramMesh;
-        GLuint ComputeProgramPaint;
+        GLuint ComputeProgramRaise;
         GLuint ComputeProgramSelect;
         GLuint VerticalQuadBuffer;
         GLuint VerticalQuadLengthBuffer;
@@ -107,6 +108,8 @@ namespace TTerrain
         static unsigned int GetHeightBufferSize();
         static unsigned int GetHeightBufferByteSize();
 
+        /** these buffers are continuously copied to cpu and used for terrain lookup,
+         * so just sync them permanently */
         void* MappedHeightPtr = nullptr;
         void* MappedVertexPtr = nullptr;
         void* MappedVertexOffsetPtr = nullptr;

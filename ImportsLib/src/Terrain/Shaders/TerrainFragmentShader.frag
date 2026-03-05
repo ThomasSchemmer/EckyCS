@@ -36,7 +36,7 @@ const float BrushBorder = 0.25;
 
 // binding 0 and 1 are vertex and normal buffer in vertex shader. 2 is count buffer. 3 is height
 // for more layout info see terrain mesh shader
-layout(std430, binding = 3) buffer HeightBuffer {
+layout(std430, binding = SSBO_LAYOUT_HEIGHTS) buffer HeightBuffer {
     uint Values[];
 } Heights;
 
