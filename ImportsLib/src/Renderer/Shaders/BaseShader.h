@@ -4,6 +4,7 @@
 
 #include <GL/glew.h>
 
+#include "Shader.h"
 #include "glm/matrix.hpp"
 
 class Light;
@@ -14,18 +15,18 @@ class Camera;
  * Displays a very basic, phong-lit material 
  */
 using namespace std;
-class BaseShader
+class BaseShader : public Shader
 {
     
 public:
-    unsigned int Program;
     BaseShader() = default;
-    virtual ~BaseShader() = default;
 
-    virtual void Create();
-    void Use() const;
+    void Create() override;
     void UpdateVars(const shared_ptr<Camera>& Camera, const shared_ptr<Light>& Light) const;
-    void CleanUp() const;
+    bool SupportsPass(RenderPassType Type) override;
+    void Use(RenderPassType Type) override;
+    void CleanUp() const override;
+    
 
 protected:
     glm::mat4 Transform;

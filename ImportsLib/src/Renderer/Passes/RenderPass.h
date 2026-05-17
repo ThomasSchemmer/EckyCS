@@ -9,16 +9,18 @@ enum class RenderPassType : uint8_t
     BasePass = 1,
     ShadowPass = 2,
     DepthPrePass = 3,
+    TransparentPass = 4,
 };
 
 inline const char* ToString(RenderPassType type)
 {
     switch(type)
     {
-    case RenderPassType::BasePass:      return "Base";
-    case RenderPassType::ShadowPass:    return "Shadow";
-    case RenderPassType::DepthPrePass:    return "DepthPrePass";
-    default:                            return "INVALID";
+        case RenderPassType::BasePass:          return "Base";
+        case RenderPassType::ShadowPass:        return "Shadow";
+        case RenderPassType::DepthPrePass:      return "DepthPrePass";
+        case RenderPassType::TransparentPass:   return "Transparent";
+        default:                                return "INVALID";
     }
 }
 

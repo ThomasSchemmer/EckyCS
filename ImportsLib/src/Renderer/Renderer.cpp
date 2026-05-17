@@ -20,6 +20,7 @@
 #include "Passes/ShadowPass.h"
 #include "../Scene/SceneManager.h"
 #include "Passes/DepthPrePass.h"
+#include "Passes/TransparentPass.h"
 
 using namespace EckyCS;
 using namespace Scene;
@@ -54,9 +55,12 @@ void Renderer::InitRenderPasses(GLFWwindow* Window)
     BPass->Create(Window);
     auto DPass = make_shared<DepthPrePass>();
     DPass->Create(Window);
-    RenderPasses.emplace_back(SPass);
+    auto TPass = make_shared<TransparentPass>();
+    TPass->Create(Window);
     RenderPasses.emplace_back(DPass);
+    RenderPasses.emplace_back(SPass);
     RenderPasses.emplace_back(BPass);
+    RenderPasses.emplace_back(TPass);
 }
 
 void Renderer::Update(float Delta) const
@@ -87,7 +91,7 @@ void Renderer::Render()
         auto CurrentShader = GetShaderForCurrentPass();
         if (CurrentShader)
         {
-            CurrentShader->Use();
+            CurrentShader->Use(Pass->Type);
             CurrentShader->UpdateVars(Camera, LightPtr);
         
             for (auto& System : Systems)

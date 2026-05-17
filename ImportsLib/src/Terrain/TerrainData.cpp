@@ -20,11 +20,6 @@ namespace TTerrain
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOVertices, VertexBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBONormals, NormalBuffer);
         glDrawArrays(GL_TRIANGLES, 0, AppendCount);
-        if (Manager->bRenderGrass)
-        {
-            GPU_PROFILE(GameImports::Game::GetGpuFrame(), "Grass", legit::Colors::greenSea);
-            Grass.Render(Type);
-        }
     }
 
     void TerrainData::RenderWater(RenderPassType Type) const

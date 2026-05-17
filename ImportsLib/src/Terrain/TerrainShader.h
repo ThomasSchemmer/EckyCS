@@ -6,6 +6,7 @@
 
 #include <glew/include/GL/glew.h>
 
+#include "Shader.h"
 #include "../Renderer/Passes/RenderPass.h"
 
 class Light;
@@ -41,25 +42,24 @@ namespace TTerrain
     /**
      * Link between the CPU/GPU - handles data passing into vertex/fragment shader
      */
-    class TerrainShader
+    class TerrainShader : public Shader
     {
     public:
-        TerrainShader();
-        ~TerrainShader() = default;
-        void Use(RenderPassType Type);
+        TerrainShader() = default;
         void UpdateVars(const TerrainShaderSettings& Settings) const;
-        void CleanUp() const;
-
-        GLuint Program;
+        void CleanUp() const override;
+        bool SupportsPass(RenderPassType Type) override;
+        void Create() override;
+        void Use(RenderPassType Type) override;
 
     private:
-        GLuint DepthProgram;
+        GLuint ShadowProgram;
         GLuint ActiveProgram = 0;
         glm::mat4 Transform;
    
         const wchar_t* VertexShader = L"TERRAIN_VERTEX_SHADER";
         const wchar_t* FragmentShader = L"TERRAIN_FRAGMENT_SHADER";
-        const wchar_t* DepthFragmentShader = L"DEPTH_FRAGMENT_SHADER";
+        const wchar_t* ShadowFragmentShader = L"DEPTH_FRAGMENT_SHADER";
 
     };
 }

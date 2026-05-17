@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include <memory>
 #include <glm/glm.hpp>
+
+#include "Shader.h"
 #include "GL/glew.h"
 #include "../../Renderer/Passes/RenderPass.h"
 
@@ -31,17 +33,16 @@ namespace TTerrain
     /**
      * Link between the CPU/GPU - handles data passing into vertex/fragment shader
      */
-    class WaterShader
+    class WaterShader : public Shader
     {
     public:
-        WaterShader();
-        ~WaterShader() = default;
-        void Use(RenderPassType Type);
+        WaterShader() = default;
         void UpdateVars(const WaterShaderSettings& Settings) const;
-        void CleanUp() const;
+        void CleanUp() const override;
+        void Create() override;
+        void Use(RenderPassType Type) override;
+        bool SupportsPass(RenderPassType Type) override;
         
-        GLuint Program = 0;
-
     private:
         glm::mat4 Transform;
    

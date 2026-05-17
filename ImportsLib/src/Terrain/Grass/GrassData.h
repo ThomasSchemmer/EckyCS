@@ -37,6 +37,7 @@ namespace TTerrain
         void DispatchGenerate(const TerrainData& Data);
         void CleanUp() const;
         void Render(RenderPassType Type) const;
+        GrassShaderSettings& GetStandardSettings() const;
         
     private:
         GLuint VAO = 0;
@@ -54,6 +55,5 @@ namespace TTerrain
         std::shared_ptr<GrassShader> GrassShader;
         std::shared_ptr<TerrainManager> Manager;
 
-        GrassShaderSettings& GetStandardSettings() const;
     };
 }

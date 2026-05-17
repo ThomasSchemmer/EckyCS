@@ -9,37 +9,6 @@
 
 using namespace Util;
 
-TTerrain::TerrainShader::TerrainShader()
-{
-    string VertexCode = ShaderHelper::LoadShaderFromResource(VertexShader);
-    string FragmentCode = ShaderHelper::LoadShaderFromResource(FragmentShader);
-    string DepthFragmentCode = ShaderHelper::LoadShaderFromResource(DepthFragmentShader);
-
-    unsigned int Vertex = ShaderHelper::CompileShader(VertexCode, GL_VERTEX_SHADER);
-    unsigned int Fragment = ShaderHelper::CompileShader(FragmentCode, GL_FRAGMENT_SHADER);
-    unsigned int DepthFragment = ShaderHelper::CompileShader(DepthFragmentCode, GL_FRAGMENT_SHADER);
-
-    vector IDs = {Vertex, Fragment};
-    Program = ShaderHelper::CreateProgram(IDs);
-    glObjectLabel(GL_PROGRAM, Program, -1, "TerrainShaderProgram");
-    
-    vector DepthIDs = {Vertex, DepthFragment};
-    DepthProgram = ShaderHelper::CreateProgram(DepthIDs);
-    glObjectLabel(GL_PROGRAM, DepthProgram, -1, "TerrainDepthShader");
-    
-    glDeleteShader(Vertex);
-    glDeleteShader(Fragment);
-    glDeleteShader(DepthFragment);
-    
-    Transform = glm::mat4(1.0f);
-}
-
-void TTerrain::TerrainShader::Use(RenderPassType Type)
-{
-    ActiveProgram = Type == RenderPassType::ShadowPass ?
-        DepthProgram : Program;
-    glUseProgram(ActiveProgram);
-}
 
 void TTerrain::TerrainShader::UpdateVars(const TerrainShaderSettings& Settings) const
 {
@@ -86,6 +55,43 @@ void TTerrain::TerrainShader::UpdateVars(const TerrainShaderSettings& Settings) 
 void TTerrain::TerrainShader::CleanUp() const
 {
     glDeleteProgram(Program);
-    glDeleteProgram(DepthProgram);
+    glDeleteProgram(ShadowProgram);
+}
+
+bool TTerrain::TerrainShader::SupportsPass(RenderPassType Type)
+{
+    return Type == RenderPassType::ShadowPass || Type == RenderPassType::BasePass || Type == RenderPassType::DepthPrePass;
+}
+
+void TTerrain::TerrainShader::Create()
+{
+    string VertexCode = ShaderHelper::LoadShaderFromResource(VertexShader);
+    string FragmentCode = ShaderHelper::LoadShaderFromResource(FragmentShader);
+    string DepthFragmentCode = ShaderHelper::LoadShaderFromResource(ShadowFragmentShader);
+
+    unsigned int Vertex = ShaderHelper::CompileShader(VertexCode, GL_VERTEX_SHADER);
+    unsigned int Fragment = ShaderHelper::CompileShader(FragmentCode, GL_FRAGMENT_SHADER);
+    unsigned int DepthFragment = ShaderHelper::CompileShader(DepthFragmentCode, GL_FRAGMENT_SHADER);
+
+    vector IDs = {Vertex, Fragment};
+    Program = ShaderHelper::CreateProgram(IDs);
+    glObjectLabel(GL_PROGRAM, Program, -1, "TerrainShaderProgram");
+    
+    vector DepthIDs = {Vertex, DepthFragment};
+    ShadowProgram = ShaderHelper::CreateProgram(DepthIDs);
+    glObjectLabel(GL_PROGRAM, ShadowProgram, -1, "TerrainDepthShader");
+    
+    glDeleteShader(Vertex);
+    glDeleteShader(Fragment);
+    glDeleteShader(DepthFragment);
+    
+    Transform = glm::mat4(1.0f);
+}
+
+void TTerrain::TerrainShader::Use(RenderPassType Type)
+{
+    ActiveProgram = Type == RenderPassType::ShadowPass ?
+        ShadowProgram : Program;
+    glUseProgram(ActiveProgram);
 }
 

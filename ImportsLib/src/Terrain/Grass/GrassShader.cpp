@@ -11,7 +11,7 @@
 using namespace std;
 using namespace Util;
 
-TTerrain::GrassShader::GrassShader()
+void TTerrain::GrassShader::Create()
 {
     
     string VertexCode = ShaderHelper::LoadShaderFromResource(GrassVertexShader);
@@ -35,7 +35,7 @@ TTerrain::GrassShader::GrassShader()
     glCreateVertexArrays(1, &VAO);
 }
 
-void TTerrain::GrassShader::Use() const
+void TTerrain::GrassShader::Use(RenderPassType Type)
 {
     glUseProgram(GrassProgram);
     glBindVertexArray(VAO);
@@ -75,4 +75,9 @@ void TTerrain::GrassShader::CleanUp() const
     glDeleteVertexArrays(1, &VAO);
     glDeleteProgram(GrassProgram);
     
+}
+
+bool TTerrain::GrassShader::SupportsPass(RenderPassType Type)
+{
+    return Type == RenderPassType::BasePass;
 }

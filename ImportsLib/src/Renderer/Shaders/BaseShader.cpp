@@ -8,6 +8,7 @@
 #include "../Camera.h"
 #include "../Light.h"
 #include "../../Util/ShaderHelper.h"
+#include "../Passes/RenderPass.h"
 using namespace Util;
 
 void BaseShader::Create()
@@ -35,7 +36,7 @@ void BaseShader::CreateInternal(const wchar_t* VShader, const wchar_t* FShader)
 }
 
 
-void BaseShader::Use() const
+void BaseShader::Use(RenderPassType Type)
 {
     glUseProgram(Program);
 }
@@ -53,6 +54,11 @@ void BaseShader::UpdateVars(const shared_ptr<Camera>& Camera, const shared_ptr<L
     ShaderHelper::SetUniform3fv("LightPos", Light->Position, Program);
     ShaderHelper::SetUniform3fv("LightDir", Light->GetForward(), Program);
     ShaderHelper::SetUniform3fv("CamPos", Camera->Position, Program);
+}
+
+bool BaseShader::SupportsPass(RenderPassType Type)
+{
+    return Type == RenderPassType::BasePass;
 }
 
 void BaseShader::CleanUp() const

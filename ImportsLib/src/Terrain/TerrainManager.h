@@ -125,6 +125,7 @@ namespace TTerrain
         void HandleSelecting();
         void HandleRaising();
         void RenderBase(RenderPassType Type);
+        void RenderGrass(RenderPassType Type);
         void RenderWater(RenderPassType Type);
         void DrawRegularGizmos();
         void DrawLenseGizmos(glm::vec3& Pos);

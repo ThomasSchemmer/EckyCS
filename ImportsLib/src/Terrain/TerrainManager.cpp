@@ -76,8 +76,11 @@ namespace TTerrain
         CamPtr = RendererPtr->GetCamera();
         LightPtr = RendererPtr->GetLight();
         TerrainShader = make_shared<class TerrainShader>();
+        TerrainShader->Create();
         WaterShader = make_shared<class WaterShader>();
+        WaterShader->Create();
         GrassShader = make_shared<class GrassShader>();
+        GrassShader->Create();
         GeometryProvider = make_shared<EckyCS::SpriteGeometryProvider>();
         
         CreateCompute();
@@ -90,6 +93,7 @@ namespace TTerrain
         GPU_PROFILE(Game::GetGpuFrame(), "Terrain::Render", legit::Colors::alizarin);
         DispatchCompute();
         RenderBase(Type);
+        RenderGrass(Type);
         RenderWater(Type);
         bWasPressingRaise = bIsRaising;
         bWasPressingSelect = bIsSelecting;
@@ -202,10 +206,13 @@ namespace TTerrain
 
     void TerrainManager::RenderBase(RenderPassType Type)
     {
+        if (!TerrainShader->SupportsPass(Type))
+            return;
+        
         glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, TerrainShader->Program, -1, "RenderTerrain");
         TerrainShader->Use(Type);
         auto Settings = GetStandardBaseSettings();
-        for (auto& TData : TerrainDatas)
+        for (TerrainData& TData : TerrainDatas)
         {
             TData.ApplyToSettings(Settings);
             TerrainShader->UpdateVars(Settings);
@@ -214,10 +221,28 @@ namespace TTerrain
         glPopDebugGroup();
     }
 
+    void TerrainManager::RenderGrass(RenderPassType Type)
+    {
+        if (!GrassShader->SupportsPass(Type))
+            return;
+        
+        glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, GrassShader->Program, -1, "RenderGrass");
+        GPU_PROFILE(GameImports::Game::GetGpuFrame(), "Grass", legit::Colors::greenSea);
+        
+        GrassShader->Use(Type);
+        for (TerrainData& TData : TerrainDatas)
+        {
+            auto& Grass = TData.Grass;
+            GrassShader->UpdateVars( Grass.GetStandardSettings(), GetStandardBaseSettings());
+            TData.Grass.Render(Type);
+        }
+        glPopDebugGroup();
+    }
+
     void TerrainManager::RenderWater(RenderPassType Type)
     {
-        if (Type != RenderPassType::BasePass)
-            return; 
+        if (!WaterShader->SupportsPass(Type))
+            return;
         
         glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, WaterShader->Program, -1, "RenderWater");
         WaterShader->Use(Type);

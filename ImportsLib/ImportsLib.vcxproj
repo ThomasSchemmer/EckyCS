@@ -740,9 +740,11 @@
     <ClInclude Include="src\Renderer\Passes\DepthPrePass.h" />
     <ClInclude Include="src\Renderer\Passes\RenderPass.h" />
     <ClInclude Include="src\Renderer\Passes\ShadowPass.h" />
+    <ClInclude Include="src\Renderer\Passes\TransparentPass.h" />
     <ClInclude Include="src\Renderer\Renderer.h" />
     <ClInclude Include="src\Renderer\Shaders\BaseShader.h" />
     <ClInclude Include="src\Renderer\Shaders\DepthShader.h" />
+    <ClInclude Include="src\Renderer\Shaders\Shader.h" />
     <ClInclude Include="src\Renderer\Util\Projector.h" />
     <ClInclude Include="src\Renderer\Util\Transform.h" />
     <ClInclude Include="src\Renderer\Util\Utils.h" />

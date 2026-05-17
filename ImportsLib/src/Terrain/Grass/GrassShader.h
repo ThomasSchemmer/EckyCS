@@ -4,6 +4,8 @@
 #include <glew/include/GL/glew.h>
 #include <glm/glm.hpp>
 
+#include "Shader.h"
+
 
 class Camera;
 
@@ -19,15 +21,15 @@ namespace TTerrain
         std::shared_ptr<Camera> Camera;
     };
     
-    class GrassShader
+    class GrassShader : public Shader
     {
     public:
-    
-        GrassShader();
-        ~GrassShader() = default;
-        void Use() const;
+        GrassShader() = default;
+        void Create() override;
+        void CleanUp() const override;
+        bool SupportsPass(RenderPassType Type) override;
+        void Use(RenderPassType Type) override;
         void UpdateVars(const GrassShaderSettings& Settings, const TerrainShaderSettings& TerrainSettings) const;
-        void CleanUp() const;
 
     private:
         GLuint VAO;

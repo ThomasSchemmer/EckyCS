@@ -87,11 +87,6 @@ namespace TTerrain
     
     void GrassData::Render(RenderPassType Type) const
     {
-        if (Type != RenderPassType::BasePass)
-            return;
-
-        GrassShader->Use();
-        GrassShader->UpdateVars( GetStandardSettings(), Manager->GetStandardBaseSettings());
         glDrawArraysInstanced(GL_TRIANGLES, 0, 6, AppendCount);
     }
 

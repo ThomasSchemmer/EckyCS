@@ -9,7 +9,7 @@ using namespace Util;
 
 namespace TTerrain
 {
-    WaterShader::WaterShader()
+    void WaterShader::Create()
     {
         string VertexCode = ShaderHelper::LoadShaderFromResource(VertexShader);
         string FragmentCode = ShaderHelper::LoadShaderFromResource(FragmentShader);
@@ -32,7 +32,12 @@ namespace TTerrain
         glUseProgram(Program);
     }
 
-    
+    bool WaterShader::SupportsPass(RenderPassType Type)
+    {
+        return Type == RenderPassType::TransparentPass;
+    }
+
+
     void WaterShader::UpdateVars(const WaterShaderSettings& Settings) const
     {
         // where should this be placed in world space?
