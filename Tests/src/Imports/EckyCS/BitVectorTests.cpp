@@ -1,9 +1,9 @@
-﻿
+﻿#include "gtest/gtest.h"
 #include "../../../../ImportsLib/src/EckyCS/Util/BitVector.h"
 
 using namespace EckyCS;
 
-TEST(SetBit, EckyCS::BitVector)
+TEST(SetBit, BitVector)
 {
     EckyCS::BitVector V;
     constexpr int Target = 15;
@@ -12,7 +12,7 @@ TEST(SetBit, EckyCS::BitVector)
     EXPECT_TRUE(V.Get(Target));
 }
 
-TEST(ToBitPos, EckyCS::BitVector)
+TEST(ToBitPos, BitVector)
 {
     constexpr int Target = 27;
     int PosByte, PosInByte;

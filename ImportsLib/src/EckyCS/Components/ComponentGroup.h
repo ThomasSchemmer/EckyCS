@@ -137,7 +137,7 @@ namespace EckyCS
 
         void ChangeSize(size_t NewCount)
         {
-            int OldCount = Count;
+            size_t OldCount = Count;
             Count = NewCount;
             ChangeSizeIDs(OldCount, NewCount);
             ChangeSizeComponents(OldCount, NewCount);

@@ -1,11 +1,11 @@
 ﻿#pragma once
 #include <cstdint>
+#include "../ECS.h"
 
 class Gizmos;
 
 namespace EckyCS
 {
-    class ECS;
     
     /**
      * Describes a system of the ECS:

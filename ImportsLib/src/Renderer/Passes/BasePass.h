@@ -4,15 +4,12 @@
 
 #include "RenderPass.h"
 
+/** RenderPass for all regularly displayed (ie non-transparent) objects in the scene
+ * Has information from shadow and depth pass
+ * Followed by transparent pass
+ */
 class BasePass : public RenderPass
 {
 public:
-    void Create(GLFWwindow* Window) override
-    {
-        Type = RenderPassType::BasePass; 
-        bCreateFrameBuffer = false;
-        glfwGetFramebufferSize(Window, &Width, &Height);
-        Name = "BasePass";
-        RenderPass::Create(Window);
-    }
+    void Create(GLFWwindow* Window, Renderer* Renderer) override;
 };

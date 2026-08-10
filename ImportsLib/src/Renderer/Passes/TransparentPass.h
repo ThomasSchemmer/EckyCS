@@ -4,17 +4,18 @@
 class TransparentPass : public RenderPass
 {
 public:
-    void Create(GLFWwindow* Window) override
+    void Create(GLFWwindow* Window, Renderer* Renderer) override
     {
-        Type = RenderPassType::TransparentPass; 
-        bCreateFrameBuffer = false;
-        glfwGetFramebufferSize(Window, &Width, &Height);
+        Type = RenderPassType::TransparentPass;
+        FBOTarget = FrameBufferTarget::Base;
+        SetDimensions(Window);
         Name = "TransparentPass";
-        RenderPass::Create(Window);
+        RenderPass::Create(Window, Renderer);
     }
 
     void Use() const override
     {
+        RenderPass::Use();
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -26,6 +27,7 @@ public:
 
     void UnUse() const override
     {
+        RenderPass::UnUse();
         glDepthMask(GL_TRUE);
         glDisable(GL_BLEND);
     }

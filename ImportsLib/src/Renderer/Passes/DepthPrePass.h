@@ -9,7 +9,7 @@
 class DepthPrePass : public RenderPass
 {
 public:
-    void Create(GLFWwindow* Window) override;
+    void Create(GLFWwindow* Window, Renderer* Renderer) override;
     
     
 };

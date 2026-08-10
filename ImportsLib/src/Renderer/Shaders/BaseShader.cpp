@@ -38,12 +38,13 @@ void BaseShader::CreateInternal(const wchar_t* VShader, const wchar_t* FShader)
 
 void BaseShader::Use(RenderPassType Type)
 {
+    glActiveTexture(GL_TEXTURE0);
+    //glBindTexture(GL_TEXTURE_2D, 0);
     glUseProgram(Program);
 }
 
 void BaseShader::UpdateVars(const shared_ptr<Camera>& Camera, const shared_ptr<Light>& Light) const
 {
-
     float Time = static_cast<float>(glfwGetTime());
     float TimeOffset = (sin(Time) / 2.0f) + 0.5f;
     ShaderHelper::SetUniform1f("Offset", TimeOffset, Program);

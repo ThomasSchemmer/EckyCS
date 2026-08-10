@@ -21,11 +21,11 @@ class BaseShader : public Shader
 public:
     BaseShader() = default;
 
-    void Create() override;
-    void UpdateVars(const shared_ptr<Camera>& Camera, const shared_ptr<Light>& Light) const;
-    bool SupportsPass(RenderPassType Type) override;
-    void Use(RenderPassType Type) override;
-    void CleanUp() const override;
+    virtual void Create() override;
+    virtual void UpdateVars(const shared_ptr<Camera>& Camera, const shared_ptr<Light>& Light) const;
+    virtual bool SupportsPass(RenderPassType Type) override;
+    virtual void Use(RenderPassType Type) override;
+    virtual void CleanUp() const override;
     
 
 protected:

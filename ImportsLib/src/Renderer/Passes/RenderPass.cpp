@@ -1,11 +1,16 @@
 ﻿#include "RenderPass.h"
 
 #include <iostream>
+#include "../Renderer.h"
 
-void RenderPass::Create(GLFWwindow*)
+void RenderPass::Create(GLFWwindow*, Renderer* Renderer)
 {
-    if (!bCreateFrameBuffer)
+    // already exists so we are not supposed to do anything
+    if (GLuint GlobalFBO = Renderer->HasFrameBuffer(FBOTarget); GlobalFBO != GLuint(-1))
+    {
+        FBO = GlobalFBO;
         return;
+    }
     
     glGenFramebuffers(1, &FBO);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
@@ -28,6 +33,7 @@ void RenderPass::Create(GLFWwindow*)
         std::cerr << "ERROR::RENDERPASS::USE_FAILED\n";
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    Renderer->SetFrameBuffer(FBOTarget, FBO);
 }
 
 void RenderPass::Use() const
@@ -35,7 +41,11 @@ void RenderPass::Use() const
     glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, Name.data());
     glViewport(0, 0, Width, Height);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-    glClear(ClearFlags);
+    glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, ClearColor.w);
+    if (Type != RenderPassType::TransparentPass)
+    {
+        glClear(ClearFlags);
+    }
 }
 
 void RenderPass::UnUse() const
@@ -48,6 +58,14 @@ void RenderPass::CleanUp() const
     if (DepthTex != 0) glDeleteTextures(1, &DepthTex);
     if (ColorTex != 0) glDeleteTextures(1, &ColorTex);
     if (FBO != 0) glDeleteFramebuffers(1, &FBO);
+}
+
+void RenderPass::SetDimensions(GLFWwindow* Window)
+{
+    const int Multiplier = bIsDownSampled ? 4 : 1; 
+    glfwGetFramebufferSize(Window, &Width, &Height);
+    Width = Width / Multiplier;
+    Height = Height / Multiplier;
 }
 
 GLuint RenderPass::CreateDepthTexture(int Width, int Height, GLint DepthSamplingMethod)
@@ -63,12 +81,14 @@ GLuint RenderPass::CreateDepthTexture(int Width, int Height, GLint DepthSampling
     return Tex;
 }
 
-GLuint RenderPass::CreateColorTexture(int Width, int Height, GLint ColorSamplingMethod)
+GLuint RenderPass::CreateColorTexture(int Width, int Height, GLint ColorSamplingMethod, bool bUseRGB)
 {
     GLuint Tex;
     glGenTextures(1, &Tex);
     glBindTexture(GL_TEXTURE_2D, Tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, Width, Height, 0, GL_RG, GL_FLOAT, nullptr);
+    GLint InternalFormat = bUseRGB ? GL_RGB : GL_RG32F;
+    GLenum Format = bUseRGB ? GL_RGB : GL_RG;
+    glTexImage2D(GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, Format, GL_FLOAT, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, ColorSamplingMethod);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, ColorSamplingMethod);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);

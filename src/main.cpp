@@ -184,7 +184,10 @@ namespace
 
 		Game::ProfilerWindow.Render(Game::GetLastGpuFrame());
 		Game::GpuFrameNext();
-		
+		GLint viewport[4];
+		glGetIntegerv(GL_VIEWPORT, viewport);
+
+		Game::GetRenderer()->Reset();
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		

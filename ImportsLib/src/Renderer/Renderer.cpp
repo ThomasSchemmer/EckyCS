@@ -20,6 +20,7 @@
 #include "Passes/ShadowPass.h"
 #include "../Scene/SceneManager.h"
 #include "Passes/DepthPrePass.h"
+#include "Passes/PostProcessingPass.h"
 #include "Passes/TransparentPass.h"
 
 using namespace EckyCS;
@@ -34,6 +35,7 @@ void Renderer::Init(GLFWwindow* Window)
     DepthShaderPtr->Create();
     Camera = make_shared<class Camera>(Window);
     SceneManagerPtr = make_shared<Scene::SceneManager>();
+    PostProcessingPtr = make_shared<PostProcessing::PostProcessingManager>();
     LightPtr = make_shared<Light>(
         glm::vec3(10),
         glm::vec3(glm::radians(125.0f), glm::radians(140.0f), 0),
@@ -42,25 +44,44 @@ void Renderer::Init(GLFWwindow* Window)
         Camera
     );
     GizmosPtr = make_shared<Gizmos>();
-
+    
     InitRenderPasses(Window);
     SceneManagerPtr->Init();
+    PostProcessingPtr->Init();
 }
 
 void Renderer::InitRenderPasses(GLFWwindow* Window)
 {
+    // TODO: FBOs are not shared between base pass and transparent pass
+    // add a filtering / sharing mekanism for FBOs that auto creates and links them when necessary
     auto SPass = make_shared<ShadowPass>();
-    SPass->Create(Window);
+    SPass->Create(Window, this);
     auto BPass = make_shared<BasePass>();
-    BPass->Create(Window);
+    BPass->Create(Window, this);
     auto DPass = make_shared<DepthPrePass>();
-    DPass->Create(Window);
+    DPass->Create(Window, this);
     auto TPass = make_shared<TransparentPass>();
-    TPass->Create(Window);
+    TPass->Create(Window, this);
+    auto PPass = make_shared<PostProcessingPass>(SPass->ColorTex);
+    PPass->Create(Window, this);
     RenderPasses.emplace_back(DPass);
     RenderPasses.emplace_back(SPass);
     RenderPasses.emplace_back(BPass);
     RenderPasses.emplace_back(TPass);
+    RenderPasses.emplace_back(PPass);
+}
+
+void Renderer::RenderECS(const shared_ptr<RenderPass>& Pass, const vector<shared_ptr<System>>& Systems) const
+{
+    for (const shared_ptr<System>& System : Systems)
+    {
+        auto RenderSystem = dynamic_pointer_cast<BaseRenderSystem>(System);
+        if (!RenderSystem || !RenderSystem->SupportsRenderPass(Pass->Type))
+            continue;
+            
+        GPU_PROFILE(Game::GetGpuFrame(), "RenderSystem", legit::Colors::silver);   
+        RenderSystem->Render();
+    }
 }
 
 void Renderer::Update(float Delta) const
@@ -76,7 +97,7 @@ void Renderer::Render()
     vector<shared_ptr<System>> Systems;
     Ecs->TryGetSystems<BaseRenderSystem>(OUT Systems);
     
-    for (auto& Pass : RenderPasses)
+    for (shared_ptr<RenderPass>& Pass : RenderPasses)
     {
         auto TypeStr = std::string("Render::")+ToString(Pass->Type);
         CPU_PROFILE(Game::CpuProfilerFrame, TypeStr.c_str(), legit::Colors::pumpkin);
@@ -86,6 +107,7 @@ void Renderer::Render()
         CurrentRenderPass = Pass;
 
         // terrain has its own shaders, so do it before the global ones
+        // TODO: can probably make the shaders quicker for shadows etc
         Game::Instance->TerrainPtr->Render(Pass->Type);
 
         auto CurrentShader = GetShaderForCurrentPass();
@@ -93,22 +115,20 @@ void Renderer::Render()
         {
             CurrentShader->Use(Pass->Type);
             CurrentShader->UpdateVars(Camera, LightPtr);
-        
-            for (auto& System : Systems)
-            {
-                auto RenderSystem = dynamic_pointer_cast<BaseRenderSystem>(System);
-                if (!RenderSystem || !RenderSystem->SupportsRenderPass(Pass->Type))
-                    continue;
-            
-                GPU_PROFILE(Game::GetGpuFrame(), "RenderSystem", legit::Colors::silver);   
-                RenderSystem->Render();
-            }
+            // this includes all matching systems, so be careful!
+            RenderECS(Pass, Systems);
         
             if (Pass->Type == RenderPassType::BasePass)
             {
                 GPU_PROFILE(Game::GetGpuFrame(), "RenderGizmos", legit::Colors::silver);
                 GizmosPtr->Render();
             }
+        }
+
+        if (Pass->Type == RenderPassType::PostProcessingPass)
+        {
+            PostProcessingPtr->Update(Pass->Type);
+            PostProcessingPtr->Render(Pass->Type);
         }
 
         Pass->OnAfterRender();
@@ -124,6 +144,14 @@ void Renderer::Render()
     Camera->OnDrawGizmos(GizmosPtr);
     LightPtr->OnDrawGizmos(GizmosPtr);
     Game::Instance->TerrainPtr->OnDrawGizmos(GizmosPtr);
+}
+
+void Renderer::Reset()
+{
+    int width, height;
+    glfwGetFramebufferSize(Game::Instance->WindowPtr, &width, &height);
+    glViewport(0, 0, width, height);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 
@@ -157,22 +185,34 @@ std::shared_ptr<BaseShader> Renderer::GetShaderForCurrentPass() const
 {
     if (!CurrentRenderPass)
         return nullptr;
-    
-    if (CurrentRenderPass->Type == RenderPassType::BasePass)
-        return ShaderPtr;
 
-    if (CurrentRenderPass->Type == RenderPassType::ShadowPass)
-        return DepthShaderPtr;
-    
-    if (CurrentRenderPass->Type == RenderPassType::DepthPrePass)
-        return ShaderPtr;
-
-    return nullptr;
+    switch (CurrentRenderPass->Type)
+    {
+        case RenderPassType::BasePass: return ShaderPtr;
+        case RenderPassType::DepthPrePass: return ShaderPtr;
+        case RenderPassType::ShadowPass: return DepthShaderPtr;
+        // we have potentially a lot to chose from, so let the PP manager handle it
+        case RenderPassType::PostProcessingPass: return PostProcessingPtr->GetShader();
+        default: return nullptr;
+    }
 }
 
 RenderPassType Renderer::GetCurrentRenderPassType() const
 {
     return CurrentRenderPass ? CurrentRenderPass->Type : RenderPassType::Invalid;
+}
+
+GLuint Renderer::HasFrameBuffer(FrameBufferTarget Target) const
+{
+    if (!FrameBufferObjects.contains(Target))
+        return -1;
+    
+    return FrameBufferObjects.at(Target);
+}
+
+void Renderer::SetFrameBuffer(FrameBufferTarget Target, GLuint FBO)
+{
+    FrameBufferObjects[Target] = FBO;
 }
 
 

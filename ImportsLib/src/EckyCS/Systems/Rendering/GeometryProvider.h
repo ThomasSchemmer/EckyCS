@@ -6,6 +6,7 @@ namespace EckyCS
     /**
      * Describes what geometry should be rendered for the Entities
      * Can be a @MeshDataProvider, or @SpriteDataProvider
+     * TODO: should not be in EckyCS, but global rendering
      */
     class GeometryProvider
     {

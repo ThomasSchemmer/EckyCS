@@ -1,4 +1,5 @@
 ﻿#pragma once
+
 #include "RenderPass.h"
 
 /**
@@ -10,7 +11,7 @@
 class ShadowPass : public RenderPass
 {
 public:
-    void Create(GLFWwindow* Window) override;
+    void Create(GLFWwindow* Window, Renderer* Renderer) override;
     void OnAfterRender() override;
     void CleanUp() const override;
     virtual void Use() const override;

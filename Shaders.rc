@@ -6,7 +6,7 @@ BASE_FRAGMENT_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/BaseFragme
 DEPTH_VERTEX_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/DepthVertexShader.vert"
 DEPTH_FRAGMENT_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/DepthFragmentShader.frag"
 
-/*  Terrain related shader */
+/*  Terrain */
 TERRAIN_VERTEX_SHADER  RCDATA           "./ImportsLib/src/Terrain/Shaders/TerrainVertexShader.vert"
 TERRAIN_FRAGMENT_SHADER  RCDATA         "./ImportsLib/src/Terrain/Shaders/TerrainFragmentShader.frag"
 TERRAIN_MESH_COMPUTE_SHADER  RCDATA     "./ImportsLib/src/Terrain/Shaders/TerrainMesh.comp"
@@ -23,6 +23,9 @@ TERRAIN_NOISE_SHADER  RCDATA            "./ImportsLib/src/Terrain/Shaders/Noise.
 TERRAIN_COMMON_SHADER  RCDATA           "./ImportsLib/src/Terrain/Shaders/TerrainCommon.glsl"
 TERRAIN_TEXLOOKUP_SHADER  RCDATA        "./ImportsLib/src/Terrain/Shaders/TexLookup.glsl"
 
+/** PostProcessing */
+PIXEL_VERTEX_SHADER  RCDATA           "./ImportsLib/src/Renderer/PostProcessing/Shaders/glsl/PixelShader.vert"
+PIXEL_FRAGMENT_SHADER  RCDATA         "./ImportsLib/src/Renderer/PostProcessing/Shaders/glsl/PixelShader.frag"
 
 /** Textures */
 TERRAIN_GRASS_TEX_LOCATION RCDATA       "./ImportsLib/Textures/leaf.png";

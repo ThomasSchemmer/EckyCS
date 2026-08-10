@@ -1,11 +1,12 @@
 #include "DepthPrePass.h"
 
-void DepthPrePass::Create(GLFWwindow* Window)
+void DepthPrePass::Create(GLFWwindow* Window, Renderer* Renderer)
 {
     Type = RenderPassType::DepthPrePass;
-    glfwGetFramebufferSize(Window, &Width, &Height);
+    FBOTarget = FrameBufferTarget::Depth;
+    SetDimensions(Window);
     ClearFlags = GL_DEPTH_BUFFER_BIT;
     DepthTex = CreateDepthTexture(Width, Height, GL_NEAREST);
     Name = "DepthPrePass";
-    RenderPass::Create(Window);
+    RenderPass::Create(Window, Renderer);
 }

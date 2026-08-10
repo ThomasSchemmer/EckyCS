@@ -514,7 +514,7 @@ namespace TTerrain
         
         GLFWmonitor* Monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode* Mode = glfwGetVideoMode(Monitor);
-        Settings.ScreenSize = glm::vec2(Mode->width, Mode->height);
+        Settings.ScreenSize = glm::vec2(Mode->width / 4, Mode->height / 4);
         
         return Settings;
     }

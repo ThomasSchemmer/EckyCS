@@ -1,18 +1,21 @@
 ﻿#include "ShadowPass.h"
 
 #include "../../Util/ShaderHelper.h"
+#include "../Renderer.h"
 using namespace Util;
 
-void ShadowPass::Create(GLFWwindow* Window) 
+void ShadowPass::Create(GLFWwindow* Window, Renderer* Renderer) 
 {
-    Type = RenderPassType::ShadowPass; 
+    Type = RenderPassType::ShadowPass;
+    FBOTarget = FrameBufferTarget::Shadow;
+    // explicit size for shadow maps!
     Width = 1024;
     Height = 1024;
     ClearFlags = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
     DepthTex = CreateDepthTexture(Width, Height, GL_NEAREST);
-    ColorTex = CreateColorTexture(Width, Height, GL_LINEAR);
+    ColorTex = CreateColorTexture(Width, Height, GL_LINEAR, false);
     Name = "ShadowPass";
-    RenderPass::Create(Window);
+    RenderPass::Create(Window, Renderer);
     TempOut = CreateColorTexture(Width, Height, GL_LINEAR);
     
     BlurTexCompute = ShaderHelper::CreateComputeProgram({BlurTexComputeID});

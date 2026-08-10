@@ -28,10 +28,19 @@ void main() {
     float SelfDepth = gl_FragCoord.z;
     vec2 uv = gl_FragCoord.xy / ScreenSize;
     float RefDepth = texture(DepthTex, uv).r;
-    RefDepth = RefDepth > 0.95 ? SelfDepth : RefDepth;
-    float DepthDiff = clamp((RefDepth - SelfDepth) * 25, 0, 1);
-    vec3 WaterColor = mix(ShallowWaterColor, DeepWaterColor, DepthDiff);
-    float FoamFactor = 1 - smoothstep(0.0, 0.2, DepthDiff);
     
-    FragColor = vec4(WaterColor + vec3(FoamFactor), 1);
+    float RawDepthDiff = RefDepth - SelfDepth;
+    float DepthDiff = 0.0;
+    float FoamFactor = 0.0;
+    if (RefDepth < 0.95 && RawDepthDiff > 0.01)
+    {
+        DepthDiff = clamp(RawDepthDiff * 25, 0.0, 1.0);
+        FoamFactor = 1.0 - smoothstep(0.0, 0.2, DepthDiff * .25);
+    }
+    
+    vec3 WaterColor = mix(ShallowWaterColor, DeepWaterColor, DepthDiff);
+    WaterColor = mix(WaterColor, vec3(1), FoamFactor);
+    
+    FragColor = vec4(WaterColor, DepthDiff > 0.01);
+
 }

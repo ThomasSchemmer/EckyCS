@@ -4,7 +4,7 @@
 #include <glew/include/GL/glew.h>
 #include <glm/glm.hpp>
 
-#include "Shader.h"
+#include "../../Renderer/Shaders/Shader.h"
 
 
 class Camera;
@@ -20,7 +20,11 @@ namespace TTerrain
         
         std::shared_ptr<Camera> Camera;
     };
-    
+
+    /**
+     * Wrapper class to hold the grass shader. Indirect rendered billboard shader
+     * that gets its data through the compute shaders
+     * */
     class GrassShader : public Shader
     {
     public:

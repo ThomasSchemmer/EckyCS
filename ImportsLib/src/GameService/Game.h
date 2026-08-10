@@ -6,6 +6,7 @@
 #include "GameService.h"
 #include <glew/include/GL/glew.h>
 
+#include "../Renderer/PostProcessing/PostProcessingManager.h"
 #include "../Terrain/TerrainManager.h"
 #include "GLFW/glfw3.h"
 #include "LegitProfiler/CPUProfiler.h"
@@ -58,7 +59,7 @@ namespace GameImports {
 		static unsigned int FrameCounter;
 		shared_ptr<Renderer> RendererPtr;
 		shared_ptr<TTerrain::TerrainManager> TerrainPtr;
-
+		
 		// profiler stuff, should probably be only debug
 		static legit::CpuProfilerFrame CpuProfilerFrame;
 		//ring buffer

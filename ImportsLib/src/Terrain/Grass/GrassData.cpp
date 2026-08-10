@@ -49,7 +49,7 @@ namespace TTerrain
         ShaderHelper::ResetBufferCounter(CountBuffer);
 
         ShaderHelper::SetUniform1ui("_Mode", 0, GrassCompute);
-        ShaderHelper::SetUniform2iv("_TexSize", glm::vec2(TerrainData::TexSize), GrassCompute);
+        ShaderHelper::SetUniform2iv("_TexSize", glm::ivec2(TerrainData::TexSize), GrassCompute);
         ShaderHelper::SetUniform2iv("_TargetCount", TargetCount, GrassCompute);
         ShaderHelper::SetUniform3iv("_WorldSize", TerrainData::WorldSize, GrassCompute);
         ShaderHelper::SetUniform3fv("_GlobalWorldPos", Data.GlobalWorldPos, GrassCompute);

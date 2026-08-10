@@ -2,7 +2,7 @@
 #include <memory>
 #include <glm/glm.hpp>
 
-#include "Shader.h"
+#include "../../Renderer/Shaders/Shader.h"
 #include "GL/glew.h"
 #include "../../Renderer/Passes/RenderPass.h"
 

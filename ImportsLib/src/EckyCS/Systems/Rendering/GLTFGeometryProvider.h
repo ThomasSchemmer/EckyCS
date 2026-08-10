@@ -18,12 +18,12 @@ namespace EckyCS
 
         GLsizei GetVertexCount() const override
         {
-            return ModelData.size();
+            return static_cast<int>(ModelData.size());
         }
 
         GLsizei GetVertexByteCount() const override
         {
-            return sizeof(ModelData) * ModelData.size();
+            return sizeof(ModelData) * static_cast<int>(ModelData.size());
         }
 
         void Load(const wchar_t* Path) override
