@@ -25,6 +25,8 @@ namespace TTerrain
         glDeleteShader(Fragment);
     
         Transform = glm::mat4(1.0f);
+
+        CaustixTex = ShaderHelper::CreateTexture(CausticTexLocation, GL_RGBA);
     }
 
     void WaterShader::Use(RenderPassType Type)
@@ -44,6 +46,8 @@ namespace TTerrain
         ShaderHelper::SetUniform2iv("TexSize", Settings.TexSize, Program);
         ShaderHelper::SetUniform3fv("GlobalWorldPos", Settings.GlobalWorldPos, Program);
         ShaderHelper::SetUniformM4("Transform", Transform, Program);
+        float Time = static_cast<float>(glfwGetTime());
+        ShaderHelper::SetUniform1f("Time", Time, Program);
 
         // rendering info, useful for shadows etc
         ShaderHelper::SetUniformM4("Projection", Settings.Camera->Projection, Program);
@@ -54,6 +58,7 @@ namespace TTerrain
         ShaderHelper::SetUniformM4("LightProjection", Settings.Light->Projection, Program);
         ShaderHelper::SetUniformM4("LightView", Settings.Light->View, Program);
         ShaderHelper::SetUniformTexture("DepthTex", Settings.DepthTex, 0, Program);
+        ShaderHelper::SetUniformTexture("CausticTex", CaustixTex, 1, Program);
         
         ShaderHelper::SetUniform2fv("DepthThreshold", Settings.DepthThreshold, Program);
         ShaderHelper::SetUniform2fv("ScreenSize", Settings.ScreenSize, Program);
@@ -64,5 +69,6 @@ namespace TTerrain
     void WaterShader::CleanUp() const
     {
         glDeleteProgram(Program);
+    glDeleteTextures(1, &CaustixTex);
     }
 }

@@ -179,6 +179,13 @@ uint GetDecorationType(uint Value, float Chance, int DecorationValue){
     return bHasDecoration && bHasChance ? DecorationValue : 0;
 }
 
+bool IsUnderWater(ivec3 QuadIndices, vec3 WorldPos){
+    uint Values = Heights.Values[QuadIndices.x];
+    uint WaterHeight = int(Values & LAYOUT_WATER_MASK) >> LAYOUT_WATER_OFFSET;
+    uint TerrainHeight = int(Values & LAYOUT_HEIGHT_MASK) >> LAYOUT_HEIGHT_OFFSET;
+    return WaterHeight > TerrainHeight;
+}
+
 uint GetDecorationType(ivec3 QuadIndices, vec3 WorldPos){
     float Chance = simplexNoise(WorldPos);
     Chance = map(Chance, -.34, 1.34, 0, 1);
@@ -210,8 +217,10 @@ void GenerateGrassPosition(vec3 id){
 
     if (IsOnDirt(WorldPos, QuadIndices))
         return;
+    
+    if (IsUnderWater(QuadIndices, WorldPos))
+        return;
 
-    //Todo: check if we not are above water/dirt etc!
     uint Index = atomicAdd(Counter.Count, 1);
     if (_Mode == MODE_COUNT_TRIANGLES)
         return;

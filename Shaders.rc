@@ -30,6 +30,7 @@ PIXEL_FRAGMENT_SHADER  RCDATA         "./ImportsLib/src/Renderer/PostProcessing/
 /** Textures */
 TERRAIN_GRASS_TEX_LOCATION RCDATA       "./ImportsLib/Textures/leaf.png";
 TERRAIN_FLOWER_TEX_LOCATION RCDATA      "./ImportsLib/Textures/flower.png";
+WATER_CAUSTIC_TEX_LOCATION RCDATA      "./Resources/Textures/CausticTexture.png";
 
 /** General lighting etc shader */
 COMMON_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/Common.glsl"

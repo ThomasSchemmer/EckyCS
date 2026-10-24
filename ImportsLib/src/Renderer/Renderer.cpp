@@ -56,10 +56,10 @@ void Renderer::InitRenderPasses(GLFWwindow* Window)
     // add a filtering / sharing mekanism for FBOs that auto creates and links them when necessary
     auto SPass = make_shared<ShadowPass>();
     SPass->Create(Window, this);
-    auto BPass = make_shared<BasePass>();
-    BPass->Create(Window, this);
     auto DPass = make_shared<DepthPrePass>();
     DPass->Create(Window, this);
+    auto BPass = make_shared<BasePass>();
+    BPass->Create(Window, this, DPass->DepthTex);
     auto TPass = make_shared<TransparentPass>();
     TPass->Create(Window, this);
     auto PPass = make_shared<PostProcessingPass>(SPass->ColorTex);

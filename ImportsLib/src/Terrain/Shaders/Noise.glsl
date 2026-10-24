@@ -75,6 +75,20 @@ vec2 hashv2(vec2 p)
     return vec2(q) * (1.0 / 4294967296.0);
 }
 
+float hash21(vec2 p){
+    uvec2 q = floatBitsToUint(p);
+    uint n = q.x * 1597334677u;
+    n ^= q.y * 3812015801u;
+
+    n ^= n >> 16;
+    n *= 2246822519u;
+    n ^= n >> 13;
+    n *= 3266489917u;
+    n ^= n >> 16;
+
+    return float(n >> 8) * (1.0 / 16777216.0);
+}
+
 /** Bell curve distribution, values at end points basically impossible without flattening! */
 float simplexNoise(vec3 p) {
     const float F3 = 1.0 / 3.0;
@@ -150,10 +164,10 @@ float valueNoise2D(vec2 p)
     // Quintic interpolation
     f = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
 
-    float a = hashv2(i + vec2(0,0)).x;
-    float b = hashv2(i + vec2(1,0)).x;
-    float c = hashv2(i + vec2(0,1)).x;
-    float d = hashv2(i + vec2(1,1)).x;
+    float a = hash21(i + vec2(0,0));
+    float b = hash21(i + vec2(1,0));
+    float c = hash21(i + vec2(0,1));
+    float d = hash21(i + vec2(1,1));
 
     float x1 = mix(a, b, f.x);
     float x2 = mix(c, d, f.x);

@@ -125,6 +125,7 @@ namespace
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_BACK);
+		glDepthFunc(GL_LESS);
 		//glDisable(GL_DEBUG_OUTPUT);
 		//glDebugMessageCallback(GLDebugMessageCallback, nullptr);
 	}

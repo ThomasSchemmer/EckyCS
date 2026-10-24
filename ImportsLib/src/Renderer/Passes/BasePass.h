@@ -11,5 +11,5 @@
 class BasePass : public RenderPass
 {
 public:
-    void Create(GLFWwindow* Window, Renderer* Renderer) override;
+    void Create(GLFWwindow* Window, Renderer* Renderer, GLuint DepthTex);
 };

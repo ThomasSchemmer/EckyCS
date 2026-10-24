@@ -45,9 +45,12 @@ namespace TTerrain
         
     private:
         glm::mat4 Transform;
+        GLuint CaustixTex;
    
         const wchar_t* VertexShader = L"TERRAIN_WATER_VERTEX_SHADER";
         const wchar_t* FragmentShader = L"TERRAIN_WATER_FRAGMENT_SHADER";
+
+        const wchar_t* CausticTexLocation = L"WATER_CAUSTIC_TEX_LOCATION";
 
     };
 }
