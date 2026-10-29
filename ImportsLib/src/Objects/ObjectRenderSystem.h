@@ -8,7 +8,7 @@
 /**
  * Idea: iterate over available models.rc and load all data for it
  * then provide utility for placing and instantiate all placed objects
- * via lookup and amulti instanced draw call?
+ * via lookup and a multi instanced draw call?
  */
 class ObjectRenderSystem : public EntityRenderSystem<Object, ObjectRenderData, GLTFGeometryProvider>
 {
@@ -16,7 +16,7 @@ public:
 
     bool SupportsRenderPass(RenderPassType Type) const override
     {
-        return Type == RenderPassType::BasePass;
+        return Type == RenderPassType::BasePass || Type == RenderPassType::ShadowPass;
     }
 
     void Tick(float Delta) override;

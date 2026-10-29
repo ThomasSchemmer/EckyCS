@@ -17,7 +17,7 @@ public:
 class ModelHelper
 {
 public:
-    static std::vector<ModelData> LoadGltf(const wchar_t* ResourcePath);
+    static std::vector<ModelData> LoadGltf(const wchar_t* ResourcePath, int TargetMesh, int TargetPrimitive);
 
     template<typename T>
     static void CopyData(const gltf::Gltf& Object, int MeshIndex, int PrimitiveIndex, int AttributeIndex, std::vector<T>& TargetVector)

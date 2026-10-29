@@ -32,7 +32,7 @@ namespace TTerrain
         void Create() override;
         void CleanUp() const override;
         bool SupportsPass(RenderPassType Type) override;
-        void Use(RenderPassType Type) override;
+        void Use(RenderPassType Type, void* UserData = nullptr) override;
         void UpdateVars(const GrassShaderSettings& Settings, const TerrainShaderSettings& TerrainSettings) const;
 
     private:

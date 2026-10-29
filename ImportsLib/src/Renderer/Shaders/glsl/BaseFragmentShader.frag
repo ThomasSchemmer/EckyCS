@@ -15,6 +15,6 @@ uniform vec3 CamPos;
 void main()
 {
     float a = GetLight();
-    FragColor = vec4(WorldNormals.y, 0, 0, 1);
+    FragColor = vec4(WorldNormals.y, 1, 0, 1);
     return;
 } 

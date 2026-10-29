@@ -88,7 +88,7 @@ void TTerrain::TerrainShader::Create()
     Transform = glm::mat4(1.0f);
 }
 
-void TTerrain::TerrainShader::Use(RenderPassType Type)
+void TTerrain::TerrainShader::Use(RenderPassType Type, void* UserData)
 {
     ActiveProgram = Type == RenderPassType::ShadowPass ?
         ShadowProgram : Program;

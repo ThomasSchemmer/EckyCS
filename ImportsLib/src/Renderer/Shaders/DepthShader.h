@@ -7,4 +7,9 @@ class DepthShader : public BaseShader
 public:
     void Create() override;
     bool SupportsPass(RenderPassType Type) override;
+    void Use(RenderPassType Type, void* UserData = nullptr) override;
+
+private:
+    GLuint ECSProgram = 0;
 };
+

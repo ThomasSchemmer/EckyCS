@@ -35,7 +35,7 @@ void TTerrain::GrassShader::Create()
     glCreateVertexArrays(1, &VAO);
 }
 
-void TTerrain::GrassShader::Use(RenderPassType Type)
+void TTerrain::GrassShader::Use(RenderPassType Type, void* UserData)
 {
     glUseProgram(GrassProgram);
     glBindVertexArray(VAO);

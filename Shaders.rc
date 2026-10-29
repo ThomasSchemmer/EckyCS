@@ -6,6 +6,9 @@ BASE_FRAGMENT_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/BaseFragme
 DEPTH_VERTEX_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/DepthVertexShader.vert"
 DEPTH_FRAGMENT_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/DepthFragmentShader.frag"
 
+ECS_DEPTH_VERTEX_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/DepthECSVertexShader.vert"
+ECS_DEPTH_FRAGMENT_SHADER  RCDATA  "./ImportsLib/src/Renderer/Shaders/glsl/DepthECSFragmentShader.frag"
+
 /*  Terrain */
 TERRAIN_VERTEX_SHADER  RCDATA           "./ImportsLib/src/Terrain/Shaders/TerrainVertexShader.vert"
 TERRAIN_FRAGMENT_SHADER  RCDATA         "./ImportsLib/src/Terrain/Shaders/TerrainFragmentShader.frag"

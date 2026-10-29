@@ -6,7 +6,7 @@
 typedef gltf::Mesh::Primitive::Attribute Attribute;
 using Data = std::vector<uint8_t>;
 
-std::vector<ModelData> ModelHelper::LoadGltf(const wchar_t* ResourcePath)
+std::vector<ModelData> ModelHelper::LoadGltf(const wchar_t* ResourcePath, int MeshIndex, int PrimitiveIndex)
 {
     auto Tuple = Util::ShaderHelper::ResourceToData(ResourcePath);
     
@@ -20,10 +20,10 @@ std::vector<ModelData> ModelHelper::LoadGltf(const wchar_t* ResourcePath)
     gltf::Gltf& Objects = Option.value();
     auto& Meshes = Objects.meshes;
 
-    for (int MeshIndex = 0; MeshIndex < Meshes.size(); ++MeshIndex)
+    //for (int MeshIndex = 0; MeshIndex < Meshes.size(); ++MeshIndex)
     {
         auto& Mesh = Meshes[MeshIndex];
-        for (int PrimitiveIndex = 0; 0 < Mesh.primitives.size(); ++PrimitiveIndex)
+        //for (int PrimitiveIndex = 0; 0 < Mesh.primitives.size(); ++PrimitiveIndex)
         {
             std::vector<short> Triangles;
             auto Vertices = std::vector<glm::vec3>();

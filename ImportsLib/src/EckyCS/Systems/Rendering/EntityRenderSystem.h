@@ -7,10 +7,11 @@
 #include "../System.h"
 #include "../../Util/EckyCSHeader.h"
 #include "../../Entities/Entity.h"
+
+
 namespace EckyCS
 {
     class ExplicitRenderData;
-    class RenderData;
     class ComponentGroupIdentifier;
 
     /**
@@ -27,7 +28,9 @@ namespace EckyCS
     template <typename EntityType, typename RenderDataType, typename GeometryProviderType>
     requires HasRequiredComponents<EntityType> &&
         is_base_of_v<RenderData, RenderDataType> &&
-        is_base_of_v<GeometryProvider, GeometryProviderType>
+        is_base_of_v<GeometryProvider, GeometryProviderType> &&
+        HasModelDefinition<RenderDataType> &&
+        IsRenderable<RenderDataType>
     /**
      * Handles registering and rendering RenderData, which in turn
      * describe how Entities should be rendered
@@ -53,12 +56,12 @@ namespace EckyCS
             {
                 auto ProviderPtr = make_shared<GeometryProviderType>();
                 Datas[GroupID] = RenderDataType();
-                Datas[GroupID].Create(Count, ProviderPtr);
+                Datas[GroupID].template Create<RenderDataType>(Count, ProviderPtr);
             }
 
-            if constexpr (std::is_base_of_v<ExplicitRenderData, RenderDataType>)
+            if constexpr (std::is_base_of_v<RenderData, RenderDataType>)
             {
-                static_cast<ExplicitRenderData*>(&Datas[GroupID])->UpdateBuffers(GroupID, Count, Data);
+                static_cast<RenderData*>(&Datas[GroupID])->UpdateBuffers(GroupID, Count, Data);
             }
             
             return true;

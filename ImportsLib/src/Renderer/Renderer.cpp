@@ -110,13 +110,15 @@ void Renderer::Render()
         // TODO: can probably make the shaders quicker for shadows etc
         Game::Instance->TerrainPtr->Render(Pass->Type);
 
-        auto CurrentShader = GetShaderForCurrentPass();
-        if (CurrentShader)
+        if (auto CurrentShader = GetShaderForCurrentPass())
         {
-            CurrentShader->Use(Pass->Type);
-            CurrentShader->UpdateVars(Camera, LightPtr);
+            bool IsECS = true;
+            CurrentShader->Use(Pass->Type, &IsECS);
+            CurrentShader->UpdateVars(Camera, LightPtr, Pass->Type);
             // this includes all matching systems, so be careful!
             RenderECS(Pass, Systems);
+            
+            // Todo: actual renderpass rendering? so far only terrain and ECS is here?
         
             if (Pass->Type == RenderPassType::BasePass)
             {

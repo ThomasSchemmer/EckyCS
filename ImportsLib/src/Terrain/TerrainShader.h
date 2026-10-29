@@ -50,7 +50,7 @@ namespace TTerrain
         void CleanUp() const override;
         bool SupportsPass(RenderPassType Type) override;
         void Create() override;
-        void Use(RenderPassType Type) override;
+        void Use(RenderPassType Type, void* UserData = nullptr) override;
 
     private:
         GLuint ShadowProgram;

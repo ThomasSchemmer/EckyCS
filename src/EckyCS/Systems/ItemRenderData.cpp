@@ -5,9 +5,10 @@
 #include "EckyCS/Systems/Rendering/SpriteGeometryProvider.h"
 #include "EckyCS/Util/TypeInfo.h"
 
-void ItemRenderData::Create(size_t InCount, const shared_ptr<GeometryProvider>& Provider)
+void ItemRenderData::CreateInternal(const wchar_t* Path, void* Data, 
+        size_t InCount, const shared_ptr<GeometryProvider>& Provider)
 {
-    RenderData::Create(InCount, Provider);
+    RenderData::CreateInternal(Path, Data, InCount, Provider);
     
     glGenBuffers(1, &ItemBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, ItemBuffer);

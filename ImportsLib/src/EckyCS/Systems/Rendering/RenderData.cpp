@@ -7,10 +7,11 @@
 
 namespace EckyCS
 {
-    void RenderData::Create(size_t InCount, const shared_ptr<GeometryProvider>& Provider)
+    void RenderData::CreateInternal(const wchar_t* Path, void* Data, 
+        size_t InCount, const shared_ptr<GeometryProvider>& Provider)
     {
         DataProvider = Provider;
-        DataProvider->Load(GetResourcePath());
+        DataProvider->Load(Path, Data);
         
         Count = InCount;
         glGenVertexArrays(1, &VAO);
@@ -33,9 +34,12 @@ namespace EckyCS
         // offsets on the other hand will have to be transmitted every frame
         glBindBuffer(GL_ARRAY_BUFFER, OffsetBuffer);
         glBufferData(GL_ARRAY_BUFFER, sizeof(TransformComponent) * InCount, nullptr, GL_DYNAMIC_DRAW);
-        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(3);
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(sizeof(float) * 3));
+        glEnableVertexAttribArray(4);
         glVertexAttribDivisor(3, 1); 
+        glVertexAttribDivisor(4, 1); 
         
         glBindBuffer(GL_ARRAY_BUFFER, IDBuffer);
         glBufferData(GL_ARRAY_BUFFER, sizeof(EntityID) * InCount, nullptr, GL_DYNAMIC_DRAW);
@@ -45,6 +49,7 @@ namespace EckyCS
     void RenderData::Render() const
     {
         glBindVertexArray(VAO);
+        // todo use
         glDrawArraysInstanced(GL_TRIANGLES, 0, DataProvider->GetVertexCount(), static_cast<int>(Count));
     }
 }

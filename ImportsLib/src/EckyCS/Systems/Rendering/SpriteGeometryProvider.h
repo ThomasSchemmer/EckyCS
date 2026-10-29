@@ -26,7 +26,7 @@ namespace EckyCS
         }
 
         // dont need to load anything
-        void Load(const wchar_t* Path) override {}
+        void Load(const wchar_t* , const void* ) override {}
 
         float SpriteVertices[48] = {
             // vec3 pos, vec2 uv, vec3 normal

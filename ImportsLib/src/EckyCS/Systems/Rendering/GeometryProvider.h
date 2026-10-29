@@ -17,7 +17,7 @@ namespace EckyCS
 
         virtual GLsizei GetVertexByteCount() const = 0;
 
-        virtual void Load(const wchar_t* Path) = 0;
+        virtual void Load(const wchar_t* Path, const void* Data) = 0;
 
         virtual ~GeometryProvider() = default;
     };

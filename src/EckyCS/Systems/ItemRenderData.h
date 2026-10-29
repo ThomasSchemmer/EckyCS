@@ -12,9 +12,15 @@ class ItemRenderData : public RenderData
 public:
     ItemRenderData() = default;
     virtual ~ItemRenderData() override = default;
-    void Create(size_t count, const shared_ptr<GeometryProvider>& Provider) override;
-    const wchar_t* GetResourcePath() const override { return ResourcePath; }
+    void CreateInternal(const wchar_t* Path, void* Data, 
+        size_t InCount, const shared_ptr<GeometryProvider>& Provider) override;
 
+    static constexpr ModelDefinition Model{
+        .Name = L"",
+        .MeshIndex = 0,
+        .PrimitiveIndex = 0
+    };
+    
 private:
     unsigned int ItemBuffer;
     const wchar_t* ResourcePath = L"";

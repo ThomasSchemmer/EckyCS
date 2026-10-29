@@ -40,7 +40,7 @@ namespace TTerrain
         void UpdateVars(const WaterShaderSettings& Settings) const;
         void CleanUp() const override;
         void Create() override;
-        void Use(RenderPassType Type) override;
+        void Use(RenderPassType Type, void* UserData = nullptr) override;
         bool SupportsPass(RenderPassType Type) override;
         
     private:

@@ -15,9 +15,9 @@ bool PixelShader::SupportsPass(RenderPassType Type)
     return Type == RenderPassType::PostProcessingPass;
 }
 
-void PixelShader::UpdateVars(const shared_ptr<Camera>& Camera, const shared_ptr<Light>& Light) const
+void PixelShader::UpdateVars(const shared_ptr<Camera>& Camera, const shared_ptr<Light>& Light, RenderPassType Type) const
 {
-    BaseShader::UpdateVars(Camera, Light);
+    BaseShader::UpdateVars(Camera, Light, Type);
 }
 
 void PixelShader::UpdateVars(const PixelShaderSettings& Settings) const

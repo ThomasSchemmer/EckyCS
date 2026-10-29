@@ -18,7 +18,7 @@ public:
     virtual void Create() = 0;
 
     /** Applies the shader for any following rendering */
-    virtual void Use(RenderPassType Type) = 0;
+    virtual void Use(RenderPassType Type, void* UserData = nullptr) = 0;
 
     /** Destroys any created OGL vars*/
     virtual void CleanUp() const = 0;

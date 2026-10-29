@@ -22,13 +22,15 @@ public:
     BaseShader() = default;
 
     virtual void Create() override;
-    virtual void UpdateVars(const shared_ptr<Camera>& Camera, const shared_ptr<Light>& Light) const;
+    virtual void UpdateVars(const shared_ptr<Camera>& Camera, const shared_ptr<Light>& Light, RenderPassType Type) const;
     virtual bool SupportsPass(RenderPassType Type) override;
-    virtual void Use(RenderPassType Type) override;
+    
+    virtual void Use(RenderPassType Type, void* UserData = nullptr) override;
     virtual void CleanUp() const override;
     
 
 protected:
     glm::mat4 Transform;
     void CreateInternal(const wchar_t* VShader, const wchar_t* FShader);
+    void CreateProgram(const wchar_t* VShader, const wchar_t* FShader, const string& Name, GLuint& Program) const;
 };

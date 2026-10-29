@@ -856,6 +856,8 @@
     <Content Include="src\Renderer\PostProcessing\Shaders\glsl\PixelShader.frag" />
     <Content Include="src\Renderer\Shaders\glsl\BlurTex.comp" />
     <Content Include="src\Renderer\Shaders\glsl\Common.glsl" />
+    <Content Include="src\Renderer\Shaders\glsl\DepthECSFragmentShader.frag" />
+    <Content Include="src\Renderer\Shaders\glsl\DepthECSVertexShader.vert" />
     <Content Include="src\Renderer\Shaders\glsl\DepthFragmentShader.frag" />
     <Content Include="src\Renderer\Shaders\glsl\DepthVertexShader.vert" />
     <Content Include="src\Renderer\Shaders\glsl\Light.glsl" />

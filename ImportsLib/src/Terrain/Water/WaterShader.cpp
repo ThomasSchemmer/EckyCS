@@ -29,7 +29,7 @@ namespace TTerrain
         CaustixTex = ShaderHelper::CreateTexture(CausticTexLocation, GL_RGBA);
     }
 
-    void WaterShader::Use(RenderPassType Type)
+    void WaterShader::Use(RenderPassType Type, void* UserData)
     {
         glUseProgram(Program);
     }

@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <memory>
 #include <vector>
+#include <tuple>
 
 #include "GeometryProvider.h"
 #include "../../../Util/ModelHelper.h"
@@ -26,9 +27,10 @@ namespace EckyCS
             return sizeof(ModelData) * static_cast<int>(ModelData.size());
         }
 
-        void Load(const wchar_t* Path) override
+        void Load(const wchar_t* Path, const void* Data) override
         {
-            ModelData = ModelHelper::LoadGltf(Path);
+            const auto* IntData = static_cast<const std::tuple<int, int>*>(Data);
+            ModelData = ModelHelper::LoadGltf(Path, std::get<0>(*IntData), std::get<1>(*IntData));
         }
 
         std::vector<ModelData> ModelData;
